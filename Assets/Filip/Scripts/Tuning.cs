@@ -25,8 +25,15 @@ public static class Tuning
     public const float OxygenDrainPerSecond = 1.5f;
     public const float OxygenPerShot = 1f;
 
+    public const float OutOfBoundsDrainMultiplier = 4f; // oxygen drains this much faster outside the level
+
+    // --- Level (temporary, until levels are loaded from text files) ---
+    public const float LevelWidth = 40f;
+    public const float LevelHeight = 50f;
+    public const float PlayerStartFromBottom = 5f; // player starts this far above the bottom border
+    public const float ShipFromTop = 3f;           // ship center is this far below the top border
+
     // --- Ship (goal) ---
-    public const float ShipDistance = 40f;        // temporary: ship is this far to the right of the player
     public const float ShipLength = 6f;
     public const float ShipHeight = 2.5f;
 
