@@ -16,7 +16,8 @@ public class ParallaxBackground : MonoBehaviour
     Camera cam;
 
     // Builds all background layers under parent.
-    public static void CreateAll(Transform parent, Vector2 anchor)
+    // tint: colour of the level (white = the picture as drawn).
+    public static void CreateAll(Transform parent, Vector2 anchor, Color tint)
     {
         var art = Art.TryMake("background", parent, Tuning.BackgroundSize, -200);
         if (art != null)
@@ -29,9 +30,9 @@ public class ParallaxBackground : MonoBehaviour
         // so the background stays behind the rocks instead of competing with them.
         float b = Tuning.NebulaFarBrightness;
         CreateRepeating("nebula_far", parent, anchor, Tuning.NebulaFarSize, Tuning.NebulaFarParallax, -200, 1.002f,
-            new Color(b, b, b, 1f));
+            new Color(b * tint.r, b * tint.g, b * tint.b, 1f));
         CreateRepeating("nebula_near", parent, anchor, Tuning.NebulaNearSize, Tuning.NebulaNearParallax, -145, 1f,
-            new Color(1f, 1f, 1f, Tuning.NebulaNearOpacity));
+            new Color(tint.r, tint.g, tint.b, Tuning.NebulaNearOpacity));
     }
 
     // 3x3 copies of a seamless picture. If the picture is missing, nothing is created (black sky).

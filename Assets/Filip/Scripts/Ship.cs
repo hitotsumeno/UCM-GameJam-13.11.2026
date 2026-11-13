@@ -39,7 +39,8 @@ public class Ship : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.GetComponent<PlayerController>() == null) return;
-        if (DraftGame.Instance != null) DraftGame.Instance.Win();
+        var player = other.GetComponent<PlayerController>();
+        if (player == null) return;
+        if (DraftGame.Instance != null) DraftGame.Instance.PlayerReachedShip(player, transform.position);
     }
 }

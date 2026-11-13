@@ -9,6 +9,7 @@ using UnityEngine;
 public class ArtImportSettings : AssetPostprocessor
 {
     const string ArtFolder = "Assets/Resources/Art/";
+    const string LevelsFolder = "Assets/Resources/Levels/";
 
     void OnPreprocessTexture()
     {
@@ -59,10 +60,14 @@ public class ArtImportSettings : AssetPostprocessor
             DraftPreview.Schedule();
     }
 
+    // Pictures or level files changed?
     static bool Touches(string[] paths)
     {
         foreach (var p in paths)
-            if (p.Replace('\\', '/').StartsWith(ArtFolder)) return true;
+        {
+            string path = p.Replace('\\', '/');
+            if (path.StartsWith(ArtFolder) || path.StartsWith(LevelsFolder)) return true;
+        }
         return false;
     }
 }

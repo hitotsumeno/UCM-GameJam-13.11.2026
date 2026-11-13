@@ -15,6 +15,7 @@ public static class DraftPreview
     const string Prefix = "[Preview] ";
     const string PrefKey = "Filip.DraftPreview.Enabled";
     const string MenuPath = "Filip/Level Preview In Editor";
+    const string LevelKey = "Filip.DraftPreview.Level";
 
     static DraftPreview()
     {
@@ -47,6 +48,17 @@ public static class DraftPreview
         return true;
     }
 
+    // Shows the next level in the preview (level 1 after the last one).
+    [MenuItem("Filip/Preview Next Level")]
+    static void PreviewNextLevel()
+    {
+        int count = LevelData.Count();
+        if (count == 0) return;
+        int current = Mathf.Clamp(EditorPrefs.GetInt(LevelKey, 1), 1, count);
+        EditorPrefs.SetInt(LevelKey, current % count + 1);
+        Schedule();
+    }
+
     static void OnPlayModeChanged(PlayModeStateChange change)
     {
         if (change == PlayModeStateChange.ExitingEditMode) Clear();
@@ -70,11 +82,18 @@ public static class DraftPreview
         try
         {
             Art.ResetStatics(); // pick up pictures added or removed since the last build
-            var world = WorldBuilder.Build();
+
+            // Which level is shown: menu Filip > Preview Next Level.
+            int count = LevelData.Count();
+            LevelData level = null;
+            if (count > 0) level = LevelData.Load(Mathf.Clamp(EditorPrefs.GetInt(LevelKey, 1), 1, count));
+
+            var world = WorldBuilder.Build(level);
+            if (level != null) world.root.name += " (level " + level.index + ": " + level.name + ")";
             Mark(world.root.gameObject);
 
             var hud = Hud.Create();
-            hud.SetOxygen(1f);
+            hud.SetOxygen(level != null ? level.oxygen / Tuning.OxygenMax : 1f);
             hud.SetCompass(world.ship.position - world.player.transform.position);
             Mark(hud.gameObject);
         }

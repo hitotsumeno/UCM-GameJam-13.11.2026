@@ -5,37 +5,105 @@ using UnityEngine;
 public class LevelWorld
 {
     public Transform root;
+    public LevelData level;      // null on the test ground (no level files)
     public PlayerController player;
     public Transform ship;
     public Rect bounds;          // level area; outside it the signal is lost
+    public List<Vector2> hintPositions = new List<Vector2>();
+    public List<string> hintTexts = new List<string>();
 }
 
 // Builds the level objects. Used by the game (on Play) and by the editor preview
 // (without Play), so this code must also work in edit mode: no Destroy(), no coroutines.
 public static class WorldBuilder
 {
-    public static LevelWorld Build()
+    // level == null builds the random test ground (used when there are no level files).
+    public static LevelWorld Build(LevelData level)
     {
         var w = new LevelWorld();
+        w.level = level;
         w.root = new GameObject("World").transform;
-
-        // Temporary level: player at the bottom, ship almost at the very top.
-        w.bounds = new Rect(-Tuning.LevelWidth * 0.5f, -Tuning.LevelHeight * 0.5f,
-            Tuning.LevelWidth, Tuning.LevelHeight);
-        Vector2 start = new Vector2(w.bounds.center.x, w.bounds.yMin + Tuning.PlayerStartFromBottom);
-        Vector2 shipPos = new Vector2(w.bounds.center.x, w.bounds.yMax - Tuning.ShipFromTop);
-
-        BuildBackground(w.root, w.bounds.center);
-        BuildBorder(w.root, w.bounds);
-        w.player = PlayerController.Create(start, w.root);
-        w.ship = Ship.Create(shipPos, w.root).transform;
-        Asteroid.Bounds = w.bounds;
-        Scatter(w.root, start, shipPos);
-        MeteorSpawner.Create(w.root, w.player.transform);
+        if (level != null) BuildLevel(w, level);
+        else BuildTestGround(w);
         return w;
     }
 
-    // Temporary: random asteroids on the way to the ship and oxygen tanks off to the sides.
+    // --- Level from a text file ---
+
+    static void BuildLevel(LevelWorld w, LevelData level)
+    {
+        w.bounds = level.Bounds;
+        Asteroid.Bounds = w.bounds;
+        BuildBackground(w.root, w.bounds.center, level.tint);
+        BuildBorder(w.root, w.bounds);
+
+        // Used if the map has no P or S.
+        Vector2 start = new Vector2(w.bounds.center.x, w.bounds.yMin + Tuning.PlayerStartFromBottom);
+        Vector2 shipPos = new Vector2(w.bounds.center.x, w.bounds.yMax - Tuning.ShipFromTop);
+
+        for (int row = 0; row < level.rows.Count; row++)
+        {
+            string line = level.rows[row];
+            for (int col = 0; col < line.Length; col++)
+            {
+                char c = line[col];
+                if (c == '.') continue;
+                Vector2 p = level.CellCenter(col, row);
+                switch (c)
+                {
+                    case 'P': start = p; break;
+                    case 'S': shipPos = p; break;
+                    case 'a': SpawnRock(AsteroidSize.Small, p, level.movers, w.root); break;
+                    case 'A': SpawnRock(AsteroidSize.Medium, p, level.movers, w.root); break;
+                    case 'B': SpawnRock(AsteroidSize.Large, p, level.movers, w.root); break;
+                    case 'o': OxygenTank.Create(p, w.root); break;
+                    default:
+                        if (char.IsDigit(c) && level.hints.ContainsKey(c))
+                        {
+                            w.hintPositions.Add(p);
+                            w.hintTexts.Add(level.hints[c]);
+                        }
+                        break;
+                }
+            }
+        }
+
+        w.player = PlayerController.Create(start, w.root);
+        w.ship = Ship.Create(shipPos, w.root).transform;
+        if (level.meteors)
+            MeteorSpawner.Create(w.root, w.player.transform, level.meteorMin, level.meteorMax);
+    }
+
+    // Some rocks barely drift, others fly noticeably in a random direction.
+    static void SpawnRock(AsteroidSize size, Vector2 position, float moverChance, Transform parent)
+    {
+        bool mover = Random.value < moverChance;
+        float speed = mover
+            ? Random.Range(Tuning.AsteroidMoveSpeedMin, Tuning.AsteroidMoveSpeedMax)
+            : Random.Range(Tuning.AsteroidDriftMin, Tuning.AsteroidDriftMax);
+        float angle = Random.Range(0f, Mathf.PI * 2f);
+        Asteroid.Create(size, position, new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed, parent);
+    }
+
+    // --- Random test ground (only when there are no level files) ---
+
+    static void BuildTestGround(LevelWorld w)
+    {
+        w.bounds = new Rect(-Tuning.LevelWidth * 0.5f, -Tuning.LevelHeight * 0.5f,
+            Tuning.LevelWidth, Tuning.LevelHeight);
+        Asteroid.Bounds = w.bounds;
+        Vector2 start = new Vector2(w.bounds.center.x, w.bounds.yMin + Tuning.PlayerStartFromBottom);
+        Vector2 shipPos = new Vector2(w.bounds.center.x, w.bounds.yMax - Tuning.ShipFromTop);
+
+        BuildBackground(w.root, w.bounds.center, Color.white);
+        BuildBorder(w.root, w.bounds);
+        w.player = PlayerController.Create(start, w.root);
+        w.ship = Ship.Create(shipPos, w.root).transform;
+        Scatter(w.root, start, shipPos);
+        MeteorSpawner.Create(w.root, w.player.transform, Tuning.MeteorIntervalMin, Tuning.MeteorIntervalMax);
+    }
+
+    // Random asteroids on the way to the ship and oxygen tanks off to the sides.
     static void Scatter(Transform parent, Vector2 start, Vector2 shipPos)
     {
         float yMin = start.y + Tuning.ScatterClearance;
@@ -59,14 +127,7 @@ public static class WorldBuilder
                 if (!IsFree(placed, pos, radius + 0.5f)) continue;
 
                 placed.Add(new Vector3(pos.x, pos.y, radius));
-                // Some asteroids barely drift, others fly noticeably in a random direction.
-                bool mover = Random.value < Tuning.AsteroidMoverChance;
-                float speed = mover
-                    ? Random.Range(Tuning.AsteroidMoveSpeedMin, Tuning.AsteroidMoveSpeedMax)
-                    : Random.Range(Tuning.AsteroidDriftMin, Tuning.AsteroidDriftMax);
-                float angle = Random.Range(0f, Mathf.PI * 2f);
-                Vector2 drift = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed;
-                Asteroid.Create(size, pos, drift, parent);
+                SpawnRock(size, pos, Tuning.AsteroidMoverChance, parent);
                 break;
             }
         }
@@ -89,6 +150,8 @@ public static class WorldBuilder
         return true;
     }
 
+    // --- Shared pieces ---
+
     // Thin red frame showing where the level ends.
     static void BuildBorder(Transform parent, Rect bounds)
     {
@@ -109,15 +172,15 @@ public static class WorldBuilder
         right.transform.position = new Vector2(bounds.xMax, c.y);
     }
 
-    // Background picture (if the file exists) and two layers of stars on top of it.
+    // Nebula (or the artist's background picture) and three layers of stars.
     // Far layers scroll slower than near ones.
-    static void BuildBackground(Transform parent, Vector2 center)
+    static void BuildBackground(Transform parent, Vector2 center, Color tint)
     {
         var root = new GameObject("Background").transform;
         root.SetParent(parent, false);
 
         // Draw order, back to front: far clouds, star dust, far stars, near clouds, near stars.
-        ParallaxBackground.CreateAll(root, center);
+        ParallaxBackground.CreateAll(root, center, tint);
         StarLayer.CreateDust("StarDust", root, center, Tuning.StarDustParallax, Tuning.StarDustCount, -160);
         StarLayer.CreateGlowing("StarsFar", root, center, Tuning.StarsFarParallax, Tuning.StarsFarCount,
             Tuning.StarFarSizeMin, Tuning.StarFarSizeMax, 0.45f, -150);

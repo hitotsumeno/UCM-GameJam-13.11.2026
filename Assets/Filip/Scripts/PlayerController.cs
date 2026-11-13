@@ -78,10 +78,24 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public float Speed
+    {
+        get { return rb.linearVelocity.magnitude; }
+    }
+
     // Called on docking: the astronaut stops drifting.
     public void Stop()
     {
         rb.linearVelocity = Vector2.zero;
+    }
+
+    // Thrown back from a point (hit the ship too fast).
+    public void BounceFrom(Vector2 point)
+    {
+        Vector2 away = (Vector2)transform.position - point;
+        if (away.sqrMagnitude < 0.0001f) away = Vector2.down;
+        float speed = Mathf.Max(Speed * Tuning.DockBounce, Tuning.DockBounceMinSpeed);
+        rb.linearVelocity = away.normalized * speed;
     }
 
     void Fire(Vector2 aim)

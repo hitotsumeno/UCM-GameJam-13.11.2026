@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 public enum GameState { Playing, Won, Lost }
 
 // Runs the game. Everything is built from code, but only in the scene named DraftScene.
-// The level objects themselves are created by WorldBuilder.
+// Levels come from text files (LevelData); the level objects are created by WorldBuilder.
 public class DraftGame : MonoBehaviour
 {
     public const string SceneName = "DraftScene";
@@ -21,11 +21,12 @@ public class DraftGame : MonoBehaviour
         get { return world != null && world.player != null ? world.player.transform : null; }
     }
 
-    float comboTimer;
-
     LevelWorld world;      // current level; null when cleared
     CameraRig cameraRig;
     Hud hud;
+    float comboTimer;
+    int levelIndex = 1;    // 1 = level1.txt
+    int levelCount;        // 0 = no level files: the random test ground is used
 
     // Reset static fields (works even when domain reload is disabled).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -51,6 +52,8 @@ public class DraftGame : MonoBehaviour
         EnsureGlobalLight();
         SetupCamera();
         hud = Hud.Create();
+        levelCount = LevelData.Count();
+        levelIndex = 1;
         BuildWorld();
     }
 
@@ -61,20 +64,42 @@ public class DraftGame : MonoBehaviour
 
     void Update()
     {
+        // R restarts the current level at any moment.
         if (Input.GetKeyDown(KeyCode.R))
         {
             BuildWorld();
             return;
         }
 
+        // After docking, Enter goes to the next level (after the last one, back to the first).
+        if (State == GameState.Won && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
+        {
+            levelIndex = levelIndex < levelCount ? levelIndex + 1 : 1;
+            BuildWorld();
+            return;
+        }
+
         bool outside = false;
+        string hint = null;
         if (world != null && world.player != null)
         {
             Vector2 pos = world.player.transform.position;
             outside = !world.bounds.Contains(pos);
             if (world.ship != null) hud.SetCompass((Vector2)world.ship.position - pos);
+
+            float speed = world.player.Speed;
+            hud.SetSpeed(speed, speed <= Tuning.DockMaxSpeed);
+
+            // The nearest hint place within reach decides which hint is shown.
+            float best = Tuning.HintRadius;
+            for (int i = 0; i < world.hintPositions.Count; i++)
+            {
+                float d = Vector2.Distance(pos, world.hintPositions[i]);
+                if (d < best) { best = d; hint = world.hintTexts[i]; }
+            }
         }
         hud.SetSignalLost(outside && State == GameState.Playing);
+        hud.SetHint(State == GameState.Playing ? hint : null);
 
         UpdateCombo();
 
@@ -86,7 +111,7 @@ public class DraftGame : MonoBehaviour
         }
     }
 
-    // --- Game state ---
+    // --- Oxygen ---
 
     public void SpendOxygen(float amount)
     {
@@ -136,19 +161,40 @@ public class DraftGame : MonoBehaviour
         else hud.SetCombo(Combo, comboTimer / Tuning.ComboWindow);
     }
 
+    // --- Docking, winning, losing ---
+
+    // Called by the ship when the player touches it. Docking only works at low speed.
+    public void PlayerReachedShip(PlayerController player, Vector2 shipPosition)
+    {
+        if (State != GameState.Playing) return;
+        if (player.Speed <= Tuning.DockMaxSpeed)
+        {
+            Win();
+            return;
+        }
+        player.BounceFrom(shipPosition);
+        SpendOxygen(Tuning.DockPenalty);
+        hud.Toast("TOO FAST");
+        CameraRig.Shake();
+    }
+
     public void Win()
     {
         if (State != GameState.Playing) return;
         State = GameState.Won;
         if (world != null && world.player != null) world.player.Stop();
-        hud.ShowMessage("DOCKED", new Color(0.4f, 1f, 0.5f));
+
+        bool last = levelIndex >= levelCount;
+        string sub = "OXYGEN LEFT " + Mathf.RoundToInt(Oxygen) + "     "
+            + (last ? "ALL LEVELS COMPLETE. PRESS ENTER TO PLAY AGAIN" : "PRESS ENTER FOR THE NEXT LEVEL");
+        hud.ShowMessage("DOCKED", new Color(0.4f, 1f, 0.5f), sub);
     }
 
     public void Lose()
     {
         if (State != GameState.Playing) return;
         State = GameState.Lost;
-        hud.ShowMessage("OUT OF OXYGEN", new Color(1f, 0.35f, 0.3f));
+        hud.ShowMessage("OUT OF OXYGEN", new Color(1f, 0.35f, 0.3f), "PRESS R TO RESTART");
     }
 
     // --- Scene setup ---
@@ -197,19 +243,22 @@ public class DraftGame : MonoBehaviour
         world = null;
     }
 
-    // Also used for restart: clears everything and builds it again.
+    // Builds the current level. Also used for restart: clears everything and builds it again.
     public void BuildWorld()
     {
         ClearWorld();
-        world = WorldBuilder.Build();
+        LevelData level = levelCount > 0 ? LevelData.Load(levelIndex) : null;
+        world = WorldBuilder.Build(level);
 
         State = GameState.Playing;
-        Oxygen = Tuning.OxygenMax;
-        hud.SetOxygen(1f);
+        Oxygen = level != null ? Mathf.Clamp(level.oxygen, 1f, Tuning.OxygenMax) : Tuning.OxygenMax;
+        hud.SetOxygen(Oxygen / Tuning.OxygenMax);
         hud.HideMessage();
         hud.SetSignalLost(false);
-        BreakCombo();
+        hud.SetHint(null);
+        hud.ShowTitle(level != null ? "LEVEL " + level.index + ": " + level.name : null);
         hud.SetCompass(world.ship.position - world.player.transform.position);
+        BreakCombo();
 
         cameraRig.target = world.player.transform;
         cameraRig.SnapToTarget();

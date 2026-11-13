@@ -33,7 +33,17 @@ public static class Tuning
     public const float OxygenPerShot = 1f;
     public const float OutOfBoundsDrainMultiplier = 4f; // oxygen drains this much faster outside the level
 
-    // --- Level (temporary test ground, until levels are loaded from text files) ---
+    // --- Levels from text files (Assets/Resources/Levels) ---
+    public const float CellSize = 2f;             // one map character is a square of this many units
+    public const float HintRadius = 9f;           // a hint is shown while the player is this close to its place
+
+    // --- Docking: reach the ship slowly ---
+    public const float DockMaxSpeed = 5f;         // faster than this the player bounces off
+    public const float DockBounce = 0.6f;         // share of speed kept after bouncing off
+    public const float DockBounceMinSpeed = 3f;
+    public const float DockPenalty = 5f;          // oxygen lost for hitting the ship too fast
+
+    // --- Test ground (only used when there are no level files) ---
     public const float LevelWidth = 60f;
     public const float LevelHeight = 120f;
     public const float PlayerStartFromBottom = 5f; // player starts this far above the bottom border

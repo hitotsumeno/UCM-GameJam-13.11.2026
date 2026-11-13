@@ -5,13 +5,17 @@ public class MeteorSpawner : MonoBehaviour
 {
     Transform player;
     float timer;
+    float intervalMin, intervalMax;
 
-    public static MeteorSpawner Create(Transform parent, Transform player)
+    // intervalMin..intervalMax: seconds between meteors (set per level).
+    public static MeteorSpawner Create(Transform parent, Transform player, float intervalMin, float intervalMax)
     {
         var go = new GameObject("MeteorSpawner");
         go.transform.SetParent(parent, false);
         var s = go.AddComponent<MeteorSpawner>();
         s.player = player;
+        s.intervalMin = intervalMin;
+        s.intervalMax = intervalMax;
         s.timer = Tuning.MeteorFirstDelay;
         return s;
     }
@@ -23,7 +27,7 @@ public class MeteorSpawner : MonoBehaviour
 
         timer -= Time.deltaTime;
         if (timer > 0f) return;
-        timer = Random.Range(Tuning.MeteorIntervalMin, Tuning.MeteorIntervalMax);
+        timer = Random.Range(intervalMin, intervalMax);
 
         var cam = Camera.main;
         if (cam == null) return;
