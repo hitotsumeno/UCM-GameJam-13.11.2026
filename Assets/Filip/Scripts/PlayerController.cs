@@ -100,7 +100,11 @@ public class PlayerController : MonoBehaviour
         float speed = collision.relativeVelocity.magnitude;
         if (speed <= Tuning.ImpactSafeSpeed) return;
         float loss = Mathf.Min((speed - Tuning.ImpactSafeSpeed) * Tuning.ImpactOxygenPerSpeed, Tuning.ImpactMaxOxygen);
-        if (DraftGame.Instance != null) DraftGame.Instance.SpendOxygen(loss);
+        if (DraftGame.Instance != null)
+        {
+            DraftGame.Instance.SpendOxygen(loss);
+            DraftGame.Instance.BreakCombo(); // a hard hit ends the combo
+        }
         CameraRig.Shake();
     }
 

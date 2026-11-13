@@ -14,6 +14,14 @@ public class DraftGame : MonoBehaviour
 
     public GameState State { get; private set; }
     public float Oxygen { get; private set; }
+    public int Combo { get; private set; }
+
+    public Transform PlayerTransform
+    {
+        get { return world != null && world.player != null ? world.player.transform : null; }
+    }
+
+    float comboTimer;
 
     LevelWorld world;      // current level; null when cleared
     CameraRig cameraRig;
@@ -68,6 +76,8 @@ public class DraftGame : MonoBehaviour
         }
         hud.SetSignalLost(outside && State == GameState.Playing);
 
+        UpdateCombo();
+
         if (State == GameState.Playing)
         {
             float drain = Tuning.OxygenDrainPerSecond * Time.deltaTime;
@@ -91,6 +101,39 @@ public class DraftGame : MonoBehaviour
         if (State != GameState.Playing) return;
         Oxygen = Mathf.Min(Tuning.OxygenMax, Oxygen + amount);
         hud.SetOxygen(Oxygen / Tuning.OxygenMax);
+    }
+
+    public void CollectCrystal(float amount)
+    {
+        AddOxygen(amount);
+        hud.FlashOxygen();
+    }
+
+    // --- Combo ---
+
+    // Called when something is destroyed. Returns the combo count including this kill.
+    public int RegisterKill()
+    {
+        Combo = comboTimer > 0f ? Mathf.Min(Combo + 1, Tuning.ComboMax) : 1;
+        comboTimer = Tuning.ComboWindow;
+        hud.SetCombo(Combo, 1f);
+        return Combo;
+    }
+
+    // Called when the player takes a hard hit.
+    public void BreakCombo()
+    {
+        Combo = 0;
+        comboTimer = 0f;
+        hud.SetCombo(0, 0f);
+    }
+
+    void UpdateCombo()
+    {
+        if (comboTimer <= 0f) return;
+        comboTimer -= Time.deltaTime;
+        if (comboTimer <= 0f) BreakCombo();
+        else hud.SetCombo(Combo, comboTimer / Tuning.ComboWindow);
     }
 
     public void Win()
@@ -165,6 +208,7 @@ public class DraftGame : MonoBehaviour
         hud.SetOxygen(1f);
         hud.HideMessage();
         hud.SetSignalLost(false);
+        BreakCombo();
         hud.SetCompass(world.ship.position - world.player.transform.position);
 
         cameraRig.target = world.player.transform;

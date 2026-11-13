@@ -14,6 +14,15 @@ public class Hud : MonoBehaviour
     Text compassText;
     int shownDistance = -1;
 
+    static readonly Color OxygenColor = new Color(0.3f, 0.85f, 1f);
+    Image oxygenFillImage;
+    float oxygenFlash;
+
+    GameObject comboRoot;
+    Text comboText;
+    RectTransform comboBar;
+    int shownCombo = -1;
+
     public static Hud Create()
     {
         var go = new GameObject("HUD");
@@ -49,11 +58,13 @@ public class Hud : MonoBehaviour
         // Oxygen bar under the label.
         var bg = MakeImage("OxygenBar", go.transform, new Color(1f, 1f, 1f, 0.2f));
         Place(bg.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -80f), new Vector2(400f, 28f));
-        var fill = MakeImage("Fill", bg.transform, new Color(0.3f, 0.85f, 1f));
+        var fill = MakeImage("Fill", bg.transform, OxygenColor);
+        hud.oxygenFillImage = fill;
         hud.oxygenFill = fill.rectTransform;
         Stretch(hud.oxygenFill);
 
         hud.BuildCompass(go.transform, font);
+        hud.BuildCombo(go.transform, font);
 
         // Big message in the center (DOCKED / OUT OF OXYGEN).
         hud.message = MakeText("Message", go.transform, font, 110, TextAnchor.MiddleCenter, Color.white);
@@ -96,9 +107,57 @@ public class Hud : MonoBehaviour
         Place(compassText.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size, 80f));
     }
 
+    // Combo counter in the top-right corner, with a bar showing the time left to continue it.
+    void BuildCombo(Transform parent, Font font)
+    {
+        var root = new GameObject("Combo", typeof(RectTransform)).GetComponent<RectTransform>();
+        root.SetParent(parent, false);
+        Place(root, new Vector2(1f, 1f), new Vector2(-40f, -30f), new Vector2(420f, 100f));
+        comboRoot = root.gameObject;
+
+        comboText = MakeText("Text", root, font, 64, TextAnchor.UpperRight, new Color(1f, 0.85f, 0.3f));
+        Stretch(comboText.rectTransform);
+
+        var barBg = MakeImage("Bar", root, new Color(1f, 1f, 1f, 0.2f));
+        Place(barBg.rectTransform, new Vector2(1f, 0f), Vector2.zero, new Vector2(260f, 8f));
+        var barFill = MakeImage("Fill", barBg.transform, new Color(1f, 0.85f, 0.3f));
+        comboBar = barFill.rectTransform;
+        Stretch(comboBar);
+
+        comboRoot.SetActive(false);
+    }
+
+    // combo: kills in a row (shown from x2). timeLeft: 1 = just continued, 0 = about to end.
+    public void SetCombo(int combo, float timeLeft)
+    {
+        bool show = combo >= 2;
+        if (comboRoot.activeSelf != show) comboRoot.SetActive(show);
+        if (!show) { shownCombo = -1; return; }
+
+        if (combo != shownCombo)
+        {
+            shownCombo = combo;
+            comboText.text = "COMBO x" + combo;
+        }
+        comboBar.anchorMin = new Vector2(1f - Mathf.Clamp01(timeLeft), 0f); // shrinks toward the right edge
+    }
+
     public void SetOxygen(float fraction)
     {
         oxygenFill.anchorMax = new Vector2(Mathf.Clamp01(fraction), 1f);
+    }
+
+    // The oxygen bar flashes white when a crystal is collected.
+    public void FlashOxygen()
+    {
+        oxygenFlash = 1f;
+    }
+
+    void Update()
+    {
+        if (oxygenFlash <= 0f) return;
+        oxygenFlash = Mathf.Max(0f, oxygenFlash - Time.deltaTime * 4f);
+        oxygenFillImage.color = Color.Lerp(OxygenColor, Color.white, oxygenFlash);
     }
 
     // toShip: vector from the player to the ship, in world units.

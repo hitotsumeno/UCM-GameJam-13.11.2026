@@ -29,7 +29,7 @@ public static class Tuning
 
     // --- Oxygen ---
     public const float OxygenMax = 100f;
-    public const float OxygenDrainPerSecond = 1.5f;
+    public const float OxygenDrainPerSecond = 2f; // was 1.5: air now also comes from destroyed rocks
     public const float OxygenPerShot = 1f;
     public const float OutOfBoundsDrainMultiplier = 4f; // oxygen drains this much faster outside the level
 
@@ -118,8 +118,28 @@ public static class Tuning
     public const float OxygenTankGlowSize = 2f;   // cyan glow, units
     public const float OxygenTankGlowOpacity = 0.6f;
 
+    // --- Oxygen crystals: destroyed rocks leave air behind ("destroy to breathe") ---
+    public const float CrystalOxygen = 2f;        // oxygen per crystal (before the combo bonus)
+    public const int CrystalsFromSmall = 2;       // crystals left by a destroyed rock
+    public const int CrystalsFromMedium = 3;
+    public const int CrystalsFromLarge = 4;
+    public const float CrystalLifetime = 3.5f;    // seconds before a crystal disappears
+    public const float CrystalBlinkTime = 1f;     // it blinks for this long before disappearing
+    public const float CrystalSize = 0.35f;
+    public const float CrystalPickupRadius = 0.9f;
+    public const float CrystalMagnetRadius = 3.5f; // closer than this, crystals fly to the player
+    public const float CrystalMagnetAccel = 40f;
+    public const float CrystalBurstSpeedMin = 1.5f; // how fast crystals scatter from the rock
+    public const float CrystalBurstSpeedMax = 4f;
+    public const float CrystalDamping = 2.5f;     // how quickly they slow down
+
+    // --- Combo: destroying things in a row makes every crystal worth more ---
+    public const float ComboWindow = 3f;          // seconds to destroy the next thing
+    public const int ComboMax = 5;
+    public const float ComboBonusPerStep = 0.5f;  // x2 gives +50% oxygen per crystal, x3 +100%, ...
+
     // --- Temporary scatter on the test ground (until levels come from text files) ---
-    public const int ScatterAsteroids = 18;
+    public const int ScatterAsteroids = 24;
     public const int ScatterTanks = 3;
     public const float ScatterHalfWidth = 11f;    // asteroids lie this far left/right of the straight path
     public const float ScatterClearance = 10f;    // free space around the player start and the ship

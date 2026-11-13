@@ -133,6 +133,15 @@ public class Asteroid : MonoBehaviour
             return;
         }
 
+        // Destroyed: leave oxygen crystals. A combo makes each crystal worth more.
+        var game = DraftGame.Instance;
+        int combo = game != null ? game.RegisterKill() : 1;
+        int crystals = size == AsteroidSize.Small ? Tuning.CrystalsFromSmall
+                     : size == AsteroidSize.Medium ? Tuning.CrystalsFromMedium
+                     : Tuning.CrystalsFromLarge;
+        float worth = Tuning.CrystalOxygen * (1f + Tuning.ComboBonusPerStep * (combo - 1));
+        OxygenCrystal.Burst(transform.position, crystals, worth, transform.parent);
+
         if (size == AsteroidSize.Large)
         {
             Vector2 dir = Random.insideUnitCircle.normalized;
