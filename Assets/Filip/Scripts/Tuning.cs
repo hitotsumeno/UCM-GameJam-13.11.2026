@@ -24,20 +24,28 @@ public static class Tuning
     public const float OxygenMax = 100f;
     public const float OxygenDrainPerSecond = 1.5f;
     public const float OxygenPerShot = 1f;
-
     public const float OutOfBoundsDrainMultiplier = 4f; // oxygen drains this much faster outside the level
 
-    // --- Level (temporary, until levels are loaded from text files) ---
-    public const float LevelWidth = 40f;
-    public const float LevelHeight = 50f;
+    // --- Level (temporary test ground, until levels are loaded from text files) ---
+    public const float LevelWidth = 60f;
+    public const float LevelHeight = 120f;
     public const float PlayerStartFromBottom = 5f; // player starts this far above the bottom border
     public const float ShipFromTop = 3f;           // ship center is this far below the top border
 
-    // --- Ship (goal) ---
+    // --- Sizes in the world, in units (the larger side of the picture) ---
     public const float ShipLength = 6f;
-    public const float ShipHeight = 2.5f;
+    public const float ShipHeight = 2.5f;         // placeholder only; real art keeps its own proportions
+    public const float AsteroidSmallSize = 1f;
+    public const float AsteroidMediumSize = 2f;
+    public const float AsteroidLargeSize = 4f;
+    public const float OxygenTankSize = 0.6f;
+    public const float PlanetSize = 8f;
+    public const float BackgroundSize = 48f;
 
-    // --- Background ---
-    public const int StarCount = 300;
-    public const float StarFieldSize = 200f;      // stars are scattered over a square of this size
+    // --- Background parallax: how fast a layer scrolls on screen compared to the world (1 = like the world) ---
+    public const float BackgroundParallax = 0.1f;
+    public const float StarsFarParallax = 0.3f;
+    public const float StarsNearParallax = 0.6f;
+    public const int StarsPerLayer = 40;
+    public const float StarTileSize = 40f;        // stars repeat every this many units; must be wider than the screen
 }

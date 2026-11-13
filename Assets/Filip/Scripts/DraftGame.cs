@@ -26,6 +26,7 @@ public class DraftGame : MonoBehaviour
         Instance = null;
         CameraRig.ResetStatics();
         SpriteFactory.ResetStatics();
+        Art.ResetStatics();
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]

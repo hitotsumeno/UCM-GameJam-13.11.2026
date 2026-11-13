@@ -53,7 +53,8 @@ public static class DraftPreview
         else if (change == PlayModeStateChange.EnteredEditMode) Schedule();
     }
 
-    static void Schedule()
+    // Rebuilds the preview a moment later (also called when pictures in Resources change).
+    public static void Schedule()
     {
         EditorApplication.delayCall -= Refresh;
         EditorApplication.delayCall += Refresh;
@@ -68,6 +69,7 @@ public static class DraftPreview
 
         try
         {
+            Art.ResetStatics(); // pick up pictures added or removed since the last build
             var world = WorldBuilder.Build();
             Mark(world.root.gameObject);
 

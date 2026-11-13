@@ -29,16 +29,20 @@ public class PlayerController : MonoBehaviour
 
         var visual = new GameObject("Visual").transform;
         visual.SetParent(go.transform, false);
-        SpriteFactory.MakeSprite("Body", visual, SpriteFactory.Circle(),
-            new Color(0.9f, 0.9f, 0.95f), Vector2.one * Tuning.PlayerDiameter, 10);
-        // Visor so the facing direction reads clearly.
-        var visor = SpriteFactory.MakeSprite("Visor", visual, SpriteFactory.Circle(),
-            new Color(0.3f, 0.6f, 1f), new Vector2(0.35f, 0.5f), 11);
-        visor.transform.localPosition = new Vector3(0.2f, 0f, 0f);
-        // Gun: a rectangle pointing right (+X) in local space.
-        var gun = SpriteFactory.MakeSprite("Gun", visual, SpriteFactory.Square(),
-            new Color(0.5f, 0.5f, 0.55f), new Vector2(0.7f, 0.2f), 12);
-        gun.transform.localPosition = new Vector3(0.55f, -0.25f, 0f);
+        // Picture "astronaut" (drawn nose to the right) or a placeholder.
+        if (Art.TryMake("astronaut", visual, Tuning.PlayerDiameter, 10) == null)
+        {
+            SpriteFactory.MakeSprite("Body", visual, SpriteFactory.Circle(),
+                new Color(0.9f, 0.9f, 0.95f), Vector2.one * Tuning.PlayerDiameter, 10);
+            // Visor so the facing direction reads clearly.
+            var visor = SpriteFactory.MakeSprite("Visor", visual, SpriteFactory.Circle(),
+                new Color(0.3f, 0.6f, 1f), new Vector2(0.35f, 0.5f), 11);
+            visor.transform.localPosition = new Vector3(0.2f, 0f, 0f);
+            // Gun: a rectangle pointing right (+X) in local space.
+            var gun = SpriteFactory.MakeSprite("Gun", visual, SpriteFactory.Square(),
+                new Color(0.5f, 0.5f, 0.55f), new Vector2(0.7f, 0.2f), 12);
+            gun.transform.localPosition = new Vector3(0.55f, -0.25f, 0f);
+        }
 
         var p = go.AddComponent<PlayerController>();
         p.rb = rb;

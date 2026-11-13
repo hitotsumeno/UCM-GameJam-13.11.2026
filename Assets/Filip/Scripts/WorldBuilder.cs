@@ -24,7 +24,7 @@ public static class WorldBuilder
         Vector2 start = new Vector2(w.bounds.center.x, w.bounds.yMin + Tuning.PlayerStartFromBottom);
         Vector2 shipPos = new Vector2(w.bounds.center.x, w.bounds.yMax - Tuning.ShipFromTop);
 
-        BuildStars(w.root, w.bounds.center);
+        BuildBackground(w.root, w.bounds.center);
         BuildBorder(w.root, w.bounds);
         w.player = PlayerController.Create(start, w.root);
         w.ship = Ship.Create(shipPos, w.root).transform;
@@ -51,20 +51,15 @@ public static class WorldBuilder
         right.transform.position = new Vector2(bounds.xMax, c.y);
     }
 
-    static void BuildStars(Transform parent, Vector2 center)
+    // Background picture (if the file exists) and two layers of stars on top of it.
+    // Far layers scroll slower than near ones.
+    static void BuildBackground(Transform parent, Vector2 center)
     {
-        var stars = new GameObject("Stars").transform;
-        stars.SetParent(parent, false);
-        var circle = SpriteFactory.Circle();
-        float half = Tuning.StarFieldSize * 0.5f;
-        for (int i = 0; i < Tuning.StarCount; i++)
-        {
-            var pos = center + new Vector2(Random.Range(-half, half), Random.Range(-half, half));
-            float size = Random.Range(0.05f, 0.18f);
-            float b = Random.Range(0.5f, 1f);
-            var sr = SpriteFactory.MakeSprite("Star", stars, circle,
-                new Color(b, b, b * Random.Range(0.9f, 1.1f)), Vector2.one * size, -100);
-            sr.transform.position = pos;
-        }
+        var root = new GameObject("Background").transform;
+        root.SetParent(parent, false);
+
+        ParallaxBackground.Create(root, center);
+        StarLayer.Create("StarsFar", root, center, Tuning.StarsFarParallax, 0.04f, 0.1f, 0.4f, -150);
+        StarLayer.Create("StarsNear", root, center, Tuning.StarsNearParallax, 0.08f, 0.18f, 0.7f, -140);
     }
 }
