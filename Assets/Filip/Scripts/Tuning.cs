@@ -44,12 +44,16 @@ public static class Tuning
 
     // --- Background parallax: how fast a layer scrolls on screen compared to the world (1 = like the world) ---
     public const float BackgroundParallax = 0.1f; // artist picture "background" (does not repeat)
-    public const float NebulaParallax = 0.2f;     // generated nebula (repeats endlessly)
+    public const float NebulaFarParallax = 0.25f; // far clouds (repeat endlessly)
+    public const float NebulaNearParallax = 0.55f; // near clouds: faster, so the picture keeps changing
+    public const float NebulaFarSize = 64f;       // one copy of the far cloud picture, in units
+    public const float NebulaNearSize = 80f;
     public const float StarsFarParallax = 0.3f;
     public const float StarsNearParallax = 0.6f;
-    public const int StarsPerLayer = 40;
+    public const int StarsFarCount = 90;          // small dim stars
+    public const int StarsNearCount = 35;         // bigger bright stars
     public const float StarTileSize = 40f;        // stars repeat every this many units; must be wider than the screen
-    public const float StarArtScale = 3f;         // star pictures are drawn this many times bigger than placeholder dots
+    public const float StarArtScale = 4f;         // star pictures are drawn this many times bigger than placeholder dots
 
     // --- Asteroids ---
     public const int AsteroidHpSmall = 1;         // hits to destroy

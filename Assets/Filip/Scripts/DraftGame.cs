@@ -27,7 +27,6 @@ public class DraftGame : MonoBehaviour
         CameraRig.ResetStatics();
         SpriteFactory.ResetStatics();
         Art.ResetStatics();
-        Nebula.ResetStatics();
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]

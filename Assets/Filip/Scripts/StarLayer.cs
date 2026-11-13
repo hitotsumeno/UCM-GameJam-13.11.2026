@@ -13,7 +13,10 @@ public class StarLayer : MonoBehaviour
     Vector2[] local;   // star positions inside the tile
     Camera cam;
 
-    public static StarLayer Create(string name, Transform parent, Vector2 anchor, float factor,
+    // Warm tint taken from the artist's star material; each star is somewhere between white and this.
+    static readonly Color Gold = new Color(1f, 0.78f, 0.35f);
+
+    public static StarLayer Create(string name, Transform parent, Vector2 anchor, float factor, int count,
         float minSize, float maxSize, float minBrightness, int sortingOrder)
     {
         var go = new GameObject(name);
@@ -23,7 +26,6 @@ public class StarLayer : MonoBehaviour
         layer.factor = factor;
         layer.tile = Tuning.StarTileSize;
 
-        int count = Tuning.StarsPerLayer;
         layer.stars = new Transform[count];
         layer.local = new Vector2[count];
         var circle = SpriteFactory.Circle();
@@ -35,7 +37,11 @@ public class StarLayer : MonoBehaviour
             // Picture "star1", "star2", ... (a random one per star) or a placeholder dot.
             var sr = Art.TryMake("star", go.transform, size * Tuning.StarArtScale, sortingOrder);
             if (sr != null)
-                sr.color = new Color(1f, 1f, 1f, b);
+            {
+                Color c = Color.Lerp(Color.white, Gold, Random.value * 0.8f);
+                c.a = b;
+                sr.color = c;
+            }
             else
                 sr = SpriteFactory.MakeSprite("Star", go.transform, circle,
                     new Color(b, b, Mathf.Min(1f, b * Random.Range(0.9f, 1.15f))),

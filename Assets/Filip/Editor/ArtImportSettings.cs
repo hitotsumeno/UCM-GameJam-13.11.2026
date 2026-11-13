@@ -1,8 +1,10 @@
 using System.IO;
 using UnityEditor;
+using UnityEngine;
 
 // Every picture put into Assets/Resources/Art is imported as a Sprite with
 // 100 pixels per unit. The picture named "background" also gets Max Size 4096.
+// Seamless cloud pictures (nebula_...) repeat without visible seams.
 // This runs automatically whenever Unity imports a picture from that folder.
 public class ArtImportSettings : AssetPostprocessor
 {
@@ -18,8 +20,23 @@ public class ArtImportSettings : AssetPostprocessor
         importer.spriteImportMode = SpriteImportMode.Single;
         importer.spritePixelsPerUnit = 100f;
 
-        if (Path.GetFileNameWithoutExtension(path).ToLowerInvariant() == "background")
+        string name = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
+        if (name == "background")
             importer.maxTextureSize = 4096;
+
+        if (name == "background" || name.StartsWith("nebula"))
+        {
+            // Smooth dark gradients look blocky with normal compression.
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+
+            // Whole rectangle instead of a mesh cut around the opaque pixels.
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteMeshType = SpriteMeshType.FullRect;
+            importer.SetTextureSettings(settings);
+        }
+        if (name.StartsWith("nebula"))
+            importer.wrapMode = TextureWrapMode.Repeat; // edges blend into the next copy
     }
 
     // When pictures are added, changed or removed, refresh the level preview.

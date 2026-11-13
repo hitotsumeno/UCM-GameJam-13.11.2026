@@ -115,8 +115,11 @@ public static class WorldBuilder
         var root = new GameObject("Background").transform;
         root.SetParent(parent, false);
 
-        ParallaxBackground.Create(root, center);
-        StarLayer.Create("StarsFar", root, center, Tuning.StarsFarParallax, 0.04f, 0.1f, 0.4f, -150);
-        StarLayer.Create("StarsNear", root, center, Tuning.StarsNearParallax, 0.08f, 0.18f, 0.7f, -140);
+        // Draw order, back to front: far clouds, far stars, near clouds, near stars.
+        ParallaxBackground.CreateAll(root, center);
+        StarLayer.Create("StarsFar", root, center, Tuning.StarsFarParallax, Tuning.StarsFarCount,
+            0.04f, 0.1f, 0.4f, -150);
+        StarLayer.Create("StarsNear", root, center, Tuning.StarsNearParallax, Tuning.StarsNearCount,
+            0.08f, 0.18f, 0.7f, -140);
     }
 }

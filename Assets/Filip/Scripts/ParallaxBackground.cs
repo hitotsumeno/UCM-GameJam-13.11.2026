@@ -1,10 +1,11 @@
 using UnityEngine;
 
-// The space background. It follows the camera and scrolls on screen at a fraction
-// of the world speed (parallax), like the stars but slower.
-//  - Artist picture "background": does not repeat, so the shift is limited
-//    and the picture edge never gets into view.
-//  - No picture: a nebula generated in code, repeated endlessly in all directions.
+// One layer of the space background. It follows the camera and scrolls on screen
+// at a fraction of the world speed (parallax): the player flies THROUGH it.
+//  - Nebula layers (pictures nebula_far, nebula_near) repeat endlessly in all directions.
+//    The near layer scrolls faster than the far one, so the picture keeps changing.
+//  - Artist picture "background", if present, replaces the nebula. It does not repeat,
+//    so its shift is limited and the picture edge never gets into view.
 [DefaultExecutionOrder(100)] // after CameraRig has moved the camera
 public class ParallaxBackground : MonoBehaviour
 {
@@ -14,39 +15,52 @@ public class ParallaxBackground : MonoBehaviour
     bool repeats;
     Camera cam;
 
-    public static ParallaxBackground Create(Transform parent, Vector2 anchor)
+    // Builds all background layers under parent.
+    public static void CreateAll(Transform parent, Vector2 anchor)
     {
-        ParallaxBackground bg;
         var art = Art.TryMake("background", parent, Tuning.BackgroundSize, -200);
         if (art != null)
         {
-            bg = art.gameObject.AddComponent<ParallaxBackground>();
-            bg.factor = Tuning.BackgroundParallax;
-            bg.repeats = false;
+            var bg = art.gameObject.AddComponent<ParallaxBackground>();
+            bg.Setup(anchor, Tuning.BackgroundParallax, Tuning.BackgroundSize, false);
+            return;
         }
-        else
-        {
-            var go = new GameObject("Nebula");
-            go.transform.SetParent(parent, false);
-            var sprite = Nebula.GetSprite();
-            float t = Tuning.BackgroundSize;
-            // 3x3 copies; slightly enlarged so no gaps show between them.
-            for (int ix = -1; ix <= 1; ix++)
-            for (int iy = -1; iy <= 1; iy++)
-            {
-                var tile = SpriteFactory.MakeSprite("Tile", go.transform, sprite, Color.white,
-                    Vector2.one * 1.002f, -200);
-                tile.transform.localPosition = new Vector3(ix * t, iy * t, 0f);
-            }
-            bg = go.AddComponent<ParallaxBackground>();
-            bg.factor = Tuning.NebulaParallax;
-            bg.repeats = true;
-        }
+        CreateRepeating("nebula_far", parent, anchor, Tuning.NebulaFarSize, Tuning.NebulaFarParallax, -200, 1.002f);
+        CreateRepeating("nebula_near", parent, anchor, Tuning.NebulaNearSize, Tuning.NebulaNearParallax, -145, 1f);
+    }
 
-        bg.anchor = anchor;
-        bg.size = Tuning.BackgroundSize;
-        bg.transform.position = anchor;
-        return bg;
+    // 3x3 copies of a seamless picture. If the picture is missing, nothing is created (black sky).
+    static void CreateRepeating(string artName, Transform parent, Vector2 anchor, float size, float factor,
+        int sortingOrder, float tileScale)
+    {
+        var sprite = Art.Load(artName);
+        if (sprite == null) return;
+
+        var go = new GameObject(artName);
+        go.transform.SetParent(parent, false);
+        Vector2 b = sprite.bounds.size;
+        float scale = size / Mathf.Max(b.x, b.y) * tileScale;
+        for (int ix = -1; ix <= 1; ix++)
+        for (int iy = -1; iy <= 1; iy++)
+        {
+            var tile = new GameObject("Tile");
+            tile.transform.SetParent(go.transform, false);
+            tile.transform.localPosition = new Vector3(ix * size, iy * size, 0f);
+            tile.transform.localScale = new Vector3(scale, scale, 1f);
+            var sr = tile.AddComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.sortingOrder = sortingOrder;
+        }
+        go.AddComponent<ParallaxBackground>().Setup(anchor, factor, size, true);
+    }
+
+    void Setup(Vector2 anchor, float factor, float size, bool repeats)
+    {
+        this.anchor = anchor;
+        this.factor = factor;
+        this.size = size;
+        this.repeats = repeats;
+        transform.position = anchor;
     }
 
     void LateUpdate()

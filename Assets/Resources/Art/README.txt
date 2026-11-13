@@ -16,3 +16,9 @@ Size in the game is set by code (the larger side of the picture), not by the pic
 
 1 unit = 100 pixels. Transparent background (PNG with alpha), except background.png.
 Import settings (Sprite, 100 pixels per unit) are applied automatically.
+
+Already here (made for the draft, replace freely):
+  nebula_far.png, nebula_near.png   generated seamless space clouds, two parallax layers.
+                                    If background.png is added, it replaces both.
+  star1.png ... star5.png           white silhouettes drawn from the artist's stars.fbx
+                                    (the game is 2D, so the 3D models were turned into pictures).
