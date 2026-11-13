@@ -20,5 +20,6 @@ Import settings (Sprite, 100 pixels per unit) are applied automatically.
 Already here (made for the draft, replace freely):
   nebula_far.png, nebula_near.png   generated seamless space clouds, two parallax layers.
                                     If background.png is added, it replaces both.
-  star1.png ... star5.png           white silhouettes drawn from the artist's stars.fbx
+  star1.png ... star5.png           star shapes drawn from the artist's stars.fbx; the shape takes the middle 42% of the picture
                                     (the game is 2D, so the 3D models were turned into pictures).
+  star_glow1.png ... star_glow5.png soft halo for each star, same canvas; tinted in the game.

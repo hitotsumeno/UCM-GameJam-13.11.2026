@@ -37,6 +37,16 @@ public class ArtImportSettings : AssetPostprocessor
         }
         if (name.StartsWith("nebula"))
             importer.wrapMode = TextureWrapMode.Repeat; // edges blend into the next copy
+
+        if (name.StartsWith("star"))
+        {
+            // Small pictures with soft glow: keep them exact and do not cut the faint halo off.
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteMeshType = SpriteMeshType.FullRect;
+            importer.SetTextureSettings(settings);
+        }
     }
 
     // When pictures are added, changed or removed, refresh the level preview.

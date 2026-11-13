@@ -29,6 +29,12 @@ public static class Art
         return list[Random.Range(0, list.Count)];
     }
 
+    // Returns the picture with exactly this name (no variants). Null if there is none.
+    public static Sprite LoadExact(string name)
+    {
+        return Resources.Load<Sprite>("Art/" + name);
+    }
+
     static void AddIfExists(List<Sprite> list, string name)
     {
         var s = Resources.Load<Sprite>("Art/" + name);

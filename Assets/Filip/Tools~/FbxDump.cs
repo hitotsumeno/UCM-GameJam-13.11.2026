@@ -107,8 +107,9 @@ public static class FbxDump
             double cx = (mn[ax] + mx[ax]) / 2, cy = (mn[ay] + mx[ay]) / 2;
 
             // Sharp shape, drawn 4x bigger without smoothing and then scaled down (no seams between polygons).
+            // The shape takes only 42% of the picture: the rest is room for the glow.
             int big = size * 4;
-            double sc = big * 0.72 / span;
+            double sc = big * 0.42 / span;
             var hi = new Bitmap(big, big, PixelFormat.Format32bppArgb);
             using (var g = Graphics.FromImage(hi))
             {
@@ -125,18 +126,108 @@ public static class FbxDump
                     }
                 }
             }
-            var core = Resize(hi, size); var small = Resize(hi, size / 8); var glow = Resize(small, size);
-            var outBmp = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+            var core = Resize(hi, size);
+            float[] al = new float[size * size];
+            for (int y = 0; y < size; y++) for (int x = 0; x < size; x++) al[y * size + x] = core.GetPixel(x, y).A / 255f;
+
+            // Glow: the shape blurred at three sizes (tight, medium, wide) plus a round aura, fading out to the edges.
+            float[] g1 = Blur(al, size, size / 64), g2 = Blur(al, size, size / 20), g3 = Blur(al, size, size / 8);
+            var coreBmp = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+            var glowBmp = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+            float half = size / 2f;
             for (int y = 0; y < size; y++) for (int x = 0; x < size; x++)
             {
-                int ca = core.GetPixel(x, y).A, ga = (int)(glow.GetPixel(x, y).A * 0.5);
-                outBmp.SetPixel(x, y, Color.FromArgb(Math.Max(ca, ga), 255, 255, 255));
+                int i = y * size + x;
+                float dx = (x + 0.5f - half) / half, dy = (y + 0.5f - half) / half;
+                float d = (float)Math.Sqrt(dx * dx + dy * dy);
+                float aura = 0.42f * (float)Math.Exp(-(d * d) / (0.34f * 0.34f));
+                float glow = 1f - (1f - C01(g1[i] * 0.9f)) * (1f - C01(g2[i] * 2.2f)) * (1f - C01(g3[i] * 4.0f)) * (1f - aura);
+                float window = 1f - C01((d - 0.70f) / 0.30f); window = window * window * (3f - 2f * window);
+                glow *= window;
+                glowBmp.SetPixel(x, y, Color.FromArgb((int)(C01(glow) * 255f), 255, 255, 255));
+                coreBmp.SetPixel(x, y, Color.FromArgb((int)(al[i] * 255f), 255, 255, 255));
             }
-            string file = Path.Combine(outDir, modelNames[b] + ".png");
-            outBmp.Save(file, ImageFormat.Png);
-            sb.AppendLine(modelNames[b] + ".png  (" + (v.Length / 3) + " vertices)");
+            string nm = modelNames[b];                       // star1, star2, ...
+            string digits = nm.TrimStart("abcdefghijklmnopqrstuvwxyz_".ToCharArray());
+            string prefix = nm.Substring(0, nm.Length - digits.Length);
+            coreBmp.Save(Path.Combine(outDir, nm + ".png"), ImageFormat.Png);
+            glowBmp.Save(Path.Combine(outDir, prefix + "_glow" + digits + ".png"), ImageFormat.Png);
+            sb.AppendLine(nm + ".png + " + prefix + "_glow" + digits + ".png");
         }
         return sb.ToString();
+    }
+
+    static float C01(float t) { return t < 0f ? 0f : (t > 1f ? 1f : t); }
+
+    // Soft blur: three box blurs in a row are very close to a Gaussian.
+    static float[] Blur(float[] src, int n, int radius)
+    {
+        float[] a = (float[])src.Clone(), t = new float[n * n];
+        for (int pass = 0; pass < 3; pass++)
+        {
+            for (int y = 0; y < n; y++) for (int x = 0; x < n; x++)
+            {
+                float s = 0f; for (int k = -radius; k <= radius; k++) { int xx = x + k; if (xx >= 0 && xx < n) s += a[y * n + xx]; }
+                t[y * n + x] = s / (2 * radius + 1);
+            }
+            for (int y = 0; y < n; y++) for (int x = 0; x < n; x++)
+            {
+                float s = 0f; for (int k = -radius; k <= radius; k++) { int yy = y + k; if (yy >= 0 && yy < n) s += t[yy * n + x]; }
+                a[y * n + x] = s / (2 * radius + 1);
+            }
+        }
+        return a;
+    }
+
+    // Test picture: stars with glow drawn over a background image, at the sizes the game uses.
+    public static void Preview(string artDir, string background, string outPath, float ppu)
+    {
+        var bg = new Bitmap(background);
+        var bmp = new Bitmap(bg.Width, bg.Height, PixelFormat.Format32bppArgb);
+        var rng = new Random(5);
+        float[][] palette = {
+            new float[] { 0.65f, 0.82f, 1.00f }, new float[] { 0.55f, 0.95f, 1.00f }, new float[] { 0.78f, 0.65f, 1.00f },
+            new float[] { 1.00f, 0.68f, 0.88f }, new float[] { 1.00f, 0.82f, 0.50f }, new float[] { 1f, 1f, 1f } };
+        using (var g = Graphics.FromImage(bmp))
+        {
+            g.DrawImage(bg, 0, 0, bg.Width, bg.Height);
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            // dust
+            for (int i = 0; i < 110; i++)
+            {
+                float s = (0.03f + (float)rng.NextDouble() * 0.05f) * ppu;
+                int al = 60 + rng.Next(110);
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.FillEllipse(new SolidBrush(Color.FromArgb(al, 215, 230, 255)), (float)rng.NextDouble() * bg.Width, (float)rng.NextDouble() * bg.Height, s, s);
+            }
+            // far (small) and near (big) stars
+            for (int i = 0; i < 36; i++)
+            {
+                bool near = i < 9;
+                float shape = near ? 0.38f + (float)rng.NextDouble() * 0.42f : 0.13f + (float)rng.NextDouble() * 0.17f;
+                float canvas = shape / 0.42f * ppu;
+                float bright = near ? 0.75f + (float)rng.NextDouble() * 0.25f : 0.45f + (float)rng.NextDouble() * 0.45f;
+                int k = 1 + rng.Next(5); float[] c = palette[rng.Next(palette.Length)];
+                float x = (float)rng.NextDouble() * bg.Width, y = (float)rng.NextDouble() * bg.Height;
+                var rect = new RectangleF(x - canvas / 2, y - canvas / 2, canvas, canvas);
+                Draw(g, Path.Combine(artDir, "star_glow" + k + ".png"), rect, c[0], c[1], c[2], 0.9f * bright);
+                Draw(g, Path.Combine(artDir, "star" + k + ".png"), rect, 0.75f + 0.25f * c[0], 0.75f + 0.25f * c[1], 0.75f + 0.25f * c[2], bright);
+            }
+        }
+        bmp.Save(outPath, ImageFormat.Png);
+    }
+
+    static void Draw(Graphics g, string file, RectangleF rect, float r, float gr, float b, float alpha)
+    {
+        using (var img = new Bitmap(file))
+        {
+            var cm = new ColorMatrix(new float[][] {
+                new float[] { r, 0, 0, 0, 0 }, new float[] { 0, gr, 0, 0, 0 }, new float[] { 0, 0, b, 0, 0 },
+                new float[] { 0, 0, 0, alpha, 0 }, new float[] { 0, 0, 0, 0, 1 } });
+            var ia = new ImageAttributes(); ia.SetColorMatrix(cm);
+            g.DrawImage(img, new PointF[] { new PointF(rect.Left, rect.Top), new PointF(rect.Right, rect.Top), new PointF(rect.Left, rect.Bottom) },
+                new RectangleF(0, 0, img.Width, img.Height), GraphicsUnit.Pixel, ia);
+        }
     }
 
     static Bitmap Resize(Bitmap src, int size)

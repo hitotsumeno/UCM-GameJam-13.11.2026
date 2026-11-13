@@ -50,10 +50,19 @@ public static class Tuning
     public const float NebulaNearSize = 80f;
     public const float StarsFarParallax = 0.3f;
     public const float StarsNearParallax = 0.6f;
-    public const int StarsFarCount = 90;          // small dim stars
-    public const int StarsNearCount = 35;         // bigger bright stars
+    public const float StarDustParallax = 0.2f;
     public const float StarTileSize = 40f;        // stars repeat every this many units; must be wider than the screen
-    public const float StarArtScale = 4f;         // star pictures are drawn this many times bigger than placeholder dots
+    // Counts are per repeating tile (40x40 units); the screen shows a bit more than a quarter of it.
+    public const int StarDustCount = 300;         // tiny dim dots
+    public const int StarsFarCount = 70;          // small glowing stars
+    public const int StarsNearCount = 20;         // bigger bright glowing stars
+    public const float StarFarSizeMin = 0.1f;     // size of the star shape, units (the glow is wider)
+    public const float StarFarSizeMax = 0.24f;
+    public const float StarNearSizeMin = 0.3f;
+    public const float StarNearSizeMax = 0.6f;
+    public const float StarTwinkleStrength = 0.6f; // 0 = steady light, 1 = strong pulsing
+    public const float StarTwinkleSpeedMin = 0.6f; // how fast stars pulse
+    public const float StarTwinkleSpeedMax = 2.2f;
 
     // --- Asteroids ---
     public const int AsteroidHpSmall = 1;         // hits to destroy

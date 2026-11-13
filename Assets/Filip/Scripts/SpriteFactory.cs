@@ -24,6 +24,18 @@ public static class SpriteFactory
         });
     }
 
+    // Soft round glow: bright in the middle, fading to nothing at the edge.
+    public static Sprite Glow()
+    {
+        return Build("glow", 64, (x, y, size) =>
+        {
+            float r = size * 0.5f;
+            float d = Mathf.Sqrt((x - r) * (x - r) + (y - r) * (y - r)) / r;
+            float a = Mathf.Clamp01(1f - d);
+            return a * a;
+        });
+    }
+
     // Thin circle outline.
     public static Sprite Ring()
     {
