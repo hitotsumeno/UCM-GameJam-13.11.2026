@@ -1,0 +1,34 @@
+using UnityEngine;
+
+// The goal. Touching it wins the level. Drawn nose to the right (+X).
+public class Ship : MonoBehaviour
+{
+    public static Ship Create(Vector2 position, Transform parent)
+    {
+        var go = new GameObject("Ship");
+        go.transform.SetParent(parent, false);
+        go.transform.position = position;
+
+        float len = Tuning.ShipLength, h = Tuning.ShipHeight;
+        SpriteFactory.MakeSprite("Hull", go.transform, SpriteFactory.Square(),
+            new Color(0.55f, 0.65f, 0.8f), new Vector2(len, h), 5);
+        var nose = SpriteFactory.MakeSprite("Nose", go.transform, SpriteFactory.Square(),
+            new Color(0.8f, 0.9f, 1f), new Vector2(len * 0.2f, h * 0.5f), 6);
+        nose.transform.localPosition = new Vector3(len * 0.4f, 0f, 0f);
+        var engine = SpriteFactory.MakeSprite("Engine", go.transform, SpriteFactory.Square(),
+            new Color(0.3f, 0.35f, 0.45f), new Vector2(len * 0.12f, h * 0.7f), 6);
+        engine.transform.localPosition = new Vector3(-len * 0.44f, 0f, 0f);
+
+        var col = go.AddComponent<BoxCollider2D>();
+        col.size = new Vector2(len, h);
+        col.isTrigger = true;
+
+        return go.AddComponent<Ship>();
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.GetComponent<PlayerController>() == null) return;
+        if (DraftGame.Instance != null) DraftGame.Instance.Win();
+    }
+}

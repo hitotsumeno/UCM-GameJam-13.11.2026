@@ -60,15 +60,24 @@ public class PlayerController : MonoBehaviour
         float angle = Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg;
         visual.rotation = Quaternion.Euler(0f, 0f, angle);
 
-        if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
+        var game = DraftGame.Instance;
+        bool playing = game != null && game.State == GameState.Playing;
+        if (playing && Input.GetMouseButton(0) && Time.time >= nextFireTime)
         {
             nextFireTime = Time.time + 1f / Tuning.FireRate;
             Fire(aim);
         }
     }
 
+    // Called on docking: the astronaut stops drifting.
+    public void Stop()
+    {
+        rb.linearVelocity = Vector2.zero;
+    }
+
     void Fire(Vector2 aim)
     {
+        DraftGame.Instance.SpendOxygen(Tuning.OxygenPerShot);
         Vector2 muzzle = (Vector2)visual.TransformPoint(new Vector3(0.9f, -0.25f, 0f));
         Bullet.Spawn(muzzle, aim, col, transform.parent);
         rb.AddForce(-aim * Tuning.RecoilImpulse, ForceMode2D.Impulse);

@@ -20,6 +20,16 @@ public static class Tuning
     public const float CameraShakeTime = 0.08f;   // seconds
     public const float CameraShakeStrength = 0.15f; // units
 
+    // --- Oxygen ---
+    public const float OxygenMax = 100f;
+    public const float OxygenDrainPerSecond = 1.5f;
+    public const float OxygenPerShot = 1f;
+
+    // --- Ship (goal) ---
+    public const float ShipDistance = 40f;        // temporary: ship is this far to the right of the player
+    public const float ShipLength = 6f;
+    public const float ShipHeight = 2.5f;
+
     // --- Background ---
     public const int StarCount = 300;
     public const float StarFieldSize = 200f;      // stars are scattered over a square of this size
