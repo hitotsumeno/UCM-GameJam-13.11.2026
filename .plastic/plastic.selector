@@ -1,0 +1,4 @@
+repository "UCM-GameJam-13.11.2026/UCM-GameJam-13.11.2026@7972142018236@cloud"
+  path "/"
+    br "/main"
+    co "/main"
