@@ -27,6 +27,11 @@ public class PlayerController : MonoBehaviour
         col.radius = Tuning.PlayerDiameter * 0.5f;
         col.sharedMaterial = new PhysicsMaterial2D("NoFriction") { friction = 0f, bounciness = Tuning.Bounciness };
 
+        // Soft white glow under the player: the player is always the easiest thing to find.
+        SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
+            new Color(1f, 1f, 1f, Tuning.PlayerGlowOpacity),
+            Vector2.one * Tuning.PlayerDiameter * Tuning.PlayerGlowSize, 9);
+
         var visual = new GameObject("Visual").transform;
         visual.SetParent(go.transform, false);
         // Picture "astronaut" (drawn nose to the right) or a placeholder.

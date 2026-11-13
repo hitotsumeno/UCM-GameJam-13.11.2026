@@ -147,17 +147,18 @@ public static class NebulaGen
     }
 
     // Preview of what the screen sees: a 28x16 unit window, near layer over far layer, with parallax offsets.
+    public static float MockPpu = 40f, MockFarMul = 1f, MockNearMul = 1f;   // test-frame settings
     public static void Screen(byte[] far, int RF, float farUnits, byte[] near, int RN, float nearUnits,
         float camX, float camY, float farK, float nearK, string path)
     {
-        int W = 1120, Hh = 640; float ppu = 40f;
+        int W = 1120, Hh = 630; float ppu = MockPpu;
         byte[] px = new byte[W * Hh * 4];
         for (int y = 0; y < Hh; y++) for (int x = 0; x < W; x++)
         {
             float wx = (x - W / 2) / ppu, wy = (Hh / 2 - y) / ppu;   // units from screen centre
             float[] f = Sample(far, RF, (wx + camX * farK) / farUnits, (wy + camY * farK) / farUnits);
             float[] n = Sample(near, RN, (wx + camX * nearK) / nearUnits, (wy + camY * nearK) / nearUnits);
-            float a = n[3];
+            float a = n[3] * MockNearMul; f[0] *= MockFarMul; f[1] *= MockFarMul; f[2] *= MockFarMul;
             int i = (y * W + x) * 4;
             px[i] = B(n[0] * a + f[0] * (1 - a)); px[i + 1] = B(n[1] * a + f[1] * (1 - a));
             px[i + 2] = B(n[2] * a + f[2] * (1 - a)); px[i + 3] = 255;

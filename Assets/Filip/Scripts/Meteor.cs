@@ -14,23 +14,23 @@ public class Meteor : MonoBehaviour
 
     public static Meteor Create(Vector2 position, Vector2 velocity, Transform parent)
     {
-        var size = Random.value < 0.6f ? AsteroidSize.Small : AsteroidSize.Medium;
+        var size = Random.value < Tuning.MeteorMediumChance ? AsteroidSize.Medium : AsteroidSize.Small;
         var asteroid = Asteroid.Create(size, position, velocity, parent, false);
         asteroid.SetTint(new Color(1f, 0.7f, 0.5f));
         asteroid.gameObject.name = "Meteor";
 
         var m = asteroid.gameObject.AddComponent<Meteor>();
         m.rb = asteroid.GetComponent<Rigidbody2D>();
-        m.diameter = Asteroid.Diameter(size);
+        m.diameter = asteroid.Size;
 
         // Hot glow around the rock and a soft fiery streak behind it (both drawn under the rock).
         SpriteFactory.MakeSprite("Heat", m.transform, SpriteFactory.Glow(),
-            new Color(1f, 0.5f, 0.15f, 0.55f), Vector2.one * m.diameter * 2.4f, 1);
+            new Color(1f, 0.5f, 0.15f, Tuning.MeteorHeatOpacity), Vector2.one * m.diameter * Tuning.MeteorHeatSize, 1);
         m.tail = SpriteFactory.MakeSprite("Tail", m.transform, SpriteFactory.Glow(),
             new Color(1f, 0.6f, 0.2f, 0.6f), new Vector2(m.diameter * 1.1f, m.diameter * 5f), 2).transform;
 
         m.warning = SpriteFactory.MakeSprite("Warning", m.transform, SpriteFactory.Triangle(),
-            new Color(1f, 0.3f, 0.25f), new Vector2(0.7f, 0.7f), 30).transform;
+            new Color(1f, 0.3f, 0.25f), Vector2.one * Tuning.MeteorWarningSize, 30).transform;
         m.warning.gameObject.SetActive(false);
 
         m.Place();
@@ -69,9 +69,10 @@ public class Meteor : MonoBehaviour
         if (warning.gameObject.activeSelf != above) warning.gameObject.SetActive(above);
         if (above)
         {
-            float halfW = cam.orthographicSize * cam.aspect - 0.6f;
+            float margin = Tuning.MeteorWarningSize * 0.8f;
+            float halfW = cam.orthographicSize * cam.aspect - margin;
             float x = Mathf.Clamp(pos.x, cam.transform.position.x - halfW, cam.transform.position.x + halfW);
-            warning.position = new Vector3(x, top - 0.6f, 0f);
+            warning.position = new Vector3(x, top - margin, 0f);
             warning.rotation = Quaternion.Euler(0f, 0f, 180f); // point down
         }
     }

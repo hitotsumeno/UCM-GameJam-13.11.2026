@@ -12,6 +12,6 @@ $jobs = @(
 foreach ($j in $jobs) { [RockBake]::Bake($In, $j[1], $j[2], $j[3], $j[4], $j[5], "$Out\$($j[0]).png") }
 if ($SheetBg) {
   $files = $jobs | ForEach-Object { "$Out\$($_[0]).png" }
-  $sizes = $jobs | ForEach-Object { if ($_[0] -like '*_l*') { 160 } elseif ($_[0] -like '*_m*') { 80 } else { 40 } }
+  $sizes = $jobs | ForEach-Object { if ($_[0] -like '*_l*') { 189 } elseif ($_[0] -like '*_m*') { 126 } else { 63 } }
   [RockBake]::Sheet($SheetBg, [string[]]$files, [int[]]$sizes, $SheetOut)
 }

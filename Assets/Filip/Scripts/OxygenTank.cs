@@ -9,6 +9,10 @@ public class OxygenTank : MonoBehaviour
         go.transform.SetParent(parent, false);
         go.transform.position = position;
 
+        // Cyan glow, so the tank is easy to spot from far away.
+        SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
+            new Color(0.3f, 0.85f, 1f, Tuning.OxygenTankGlowOpacity), Vector2.one * Tuning.OxygenTankGlowSize, 2);
+
         // Picture "oxygen" or a placeholder: a small cyan bottle.
         float s = Tuning.OxygenTankSize;
         if (Art.TryMake("oxygen", go.transform, s, 4) == null)

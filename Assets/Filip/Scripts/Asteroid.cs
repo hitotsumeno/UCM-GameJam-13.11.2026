@@ -10,6 +10,9 @@ public class Asteroid : MonoBehaviour
     // Level area. Confined asteroids turn back at its edges, so they never fly away.
     public static Rect Bounds;
 
+    // Actual diameter of this rock in units (the class size times a random variation).
+    public float Size { get; private set; }
+
     AsteroidSize size;
     int hp, maxHp;
     SpriteRenderer body;
@@ -50,7 +53,8 @@ public class Asteroid : MonoBehaviour
     public static Asteroid Create(AsteroidSize size, Vector2 position, Vector2 velocity, Transform parent,
         bool confined = true)
     {
-        float d = Diameter(size);
+        // Every rock is a little bigger or smaller than its class size.
+        float d = Diameter(size) * Random.Range(Tuning.AsteroidSizeVariationMin, Tuning.AsteroidSizeVariationMax);
         var go = new GameObject("Asteroid_" + size);
         go.transform.SetParent(parent, false);
         go.transform.position = position;
@@ -90,6 +94,7 @@ public class Asteroid : MonoBehaviour
 
         var a = go.AddComponent<Asteroid>();
         a.size = size;
+        a.Size = d;
         a.maxHp = HitPoints(size);
         a.hp = a.maxHp;
         a.body = body;

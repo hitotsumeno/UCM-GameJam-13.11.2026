@@ -215,14 +215,14 @@ public static class RockBake
 
             float grain = 0.6f * Noise3(qx, qy, qz) + 0.4f * Noise3(qx * 3.1, qy * 3.1, qz * 3.1);
             float patch = Noise3(qx * 0.45 + 31.7, qy * 0.45, qz * 0.45);     // big warm / cool patches
-            float alb = 0.56f * (0.80f + 0.40f * grain);
-            float diff = (0.10f + 0.30f * ndv + 0.85f * ndl) * ao;
-            float rim = (float)Math.Pow(1f - nz0, 3.2) * 0.70f;
-            // Clay grey drifting between warm and cool, with a cool violet-blue rim.
-            float wr = 1.06f - 0.12f * patch, wb = 0.94f + 0.14f * patch;
-            rgb[i * 3] = C01(alb * wr * diff + rim * 0.50f);
-            rgb[i * 3 + 1] = C01(alb * 1.00f * diff + rim * 0.52f);
-            rgb[i * 3 + 2] = C01(alb * wb * diff + rim * 0.98f);
+            float alb = 0.69f * (0.80f + 0.40f * grain);
+            float diff = (0.16f + 0.34f * ndv + 0.78f * ndl) * ao;
+            float rim = (float)Math.Pow(1f - nz0, 3.2) * 0.55f;
+            // Warm light clay (stands out against the cool nebula), with a light warm rim.
+            float wr = 1.07f - 0.07f * patch, wb = 0.82f + 0.10f * patch;
+            rgb[i * 3] = C01(alb * wr * diff + rim * 1.00f);
+            rgb[i * 3 + 1] = C01(alb * 0.98f * diff + rim * 0.90f);
+            rgb[i * 3 + 2] = C01(alb * wb * diff + rim * 0.72f);
         }
 
         // Downsample to the final size.

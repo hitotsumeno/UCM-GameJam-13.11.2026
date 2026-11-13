@@ -25,13 +25,18 @@ public class ParallaxBackground : MonoBehaviour
             bg.Setup(anchor, Tuning.BackgroundParallax, Tuning.BackgroundSize, false);
             return;
         }
-        CreateRepeating("nebula_far", parent, anchor, Tuning.NebulaFarSize, Tuning.NebulaFarParallax, -200, 1.002f);
-        CreateRepeating("nebula_near", parent, anchor, Tuning.NebulaNearSize, Tuning.NebulaNearParallax, -145, 1f);
+        // The far clouds are darkened and the near ones made more transparent,
+        // so the background stays behind the rocks instead of competing with them.
+        float b = Tuning.NebulaFarBrightness;
+        CreateRepeating("nebula_far", parent, anchor, Tuning.NebulaFarSize, Tuning.NebulaFarParallax, -200, 1.002f,
+            new Color(b, b, b, 1f));
+        CreateRepeating("nebula_near", parent, anchor, Tuning.NebulaNearSize, Tuning.NebulaNearParallax, -145, 1f,
+            new Color(1f, 1f, 1f, Tuning.NebulaNearOpacity));
     }
 
     // 3x3 copies of a seamless picture. If the picture is missing, nothing is created (black sky).
     static void CreateRepeating(string artName, Transform parent, Vector2 anchor, float size, float factor,
-        int sortingOrder, float tileScale)
+        int sortingOrder, float tileScale, Color color)
     {
         var sprite = Art.Load(artName);
         if (sprite == null) return;
@@ -49,6 +54,7 @@ public class ParallaxBackground : MonoBehaviour
             tile.transform.localScale = new Vector3(scale, scale, 1f);
             var sr = tile.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
+            sr.color = color;
             sr.sortingOrder = sortingOrder;
         }
         go.AddComponent<ParallaxBackground>().Setup(anchor, factor, size, true);

@@ -8,8 +8,10 @@ public class Bullet : MonoBehaviour
         go.transform.SetParent(parent, false);
         go.transform.position = position;
 
+        SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
+            new Color(1f, 0.8f, 0.25f, Tuning.BulletGlowOpacity), Vector2.one * Tuning.BulletGlowSize, 19);
         SpriteFactory.MakeSprite("Visual", go.transform, SpriteFactory.Circle(),
-            new Color(1f, 0.9f, 0.4f), Vector2.one * Tuning.BulletDiameter, 20);
+            new Color(1f, 0.95f, 0.6f), Vector2.one * Tuning.BulletDiameter, 20);
 
         var rb = go.AddComponent<Rigidbody2D>();
         rb.gravityScale = 0f;

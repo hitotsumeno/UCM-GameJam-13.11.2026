@@ -43,7 +43,7 @@ public class StarLayer : MonoBehaviour
         var circle = SpriteFactory.Circle();
         for (int i = 0; i < count; i++)
         {
-            var color = new Color(0.84f, 0.9f, 1f, Random.Range(0.25f, 0.7f));
+            var color = new Color(0.84f, 0.9f, 1f, Random.Range(0.18f, 0.5f));
             var sr = SpriteFactory.MakeSprite("Dust", layer.transform, circle, color,
                 Vector2.one * Random.Range(0.03f, 0.07f), sortingOrder);
             layer.stars[i] = sr.transform;
@@ -94,9 +94,9 @@ public class StarLayer : MonoBehaviour
             }
 
             Color coreColor = Color.Lerp(Color.white, tint, 0.25f);
-            coreColor.a = brightness;
+            coreColor.a = brightness * Tuning.StarBrightness;
             Color glowColor = tint;
-            glowColor.a = 0.9f * brightness;
+            glowColor.a = brightness * Tuning.StarGlowOpacity;
             core.color = coreColor;
             glow.color = glowColor;
 

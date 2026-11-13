@@ -48,7 +48,8 @@ public static class WorldBuilder
             var size = roll < 0.45f ? AsteroidSize.Small
                      : roll < 0.8f ? AsteroidSize.Medium
                      : AsteroidSize.Large;
-            float radius = Asteroid.Diameter(size) * 0.5f;
+            // Spacing is checked for the biggest rock of this class (sizes vary a little).
+            float radius = Asteroid.Diameter(size) * Tuning.AsteroidSizeVariationMax * 0.5f;
 
             for (int attempt = 0; attempt < 30; attempt++)
             {
@@ -95,7 +96,7 @@ public static class WorldBuilder
         border.SetParent(parent, false);
         var square = SpriteFactory.Square();
         var color = new Color(1f, 0.3f, 0.25f, 0.6f);
-        const float t = 0.12f;
+        const float t = 0.16f;
         Vector2 c = bounds.center;
 
         var top = SpriteFactory.MakeSprite("Top", border, square, color, new Vector2(bounds.width + t, t), -50);

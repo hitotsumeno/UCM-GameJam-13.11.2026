@@ -1,4 +1,7 @@
 // All balance numbers live here. Change values, press Play, test.
+//
+// Look of the game: only things that matter for play glow (player, bullets,
+// oxygen tanks, meteors). Rocks are big, light and warm. The background is calm.
 public static class Tuning
 {
     // --- Shooting / recoil ---
@@ -6,19 +9,23 @@ public static class Tuning
     public const float BulletSpeed = 20f;         // units per second
     public const float BulletLifetime = 2f;       // seconds before a bullet disappears
     public const float FireRate = 4f;             // shots per second while holding the button
-    public const float BulletDiameter = 0.2f;
+    public const float BulletDiameter = 0.3f;
     public const float BulletMass = 0.05f;
+    public const float BulletGlowSize = 0.9f;     // yellow glow around a bullet, units
+    public const float BulletGlowOpacity = 0.8f;
 
     // --- Player ---
     public const float PlayerMaxSpeed = 12f;
     public const float PlayerDiameter = 1f;
     public const float PlayerMass = 1f;
+    public const float PlayerGlowSize = 3f;       // white glow under the player, in player diameters
+    public const float PlayerGlowOpacity = 0.35f;
 
     // --- Camera ---
-    public const float CameraSize = 8f;           // orthographic size (half of visible height)
+    public const float CameraSize = 10f;          // orthographic size (half of visible height): about 35.5 x 20 units on screen
     public const float CameraFollowSharpness = 5f; // higher = camera catches up faster
     public const float CameraShakeTime = 0.08f;   // seconds
-    public const float CameraShakeStrength = 0.15f; // units
+    public const float CameraShakeStrength = 0.19f; // units
 
     // --- Oxygen ---
     public const float OxygenMax = 100f;
@@ -35,32 +42,39 @@ public static class Tuning
     // --- Sizes in the world, in units (the larger side of the picture) ---
     public const float ShipLength = 6f;
     public const float ShipHeight = 2.5f;         // placeholder only; real art keeps its own proportions
-    public const float AsteroidSmallSize = 1f;
-    public const float AsteroidMediumSize = 2f;
-    public const float AsteroidLargeSize = 4f;
-    public const float OxygenTankSize = 0.6f;
+    public const float AsteroidSmallSize = 2f;    // 1 level cell
+    public const float AsteroidMediumSize = 4f;   // 2x2 level cells
+    public const float AsteroidLargeSize = 6f;    // 3x3 level cells
+    public const float AsteroidSizeVariationMin = 0.88f; // every rock gets a random size multiplier
+    public const float AsteroidSizeVariationMax = 1.12f;
+    public const float OxygenTankSize = 0.8f;
     public const float PlanetSize = 8f;
     public const float BackgroundSize = 48f;
 
-    // --- Background parallax: how fast a layer scrolls on screen compared to the world (1 = like the world) ---
+    // --- Background: calm, so it does not compete with the rocks ---
+    // Parallax: how fast a layer scrolls on screen compared to the world (1 = like the world).
     public const float BackgroundParallax = 0.1f; // artist picture "background" (does not repeat)
     public const float NebulaFarParallax = 0.25f; // far clouds (repeat endlessly)
-    public const float NebulaNearParallax = 0.55f; // near clouds: faster, so the picture keeps changing
+    public const float NebulaNearParallax = 0.4f; // near clouds: faster, so the picture keeps changing
     public const float NebulaFarSize = 64f;       // one copy of the far cloud picture, in units
     public const float NebulaNearSize = 80f;
+    public const float NebulaFarBrightness = 0.6f; // 1 = as drawn, lower = darker
+    public const float NebulaNearOpacity = 0.4f;  // 1 = as drawn, lower = more transparent
     public const float StarsFarParallax = 0.3f;
-    public const float StarsNearParallax = 0.6f;
+    public const float StarsNearParallax = 0.45f;
     public const float StarDustParallax = 0.2f;
-    public const float StarTileSize = 40f;        // stars repeat every this many units; must be wider than the screen
-    // Counts are per repeating tile (40x40 units); the screen shows a bit more than a quarter of it.
-    public const int StarDustCount = 300;         // tiny dim dots
-    public const int StarsFarCount = 70;          // small glowing stars
-    public const int StarsNearCount = 20;         // bigger bright glowing stars
-    public const float StarFarSizeMin = 0.1f;     // size of the star shape, units (the glow is wider)
-    public const float StarFarSizeMax = 0.24f;
-    public const float StarNearSizeMin = 0.3f;
-    public const float StarNearSizeMax = 0.6f;
-    public const float StarTwinkleStrength = 0.6f; // 0 = steady light, 1 = strong pulsing
+    public const float StarTileSize = 56f;        // stars repeat every this many units; must be wider than the screen
+    // Counts are per repeating tile (56x56 units); the screen shows a bit less than a quarter of it.
+    public const int StarDustCount = 420;         // tiny dim dots
+    public const int StarsFarCount = 80;          // small stars
+    public const int StarsNearCount = 14;         // a few bigger stars
+    public const float StarFarSizeMin = 0.08f;    // size of the star shape, units (the glow is wider)
+    public const float StarFarSizeMax = 0.18f;
+    public const float StarNearSizeMin = 0.18f;
+    public const float StarNearSizeMax = 0.34f;
+    public const float StarBrightness = 0.75f;    // star cores: 1 = full white
+    public const float StarGlowOpacity = 0.5f;    // coloured halo around stars
+    public const float StarTwinkleStrength = 0f;  // 0 = steady light, 1 = strong pulsing
     public const float StarTwinkleSpeedMin = 0.6f; // how fast stars pulse
     public const float StarTwinkleSpeedMax = 2.2f;
 
@@ -68,12 +82,15 @@ public static class Tuning
     public const int AsteroidHpSmall = 1;         // hits to destroy
     public const int AsteroidHpMedium = 2;
     public const int AsteroidHpLarge = 4;         // a large one splits into two medium ones
-    public const float AsteroidDensity = 1.5f;    // mass = density * size * size (the player weighs 1)
+    public const float AsteroidDensity = 0.5f;    // mass = density * size * size (the player weighs 1)
     public const float AsteroidDriftMin = 0.2f;   // slow asteroids: drift speed, units per second
     public const float AsteroidDriftMax = 0.6f;
     public const float AsteroidMoverChance = 0.5f; // share of asteroids that fly noticeably (0..1)
     public const float AsteroidMoveSpeedMin = 1f;  // moving asteroids: speed, random direction
     public const float AsteroidMoveSpeedMax = 3f;
+    public const float AsteroidSpin = 40f;        // max rotation speed, degrees per second
+    public const float AsteroidSplitSpeed = 1.5f; // how fast the two halves fly apart
+    public const float Bounciness = 0.5f;         // 0 = no bounce, 1 = full bounce
 
     // --- Meteors: fast asteroids flying from the top down at the player ---
     public const float MeteorFirstDelay = 4f;     // seconds before the first one
@@ -85,9 +102,10 @@ public static class Tuning
     public const float MeteorSpread = 8f;         // appears this far left/right of the player at most
     public const float MeteorSpawnAhead = 22f;    // appears this far above the top of the screen
     public const float MeteorLifetime = 20f;      // seconds
-    public const float AsteroidSpin = 40f;        // max rotation speed, degrees per second
-    public const float AsteroidSplitSpeed = 1.5f; // how fast the two halves fly apart
-    public const float Bounciness = 0.5f;         // 0 = no bounce, 1 = full bounce
+    public const float MeteorMediumChance = 0.25f; // share of medium meteors; the rest are small
+    public const float MeteorHeatSize = 3f;       // orange glow, in rock diameters
+    public const float MeteorHeatOpacity = 0.75f;
+    public const float MeteorWarningSize = 0.9f;  // red marker at the top edge of the screen
 
     // --- Impact: hitting an asteroid faster than the safe speed costs oxygen ---
     public const float ImpactSafeSpeed = 6f;
@@ -96,13 +114,15 @@ public static class Tuning
 
     // --- Oxygen tanks ---
     public const float OxygenTankAmount = 30f;
-    public const float OxygenTankPickupRadius = 0.5f;
+    public const float OxygenTankPickupRadius = 0.7f;
+    public const float OxygenTankGlowSize = 2f;   // cyan glow, units
+    public const float OxygenTankGlowOpacity = 0.6f;
 
     // --- Temporary scatter on the test ground (until levels come from text files) ---
-    public const int ScatterAsteroids = 15;
+    public const int ScatterAsteroids = 18;
     public const int ScatterTanks = 3;
-    public const float ScatterHalfWidth = 8f;     // asteroids lie this far left/right of the straight path
-    public const float ScatterClearance = 8f;     // free space around the player start and the ship
-    public const float TankSideOffsetMin = 12f;   // tanks lie this far off the straight path
-    public const float TankSideOffsetMax = 16f;
+    public const float ScatterHalfWidth = 11f;    // asteroids lie this far left/right of the straight path
+    public const float ScatterClearance = 10f;    // free space around the player start and the ship
+    public const float TankSideOffsetMin = 15f;   // tanks lie this far off the straight path
+    public const float TankSideOffsetMax = 20f;
 }
