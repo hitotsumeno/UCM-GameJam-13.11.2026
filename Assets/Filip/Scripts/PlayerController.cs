@@ -94,8 +94,8 @@ public class PlayerController : MonoBehaviour
         if (collision.collider.GetComponent<Asteroid>() == null) return;
         float speed = collision.relativeVelocity.magnitude;
         if (speed <= Tuning.ImpactSafeSpeed) return;
-        if (DraftGame.Instance != null)
-            DraftGame.Instance.SpendOxygen((speed - Tuning.ImpactSafeSpeed) * Tuning.ImpactOxygenPerSpeed);
+        float loss = Mathf.Min((speed - Tuning.ImpactSafeSpeed) * Tuning.ImpactOxygenPerSpeed, Tuning.ImpactMaxOxygen);
+        if (DraftGame.Instance != null) DraftGame.Instance.SpendOxygen(loss);
         CameraRig.Shake();
     }
 

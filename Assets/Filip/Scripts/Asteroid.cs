@@ -7,11 +7,15 @@ public class Asteroid : MonoBehaviour
 {
     static readonly Color DamagedColor = new Color(1f, 0.45f, 0.35f);
 
+    // Level area. Confined asteroids turn back at its edges, so they never fly away.
+    public static Rect Bounds;
+
     AsteroidSize size;
     int hp, maxHp;
     SpriteRenderer body;
     Color baseColor;
     Rigidbody2D rb;
+    bool confined;
 
     public static float Diameter(AsteroidSize size)
     {
@@ -43,7 +47,8 @@ public class Asteroid : MonoBehaviour
         }
     }
 
-    public static Asteroid Create(AsteroidSize size, Vector2 position, Vector2 velocity, Transform parent)
+    public static Asteroid Create(AsteroidSize size, Vector2 position, Vector2 velocity, Transform parent,
+        bool confined = true)
     {
         float d = Diameter(size);
         var go = new GameObject("Asteroid_" + size);
@@ -88,7 +93,25 @@ public class Asteroid : MonoBehaviour
         a.body = body;
         a.baseColor = body.color;
         a.rb = rb;
+        a.confined = confined;
         return a;
+    }
+
+    public void SetTint(Color tint)
+    {
+        baseColor *= tint;
+        body.color = baseColor;
+    }
+
+    void FixedUpdate()
+    {
+        if (!confined) return;
+        Vector2 p = rb.position;
+        Vector2 v = rb.linearVelocity;
+        bool turned = false;
+        if ((p.x < Bounds.xMin && v.x < 0f) || (p.x > Bounds.xMax && v.x > 0f)) { v.x = -v.x; turned = true; }
+        if ((p.y < Bounds.yMin && v.y < 0f) || (p.y > Bounds.yMax && v.y > 0f)) { v.y = -v.y; turned = true; }
+        if (turned) rb.linearVelocity = v;
     }
 
     // Called by a bullet.
@@ -110,8 +133,8 @@ public class Asteroid : MonoBehaviour
             Vector2 pos = transform.position;
             float offset = Diameter(AsteroidSize.Medium) * 0.5f;
             Vector2 push = dir * Tuning.AsteroidSplitSpeed;
-            Create(AsteroidSize.Medium, pos + dir * offset, rb.linearVelocity + push, transform.parent);
-            Create(AsteroidSize.Medium, pos - dir * offset, rb.linearVelocity - push, transform.parent);
+            Create(AsteroidSize.Medium, pos + dir * offset, rb.linearVelocity + push, transform.parent, confined);
+            Create(AsteroidSize.Medium, pos - dir * offset, rb.linearVelocity - push, transform.parent, confined);
         }
         Destroy(gameObject);
     }

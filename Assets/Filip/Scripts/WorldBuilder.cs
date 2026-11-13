@@ -29,7 +29,9 @@ public static class WorldBuilder
         BuildBorder(w.root, w.bounds);
         w.player = PlayerController.Create(start, w.root);
         w.ship = Ship.Create(shipPos, w.root).transform;
+        Asteroid.Bounds = w.bounds;
         Scatter(w.root, start, shipPos);
+        MeteorSpawner.Create(w.root, w.player.transform);
         return w;
     }
 
@@ -56,8 +58,13 @@ public static class WorldBuilder
                 if (!IsFree(placed, pos, radius + 0.5f)) continue;
 
                 placed.Add(new Vector3(pos.x, pos.y, radius));
-                Vector2 drift = Random.insideUnitCircle.normalized
-                    * Random.Range(Tuning.AsteroidDriftMin, Tuning.AsteroidDriftMax);
+                // Some asteroids barely drift, others fly noticeably in a random direction.
+                bool mover = Random.value < Tuning.AsteroidMoverChance;
+                float speed = mover
+                    ? Random.Range(Tuning.AsteroidMoveSpeedMin, Tuning.AsteroidMoveSpeedMax)
+                    : Random.Range(Tuning.AsteroidDriftMin, Tuning.AsteroidDriftMax);
+                float angle = Random.Range(0f, Mathf.PI * 2f);
+                Vector2 drift = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed;
                 Asteroid.Create(size, pos, drift, parent);
                 break;
             }

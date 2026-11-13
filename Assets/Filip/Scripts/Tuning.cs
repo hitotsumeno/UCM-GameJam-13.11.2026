@@ -43,7 +43,8 @@ public static class Tuning
     public const float BackgroundSize = 48f;
 
     // --- Background parallax: how fast a layer scrolls on screen compared to the world (1 = like the world) ---
-    public const float BackgroundParallax = 0.1f;
+    public const float BackgroundParallax = 0.1f; // artist picture "background" (does not repeat)
+    public const float NebulaParallax = 0.2f;     // generated nebula (repeats endlessly)
     public const float StarsFarParallax = 0.3f;
     public const float StarsNearParallax = 0.6f;
     public const int StarsPerLayer = 40;
@@ -55,8 +56,22 @@ public static class Tuning
     public const int AsteroidHpMedium = 2;
     public const int AsteroidHpLarge = 4;         // a large one splits into two medium ones
     public const float AsteroidDensity = 1.5f;    // mass = density * size * size (the player weighs 1)
-    public const float AsteroidDriftMin = 0.2f;   // drift speed, units per second
+    public const float AsteroidDriftMin = 0.2f;   // slow asteroids: drift speed, units per second
     public const float AsteroidDriftMax = 0.6f;
+    public const float AsteroidMoverChance = 0.5f; // share of asteroids that fly noticeably (0..1)
+    public const float AsteroidMoveSpeedMin = 1f;  // moving asteroids: speed, random direction
+    public const float AsteroidMoveSpeedMax = 3f;
+
+    // --- Meteors: fast asteroids flying from the top down at the player ---
+    public const float MeteorFirstDelay = 4f;     // seconds before the first one
+    public const float MeteorIntervalMin = 3f;    // seconds between meteors
+    public const float MeteorIntervalMax = 6f;
+    public const float MeteorSpeedMin = 7f;
+    public const float MeteorSpeedMax = 10f;
+    public const float MeteorSideSpeed = 1.5f;    // max sideways speed
+    public const float MeteorSpread = 8f;         // appears this far left/right of the player at most
+    public const float MeteorSpawnAhead = 22f;    // appears this far above the top of the screen
+    public const float MeteorLifetime = 20f;      // seconds
     public const float AsteroidSpin = 40f;        // max rotation speed, degrees per second
     public const float AsteroidSplitSpeed = 1.5f; // how fast the two halves fly apart
     public const float Bounciness = 0.5f;         // 0 = no bounce, 1 = full bounce
@@ -64,6 +79,7 @@ public static class Tuning
     // --- Impact: hitting an asteroid faster than the safe speed costs oxygen ---
     public const float ImpactSafeSpeed = 6f;
     public const float ImpactOxygenPerSpeed = 3f; // oxygen lost = (speed - safe speed) * this
+    public const float ImpactMaxOxygen = 25f;     // one hit never costs more than this
 
     // --- Oxygen tanks ---
     public const float OxygenTankAmount = 30f;
