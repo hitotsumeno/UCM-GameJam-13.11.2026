@@ -25,7 +25,7 @@ public class PlayerController : MonoBehaviour
 
         var col = go.AddComponent<CircleCollider2D>();
         col.radius = Tuning.PlayerDiameter * 0.5f;
-        col.sharedMaterial = new PhysicsMaterial2D("NoFriction") { friction = 0f, bounciness = 0f };
+        col.sharedMaterial = new PhysicsMaterial2D("NoFriction") { friction = 0f, bounciness = Tuning.Bounciness };
 
         var visual = new GameObject("Visual").transform;
         visual.SetParent(go.transform, false);
@@ -85,6 +85,17 @@ public class PlayerController : MonoBehaviour
         Vector2 muzzle = (Vector2)visual.TransformPoint(new Vector3(0.9f, -0.25f, 0f));
         Bullet.Spawn(muzzle, aim, col, transform.parent);
         rb.AddForce(-aim * Tuning.RecoilImpulse, ForceMode2D.Impulse);
+        CameraRig.Shake();
+    }
+
+    // Hitting an asteroid too fast costs oxygen.
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.collider.GetComponent<Asteroid>() == null) return;
+        float speed = collision.relativeVelocity.magnitude;
+        if (speed <= Tuning.ImpactSafeSpeed) return;
+        if (DraftGame.Instance != null)
+            DraftGame.Instance.SpendOxygen((speed - Tuning.ImpactSafeSpeed) * Tuning.ImpactOxygenPerSpeed);
         CameraRig.Shake();
     }
 

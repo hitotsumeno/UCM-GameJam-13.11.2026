@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Everything that belongs to one level. Destroy root to clear the level.
@@ -28,7 +29,56 @@ public static class WorldBuilder
         BuildBorder(w.root, w.bounds);
         w.player = PlayerController.Create(start, w.root);
         w.ship = Ship.Create(shipPos, w.root).transform;
+        Scatter(w.root, start, shipPos);
         return w;
+    }
+
+    // Temporary: random asteroids on the way to the ship and oxygen tanks off to the sides.
+    static void Scatter(Transform parent, Vector2 start, Vector2 shipPos)
+    {
+        float yMin = start.y + Tuning.ScatterClearance;
+        float yMax = shipPos.y - Tuning.ScatterClearance;
+        var placed = new List<Vector3>(); // x, y, radius
+
+        for (int i = 0; i < Tuning.ScatterAsteroids; i++)
+        {
+            float roll = Random.value;
+            var size = roll < 0.45f ? AsteroidSize.Small
+                     : roll < 0.8f ? AsteroidSize.Medium
+                     : AsteroidSize.Large;
+            float radius = Asteroid.Diameter(size) * 0.5f;
+
+            for (int attempt = 0; attempt < 30; attempt++)
+            {
+                var pos = new Vector2(
+                    start.x + Random.Range(-Tuning.ScatterHalfWidth, Tuning.ScatterHalfWidth),
+                    Random.Range(yMin, yMax));
+                if (!IsFree(placed, pos, radius + 0.5f)) continue;
+
+                placed.Add(new Vector3(pos.x, pos.y, radius));
+                Vector2 drift = Random.insideUnitCircle.normalized
+                    * Random.Range(Tuning.AsteroidDriftMin, Tuning.AsteroidDriftMax);
+                Asteroid.Create(size, pos, drift, parent);
+                break;
+            }
+        }
+
+        for (int i = 0; i < Tuning.ScatterTanks; i++)
+        {
+            float t = (i + 1f) / (Tuning.ScatterTanks + 1f);
+            float side = i % 2 == 0 ? 1f : -1f;
+            var pos = new Vector2(
+                start.x + side * Random.Range(Tuning.TankSideOffsetMin, Tuning.TankSideOffsetMax),
+                Mathf.Lerp(yMin, yMax, t));
+            OxygenTank.Create(pos, parent);
+        }
+    }
+
+    static bool IsFree(List<Vector3> placed, Vector2 pos, float radius)
+    {
+        foreach (var p in placed)
+            if (Vector2.Distance(new Vector2(p.x, p.y), pos) < p.z + radius) return false;
+        return true;
     }
 
     // Thin red frame showing where the level ends.

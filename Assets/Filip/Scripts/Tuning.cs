@@ -48,4 +48,32 @@ public static class Tuning
     public const float StarsNearParallax = 0.6f;
     public const int StarsPerLayer = 40;
     public const float StarTileSize = 40f;        // stars repeat every this many units; must be wider than the screen
+    public const float StarArtScale = 3f;         // star pictures are drawn this many times bigger than placeholder dots
+
+    // --- Asteroids ---
+    public const int AsteroidHpSmall = 1;         // hits to destroy
+    public const int AsteroidHpMedium = 2;
+    public const int AsteroidHpLarge = 4;         // a large one splits into two medium ones
+    public const float AsteroidDensity = 1.5f;    // mass = density * size * size (the player weighs 1)
+    public const float AsteroidDriftMin = 0.2f;   // drift speed, units per second
+    public const float AsteroidDriftMax = 0.6f;
+    public const float AsteroidSpin = 40f;        // max rotation speed, degrees per second
+    public const float AsteroidSplitSpeed = 1.5f; // how fast the two halves fly apart
+    public const float Bounciness = 0.5f;         // 0 = no bounce, 1 = full bounce
+
+    // --- Impact: hitting an asteroid faster than the safe speed costs oxygen ---
+    public const float ImpactSafeSpeed = 6f;
+    public const float ImpactOxygenPerSpeed = 3f; // oxygen lost = (speed - safe speed) * this
+
+    // --- Oxygen tanks ---
+    public const float OxygenTankAmount = 30f;
+    public const float OxygenTankPickupRadius = 0.5f;
+
+    // --- Temporary scatter on the test ground (until levels come from text files) ---
+    public const int ScatterAsteroids = 15;
+    public const int ScatterTanks = 3;
+    public const float ScatterHalfWidth = 8f;     // asteroids lie this far left/right of the straight path
+    public const float ScatterClearance = 8f;     // free space around the player start and the ship
+    public const float TankSideOffsetMin = 12f;   // tanks lie this far off the straight path
+    public const float TankSideOffsetMax = 16f;
 }

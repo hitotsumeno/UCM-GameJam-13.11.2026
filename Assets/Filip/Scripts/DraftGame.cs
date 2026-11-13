@@ -86,6 +86,13 @@ public class DraftGame : MonoBehaviour
         if (Oxygen <= 0f) Lose();
     }
 
+    public void AddOxygen(float amount)
+    {
+        if (State != GameState.Playing) return;
+        Oxygen = Mathf.Min(Tuning.OxygenMax, Oxygen + amount);
+        hud.SetOxygen(Oxygen / Tuning.OxygenMax);
+    }
+
     public void Win()
     {
         if (State != GameState.Playing) return;

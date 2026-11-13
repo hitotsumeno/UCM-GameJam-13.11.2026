@@ -30,6 +30,8 @@ public class Bullet : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
+        var asteroid = collision.collider.GetComponent<Asteroid>();
+        if (asteroid != null) asteroid.Hit();
         Destroy(gameObject);
     }
 }

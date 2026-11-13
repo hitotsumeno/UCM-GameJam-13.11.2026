@@ -31,9 +31,15 @@ public class StarLayer : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             float b = Random.Range(minBrightness, 1f);
-            var sr = SpriteFactory.MakeSprite("Star", go.transform, circle,
-                new Color(b, b, Mathf.Min(1f, b * Random.Range(0.9f, 1.15f))),
-                Vector2.one * Random.Range(minSize, maxSize), sortingOrder);
+            float size = Random.Range(minSize, maxSize);
+            // Picture "star1", "star2", ... (a random one per star) or a placeholder dot.
+            var sr = Art.TryMake("star", go.transform, size * Tuning.StarArtScale, sortingOrder);
+            if (sr != null)
+                sr.color = new Color(1f, 1f, 1f, b);
+            else
+                sr = SpriteFactory.MakeSprite("Star", go.transform, circle,
+                    new Color(b, b, Mathf.Min(1f, b * Random.Range(0.9f, 1.15f))),
+                    Vector2.one * size, sortingOrder);
             layer.stars[i] = sr.transform;
             layer.local[i] = new Vector2(Random.Range(-half, half), Random.Range(-half, half));
         }
