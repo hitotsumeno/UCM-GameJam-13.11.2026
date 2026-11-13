@@ -4,7 +4,8 @@ using UnityEngine.SceneManagement;
 
 public enum GameState { Playing, Won, Lost }
 
-// Builds the whole game from code, but only in the scene named DraftScene.
+// Runs the game. Everything is built from code, but only in the scene named DraftScene.
+// The level objects themselves are created by WorldBuilder.
 public class DraftGame : MonoBehaviour
 {
     public const string SceneName = "DraftScene";
@@ -14,12 +15,9 @@ public class DraftGame : MonoBehaviour
     public GameState State { get; private set; }
     public float Oxygen { get; private set; }
 
-    Transform worldRoot;   // everything of the current level lives under this; destroy it to clear
+    LevelWorld world;      // current level; null when cleared
     CameraRig cameraRig;
     Hud hud;
-    PlayerController player;
-    Transform ship;
-    Rect bounds;           // level area; outside it the signal is lost
 
     // Reset static fields (works even when domain reload is disabled).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -61,11 +59,11 @@ public class DraftGame : MonoBehaviour
         }
 
         bool outside = false;
-        if (player != null)
+        if (world != null && world.player != null)
         {
-            Vector2 pos = player.transform.position;
-            outside = !bounds.Contains(pos);
-            if (ship != null) hud.SetCompass((Vector2)ship.position - pos);
+            Vector2 pos = world.player.transform.position;
+            outside = !world.bounds.Contains(pos);
+            if (world.ship != null) hud.SetCompass((Vector2)world.ship.position - pos);
         }
         hud.SetSignalLost(outside && State == GameState.Playing);
 
@@ -91,7 +89,7 @@ public class DraftGame : MonoBehaviour
     {
         if (State != GameState.Playing) return;
         State = GameState.Won;
-        if (player != null) player.Stop();
+        if (world != null && world.player != null) world.player.Stop();
         hud.ShowMessage("DOCKED", new Color(0.4f, 1f, 0.5f));
     }
 
@@ -139,79 +137,29 @@ public class DraftGame : MonoBehaviour
 
     public void ClearWorld()
     {
-        if (worldRoot != null)
+        if (world != null && world.root != null)
         {
             // Deactivate first: Destroy only happens at the end of the frame.
-            worldRoot.gameObject.SetActive(false);
-            Destroy(worldRoot.gameObject);
+            world.root.gameObject.SetActive(false);
+            Destroy(world.root.gameObject);
         }
-        worldRoot = null;
-        player = null;
-        ship = null;
+        world = null;
     }
 
     // Also used for restart: clears everything and builds it again.
     public void BuildWorld()
     {
         ClearWorld();
-        worldRoot = new GameObject("World").transform;
-
-        // Temporary level: player at the bottom, ship almost at the very top.
-        bounds = new Rect(-Tuning.LevelWidth * 0.5f, -Tuning.LevelHeight * 0.5f,
-            Tuning.LevelWidth, Tuning.LevelHeight);
-        Vector2 start = new Vector2(bounds.center.x, bounds.yMin + Tuning.PlayerStartFromBottom);
-        Vector2 shipPos = new Vector2(bounds.center.x, bounds.yMax - Tuning.ShipFromTop);
-
-        BuildStars(bounds.center);
-        BuildBorder();
-        player = PlayerController.Create(start, worldRoot);
-        ship = Ship.Create(shipPos, worldRoot).transform;
+        world = WorldBuilder.Build();
 
         State = GameState.Playing;
         Oxygen = Tuning.OxygenMax;
         hud.SetOxygen(1f);
         hud.HideMessage();
         hud.SetSignalLost(false);
-        hud.SetCompass(shipPos - start);
+        hud.SetCompass(world.ship.position - world.player.transform.position);
 
-        cameraRig.target = player.transform;
+        cameraRig.target = world.player.transform;
         cameraRig.SnapToTarget();
-    }
-
-    // Thin red frame showing where the level ends.
-    void BuildBorder()
-    {
-        var border = new GameObject("Border").transform;
-        border.SetParent(worldRoot, false);
-        var square = SpriteFactory.Square();
-        var color = new Color(1f, 0.3f, 0.25f, 0.6f);
-        const float t = 0.12f;
-        Vector2 c = bounds.center;
-
-        var top = SpriteFactory.MakeSprite("Top", border, square, color, new Vector2(bounds.width + t, t), -50);
-        top.transform.position = new Vector2(c.x, bounds.yMax);
-        var bottom = SpriteFactory.MakeSprite("Bottom", border, square, color, new Vector2(bounds.width + t, t), -50);
-        bottom.transform.position = new Vector2(c.x, bounds.yMin);
-        var left = SpriteFactory.MakeSprite("Left", border, square, color, new Vector2(t, bounds.height + t), -50);
-        left.transform.position = new Vector2(bounds.xMin, c.y);
-        var right = SpriteFactory.MakeSprite("Right", border, square, color, new Vector2(t, bounds.height + t), -50);
-        right.transform.position = new Vector2(bounds.xMax, c.y);
-    }
-
-    void BuildStars(Vector2 center)
-    {
-        var stars = new GameObject("Stars").transform;
-        stars.SetParent(worldRoot, false);
-        var circle = SpriteFactory.Circle();
-        float half = Tuning.StarFieldSize * 0.5f;
-        for (int i = 0; i < Tuning.StarCount; i++)
-        {
-            var pos = center + new Vector2(Random.Range(-half, half), Random.Range(-half, half));
-            float size = Random.Range(0.05f, 0.18f);
-            float b = Random.Range(0.5f, 1f);
-            var sr = SpriteFactory.MakeSprite("Star", stars, circle,
-                new Color(b, b, b * Random.Range(0.9f, 1.1f)), Vector2.one * size, -100);
-            sr.transform.position = pos;
-        }
     }
 }

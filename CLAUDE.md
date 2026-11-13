@@ -31,6 +31,10 @@
 - Всё создаётся из кода. Скрипт с [RuntimeInitializeOnLoadMethod] собирает
   игру при запуске, но ТОЛЬКО если активная сцена называется DraftScene.
   В других сценах он ничего не делает.
+- Объекты уровня строит WorldBuilder. Его же вызывает превью в редакторе
+  (Assets/Filip/Editor/DraftPreview.cs), которое показывает уровень без Play
+  (попросил программист). Поэтому код постройки уровня и Hud.Create должны
+  работать и в режиме редактирования: без Destroy(), без корутин, без Awake/Start.
 - Наша сцена: Assets/Filip/DraftScene.unity. Получи её копированием
   Assets/Settings/Scenes/URP2DSceneTemplate.unity (без .meta).
 - Скрипты: Assets/Filip/Scripts/. Скрипты редактора: Assets/Filip/Editor/.
