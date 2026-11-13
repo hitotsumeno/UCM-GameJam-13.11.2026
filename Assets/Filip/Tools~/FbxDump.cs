@@ -17,7 +17,7 @@ public class FNode
 
 public static class FbxDump
 {
-    static FNode ReadNode(BinaryReader r, long fileLen)
+    public static FNode ReadNode(BinaryReader r, long fileLen)
     {
         uint end = r.ReadUInt32(), numProps = r.ReadUInt32(), propLen = r.ReadUInt32();
         byte nameLen = r.ReadByte();

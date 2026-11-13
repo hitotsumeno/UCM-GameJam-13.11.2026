@@ -6,3 +6,8 @@ Run from PowerShell on Windows:
   bake.ps1 -In <stars.fbx> -Out <output folder>       -> star1.png + star_glow1.png ... per model in the FBX
 
 The look of the clouds (colours, density) is set by the numbers in NebulaGen.cs.
+
+  rocks.ps1 -In <stone.fbx> -Out <output folder>      -> asteroid_l1..4, asteroid_m1..4, asteroid_s1..4 .png
+           Renders the artist's 3D rocks into shaded 2D pictures. The list at the top of rocks.ps1
+           says which model and which view angle becomes which picture; edit it to add variants.
+           Light, rim colour and rock relief are set by the numbers in RockBake.cs.

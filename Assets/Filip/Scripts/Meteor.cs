@@ -23,8 +23,11 @@ public class Meteor : MonoBehaviour
         m.rb = asteroid.GetComponent<Rigidbody2D>();
         m.diameter = Asteroid.Diameter(size);
 
-        m.tail = SpriteFactory.MakeSprite("Tail", m.transform, SpriteFactory.Square(),
-            new Color(1f, 0.55f, 0.2f, 0.35f), new Vector2(m.diameter * 0.5f, m.diameter * 3f), 2).transform;
+        // Hot glow around the rock and a soft fiery streak behind it (both drawn under the rock).
+        SpriteFactory.MakeSprite("Heat", m.transform, SpriteFactory.Glow(),
+            new Color(1f, 0.5f, 0.15f, 0.55f), Vector2.one * m.diameter * 2.4f, 1);
+        m.tail = SpriteFactory.MakeSprite("Tail", m.transform, SpriteFactory.Glow(),
+            new Color(1f, 0.6f, 0.2f, 0.6f), new Vector2(m.diameter * 1.1f, m.diameter * 5f), 2).transform;
 
         m.warning = SpriteFactory.MakeSprite("Warning", m.transform, SpriteFactory.Triangle(),
             new Color(1f, 0.3f, 0.25f), new Vector2(0.7f, 0.7f), 30).transform;
@@ -53,8 +56,8 @@ public class Meteor : MonoBehaviour
         Vector2 dir = v.sqrMagnitude > 0.01f ? v.normalized : Vector2.down;
 
         // Tail behind the meteor, stretched along its flight.
-        float length = diameter * 3f;
-        tail.position = pos - dir * (length * 0.5f);
+        float length = diameter * 5f;
+        tail.position = pos - dir * (length * 0.4f);
         tail.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f);
 
         if (cam == null) cam = Camera.main;

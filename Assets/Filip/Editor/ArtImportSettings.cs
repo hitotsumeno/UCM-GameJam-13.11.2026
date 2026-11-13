@@ -38,6 +38,9 @@ public class ArtImportSettings : AssetPostprocessor
         if (name.StartsWith("nebula"))
             importer.wrapMode = TextureWrapMode.Repeat; // edges blend into the next copy
 
+        if (name.StartsWith("asteroid"))
+            importer.textureCompression = TextureImporterCompression.CompressedHQ; // keep the rock relief clean
+
         if (name.StartsWith("star"))
         {
             // Small pictures with soft glow: keep them exact and do not cut the faint halo off.

@@ -57,6 +57,8 @@ public class Asteroid : MonoBehaviour
         go.transform.rotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
 
         // Picture (asteroid_s1, asteroid_m2, ...) or a placeholder: grey circle with two craters.
+        // The pictures are rendered so that a circle of 0.45 x picture size has the same area
+        // as the rock (see Assets/Filip/Tools~), so this collider fits every one of them.
         float radius = d * 0.45f;
         var body = Art.TryMake(ArtName(size), go.transform, d, 3);
         if (body == null)

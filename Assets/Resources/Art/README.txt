@@ -23,3 +23,7 @@ Already here (made for the draft, replace freely):
   star1.png ... star5.png           star shapes drawn from the artist's stars.fbx; the shape takes the middle 42% of the picture
                                     (the game is 2D, so the 3D models were turned into pictures).
   star_glow1.png ... star_glow5.png soft halo for each star, same canvas; tinted in the game.
+  asteroid_l1..4, asteroid_m1..4,   the artist's 3D rocks from stone.fbx, rendered into pictures from
+  asteroid_s1..4 .png               different sides (5 models -> 12 different-looking asteroids).
+                                    The rock fills the picture so that a circle of 0.45 x picture size
+                                    has the same area as the rock: that circle is used for collisions.
