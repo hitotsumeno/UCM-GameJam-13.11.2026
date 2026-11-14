@@ -129,6 +129,21 @@ public static class Tuning
     public const float OxygenTankGlowSize = 2f;   // cyan glow, units
     public const float OxygenTankGlowOpacity = 0.6f;
 
+    // --- Mines: they sleep until the player is close, then hunt ---
+    public const float MineSize = 1.1f;
+    public const float MineMass = 0.8f;
+    public const float MineWakeRadius = 12f;      // wakes up when the player is this close
+    public const float MineLoseRadius = 20f;      // gives up when the player is this far
+    public const float MineSpeed = 3.2f;          // the player's top speed is 12
+    public const float MineAccel = 5f;            // how quickly it picks up speed
+    public const float MineDamage = 15f;          // oxygen lost when a mine touches the player
+    public const float MineBlastRadius = 4.5f;    // everything this close is pushed away
+    public const float MineBlastImpulse = 10f;    // how hard
+    public const float MineRockRadius = 2.5f;     // rocks this close to the blast take one hit
+    public const float MineTriggerSpeed = 5f;     // a rock hitting a mine faster than this sets it off
+    public const float MineChainDelay = 0.12f;    // seconds before a neighbouring mine goes off too
+    public const int CrystalsFromMine = 2;        // a mine shot by the player leaves crystals
+
     // --- Oxygen crystals: destroyed rocks leave air behind ("destroy to breathe") ---
     public const float CrystalOxygen = 2f;        // oxygen per crystal (before the combo bonus)
     public const int CrystalsFromSmall = 2;       // crystals left by a destroyed rock

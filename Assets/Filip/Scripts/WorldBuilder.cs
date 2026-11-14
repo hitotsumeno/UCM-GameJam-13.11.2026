@@ -57,6 +57,7 @@ public static class WorldBuilder
                     case 'A': SpawnRock(AsteroidSize.Medium, p, level.movers, w.root); break;
                     case 'B': SpawnRock(AsteroidSize.Large, p, level.movers, w.root); break;
                     case 'o': OxygenTank.Create(p, w.root); break;
+                    case 'm': Mine.Create(p, w.root); break;
                     default:
                         if (char.IsDigit(c) && level.hints.ContainsKey(c))
                         {
