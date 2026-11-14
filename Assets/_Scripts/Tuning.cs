@@ -258,9 +258,9 @@ public class Tuning : ScriptableObject
     [Tooltip("and gives up when the player is this far")]
     public float MineLoseRadius = 26f;
     [Tooltip("the top speed of the player is 12, docking speed is 5")]
-    public float MineSpeed = 6.5f;
+    public float MineSpeed = 5.5f;
     [Tooltip("how quickly it picks up speed")]
-    public float MineAccel = 14f;
+    public float MineAccel = 12f;
     [Tooltip("a blast this close to the player breaches the hull")]
     public float MineBreachRadius = 2.2f;
     [Tooltip("everything this close is pushed away")]

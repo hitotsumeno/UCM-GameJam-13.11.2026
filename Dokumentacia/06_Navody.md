@@ -24,7 +24,7 @@ Najčastejšie úpravy:
 | pomalší úbytok vzduchu | `OxygenDrainPerSecond` (2), `OxygenPerShot` (1) |
 | viac vzduchu z kryštálov | `CrystalOxygen` (2,8) |
 | pomalšie meteory | `MeteorSpeedMin` (13), `MeteorSpeedMax` (17) |
-| menej agresívni lovci | `MineSpeed` (6,5), `MineWakeRadius` (16) |
+| menej agresívni lovci | `MineSpeed` (5,5), `MineAccel` (12), `MineWakeRadius` (16) |
 | slabšie čierne diery | `HoleBigStrength` (520), `HoleSmallStrength` (200) |
 | ľahšie pristátie | `DockMaxSpeed` (5) |
 | menej trestajúce nárazy | `BreachImpactSpeed` (7), `BreachDrainPerSecond` (1) |

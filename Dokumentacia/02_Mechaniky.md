@@ -116,7 +116,7 @@ Hra nemá životy ani okamžité tresty. Tvrdý úder prederaví trup:
 
 | Symbol na mape | Druh | Farba lampy | Správanie |
 |---|---|---|---|
-| `m` | Lovec | červená | Spí, kým je loď ďalej ako 16 jednotiek. Potom pláva za ňou rýchlosťou 6,5 (loď vie až 12). Vzdá sa, až keď je loď ďalej ako 26. |
+| `m` | Lovec | červená | Spí, kým je loď ďalej ako 16 jednotiek. Potom pláva za ňou rýchlosťou 5,5 (loď vie až 12). Vzdá sa, až keď je loď ďalej ako 26. |
 | `h` / `v` | Hliadka | žltá | Kĺže tam a späť o 6 jednotiek na každú stranu, vodorovne (`h`) alebo zvisle (`v`), rýchlosťou 3,5. |
 | `s` | Stena | žltá | Stojí na mieste v hustom rade. Jeden výstrel odpáli reťazovo celú stenu. |
 | `M` | Ťažká mína | oranžová | Veľká (2,4 jednotky), vydrží 3 zásahy, jej výbuch je dvakrát väčší. |

@@ -126,8 +126,8 @@ MonoBehaviour:
   MineMass: 0.8
   MineWakeRadius: 16
   MineLoseRadius: 26
-  MineSpeed: 6.5
-  MineAccel: 14
+  MineSpeed: 5.5
+  MineAccel: 12
   MineBreachRadius: 2.2
   MineBlastRadius: 4.5
   MineBlastImpulse: 10
