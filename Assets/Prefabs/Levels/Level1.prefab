@@ -174,7 +174,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelName: ADRIFT
   radio: Tether lost. You have a rivet gun and one tank of air.
-  oxygen: 70
+  oxygen: 90
   movers: 0
   star3: 65
   star2: 35

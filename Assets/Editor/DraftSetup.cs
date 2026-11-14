@@ -220,7 +220,10 @@ public static class DraftSetup
 
         var visual = new GameObject("Visual").transform;
         visual.SetParent(go.transform, false);
-        if (Art.TryMake("astronaut", visual, tune.PlayerDiameter, 10) == null)
+        // player_ship.png: mesh "1" from Assets/Art/Source/spaceship.fbx seen from the side, nose to +X.
+        bool isShip = Art.TryMake("player_ship", visual, tune.PlayerDiameter * 1.3f, 10) != null;
+        if (isShip) visual.Find("player_ship").name = "Body";
+        else if (Art.TryMake("astronaut", visual, tune.PlayerDiameter, 10) == null)
         {
             SpriteFactory.MakeSprite("Body", visual, SpriteFactory.Circle(),
                 new Color(0.9f, 0.9f, 0.95f), Vector2.one * tune.PlayerDiameter, 10);
@@ -233,7 +236,7 @@ public static class DraftSetup
         }
         var muzzle = new GameObject("Muzzle").transform;
         muzzle.SetParent(visual, false);
-        muzzle.localPosition = new Vector3(0.9f, -0.25f, 0f);
+        muzzle.localPosition = isShip ? new Vector3(0.7f, 0f, 0f) : new Vector3(0.9f, -0.25f, 0f);
 
         var p = go.AddComponent<PlayerController>();
         Set(p, "rb", rb);

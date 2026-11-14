@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 // On-screen interface: oxygen bar, ship compass with speed, combo counter, hints,
 // short notices and the big end-of-level message. The HUD object lives in DraftScene;
@@ -26,7 +27,8 @@ public class Hud : MonoBehaviour
     [Header("Compass")]
     [SerializeField] RectTransform compassNeedle;
     [SerializeField] Text compassText;
-    [SerializeField] Text speedText;
+    [SerializeField] TMP_Text speedText; // TextMeshPro - Text (UI) on the HUD canvas
+    [SerializeField] Image speedIcon;
 
     [Header("Combo")]
     [SerializeField] GameObject comboRoot;
@@ -105,6 +107,7 @@ public class Hud : MonoBehaviour
         shownSpeedOk = slowEnough;
         speedText.text = "SPEED " + rounded;
         speedText.color = slowEnough ? GoodColor : BadColor;
+        speedIcon.color = slowEnough ? GoodColor : BadColor;   
     }
 
     // combo: kills in a row (shown from x2). timeLeft: 1 = just continued, 0 = about to end.

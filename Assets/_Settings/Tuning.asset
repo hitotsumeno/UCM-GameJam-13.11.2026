@@ -30,8 +30,8 @@ MonoBehaviour:
   CameraShakeTime: 0.08
   CameraShakeStrength: 0.19
   OxygenMax: 100
-  OxygenDrainPerSecond: 2
-  OxygenPerShot: 1
+  OxygenDrainPerSecond: 0.5
+  OxygenPerShot: 2
   OutOfBoundsDrainMultiplier: 4
   CellSize: 2
   HintRadius: 9
