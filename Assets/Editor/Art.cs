@@ -2,13 +2,13 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-// Editor only: finds the artist's pictures in Assets/Resources/Art/<name> while the
+// Editor only: finds the artist's pictures in Assets/_Resources/Art/<name> while the
 // prefabs are made (Filip > Rebuild Prefabs And Scene). If a file is missing the caller
 // draws a placeholder instead. Size in the game is set by code, not by the picture.
 // Variants: a number at the end of the name (asteroid_m1, asteroid_m2, ...).
 public static class Art
 {
-    const string Folder = "Assets/Resources/Art/";
+    const string Folder = "Assets/_Resources/Art/";
     static readonly string[] Extensions = { ".png", ".jpg", ".jpeg", ".psd", ".tga" };
 
     // The picture called <name> and all of <name>1 .. <name>9 that exist.

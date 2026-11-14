@@ -8,13 +8,13 @@ using UnityEngine.UI;
 
 // Makes the game's assets ONCE in the editor, so nothing is built at runtime:
 //   Assets/Prefabs/*.prefab           player, bullet, rocks, meteors, ship, tank, crystal, background
-//   Assets/Prefabs/Levels/LevelN.prefab  one per Assets/Resources/Levels/levelN.txt
-//   Assets/DraftScene.unity            camera, light, HUD and the DraftGame object
+//   Assets/Prefabs/Levels/LevelN.prefab  one per Assets/_Resources/Levels/levelN.txt
+//   Assets/_Scenes/DraftScene.unity    camera, light, HUD and the DraftGame object
 // After that, edit the prefabs and the scene by hand like any Unity project.
 // Running it again OVERWRITES those prefabs and the HUD/DraftGame objects in the scene.
 public static class DraftSetup
 {
-    const string ScenePath = "Assets/DraftScene.unity";
+    const string ScenePath = "Assets/_Scenes/DraftScene.unity";
     const string PrefabFolder = "Assets/Prefabs";
     const string LevelFolder = "Assets/Prefabs/Levels";
     const string PhysicsFolder = "Assets/Physics";
@@ -81,7 +81,7 @@ public static class DraftSetup
                 Object.DestroyImmediate(root);
                 levels.Add(asset.GetComponent<Level>());
             }
-            if (levels.Count == 0) Debug.LogWarning("DraftSetup: no level files in Assets/Resources/Levels.");
+            if (levels.Count == 0) Debug.LogWarning("DraftSetup: no level files in Assets/_Resources/Levels.");
 
             SetupScene(levels.ToArray(), bullet);
             EditorSceneManager.MarkSceneDirty(scene);

@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Globalization;
+using UnityEditor;
 using UnityEngine;
 
-// One level read from Assets/Resources/Levels/levelN.txt.
+// One level read from Assets/_Resources/Levels/levelN.txt (editor only).
 //
 // Lines starting with # are settings (# name=ADRIFT). The rest is the map:
 // every character is a cell of 2x2 units, the first map line is the top of the level.
@@ -46,14 +47,21 @@ public class LevelData
     public static int Count()
     {
         int n = 0;
-        while (Resources.Load<TextAsset>("Levels/level" + (n + 1)) != null) n++;
+        while (LoadText(n + 1) != null) n++;
         return n;
     }
 
     // Returns null if the file does not exist.
+    public const string Folder = "Assets/_Resources/Levels/";
+
+    static TextAsset LoadText(int index)
+    {
+        return AssetDatabase.LoadAssetAtPath<TextAsset>(Folder + "level" + index + ".txt");
+    }
+
     public static LevelData Load(int index, Tuning tuning)
     {
-        var asset = Resources.Load<TextAsset>("Levels/level" + index);
+        var asset = LoadText(index);
         if (asset == null) return null;
         var level = Parse(asset.text, tuning);
         level.index = index;

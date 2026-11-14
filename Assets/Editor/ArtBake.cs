@@ -7,8 +7,8 @@ using UnityEngine;
 // Turns the artist's 3D models into the 2D pictures the game uses.
 // Menu: Filip > Bake Rocks And Stars From FBX.
 //
-//   Assets/Art/Source/stone.fbx -> Assets/Resources/Art/asteroid_l1..4, asteroid_m1..4, asteroid_s1..4 .png
-//   Assets/Art/Source/stars.fbx -> Assets/Resources/Art/star1.png + star_glow1.png ... (one pair per model)
+//   Assets/Art/Source/stone.fbx -> Assets/_Resources/Art/asteroid_l1..4, asteroid_m1..4, asteroid_s1..4 .png
+//   Assets/Art/Source/stars.fbx -> Assets/_Resources/Art/star1.png + star_glow1.png ... (one pair per model)
 //
 // The pictures are overwritten in place (same names, same .meta), so the prefabs that use
 // them update by themselves. Drawing is done in code (no camera, no lights), so the result
@@ -22,7 +22,7 @@ public static class ArtBake
 {
     const string StoneModel = ArtImportSettings.ModelFolder + "stone.fbx";
     const string StarsModel = ArtImportSettings.ModelFolder + "stars.fbx";
-    const string OutFolder = "Assets/Resources/Art/";
+    const string OutFolder = "Assets/_Resources/Art/";
     const int StarSize = 256;
 
     // Picture name, model inside stone.fbx, view angles in degrees (x, y, z), picture size in pixels.
@@ -48,7 +48,7 @@ public static class ArtBake
     static void BakeMenu()
     {
         if (!EditorUtility.DisplayDialog("Bake rocks and stars",
-            "This overwrites asteroid_*.png, star*.png and star_glow*.png in Assets/Resources/Art " +
+            "This overwrites asteroid_*.png, star*.png and star_glow*.png in Assets/_Resources/Art " +
             "with pictures rendered from Assets/Art/Source/stone.fbx and stars.fbx.\n\nContinue?", "Bake", "Cancel"))
             return;
         BakeAll();

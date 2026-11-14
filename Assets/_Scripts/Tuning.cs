@@ -77,7 +77,7 @@ public class Tuning : ScriptableObject
     [Tooltip("oxygen drains this much faster outside the level")]
     public float OutOfBoundsDrainMultiplier = 4f;
 
-    [Header("Levels from text files (Assets/Resources/Levels)")]
+    [Header("Levels from text files (Assets/_Resources/Levels)")]
     [Tooltip("one map character is a square of this many units")]
     public float CellSize = 2f;
     [Tooltip("a hint is shown while the player is this close to its place")]

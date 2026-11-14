@@ -2,7 +2,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-// Every picture put into Assets/Resources/Art is imported as a Sprite with
+// Every picture put into Assets/_Resources/Art is imported as a Sprite with
 // 100 pixels per unit. The picture named "background" also gets Max Size 4096.
 // Seamless cloud pictures (nebula_...) repeat without visible seams.
 // This runs automatically whenever Unity imports a picture from that folder.
@@ -12,7 +12,7 @@ using UnityEngine;
 // without materials, cameras, lights or animation, and are not part of the build.
 public class ArtImportSettings : AssetPostprocessor
 {
-    const string ArtFolder = "Assets/Resources/Art/";
+    const string ArtFolder = "Assets/_Resources/Art/";
     public const string ModelFolder = "Assets/Art/Source/";
 
     void OnPreprocessModel()
