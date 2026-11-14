@@ -38,6 +38,12 @@ public class DraftGame : MonoBehaviour
         get { return level != null && level.player != null ? level.player.transform : null; }
     }
 
+    // The level area; outside it is the storm.
+    public Rect LevelBounds
+    {
+        get { return level != null ? level.bounds : new Rect(); }
+    }
+
     public float PlayerSpeed
     {
         get { return level != null && level.player != null ? level.player.Speed : 0f; }
@@ -113,13 +119,17 @@ public class DraftGame : MonoBehaviour
         }
 
         bool outside = false;
+        float depth = 0f;   // how deep the ship is in the storm beyond the level edge
         if (level.player != null)
         {
             Vector2 pos = level.player.transform.position;
-            outside = !level.bounds.Contains(pos);
+            Rect b = level.bounds;
+            Vector2 inside = new Vector2(Mathf.Clamp(pos.x, b.xMin, b.xMax), Mathf.Clamp(pos.y, b.yMin, b.yMax));
+            depth = Vector2.Distance(pos, inside);
+            outside = depth > 0f;
             if (level.ship != null) hud.SetCompass((Vector2)level.ship.position - pos);
         }
-        hud.SetSignalLost(outside && State == GameState.Playing);
+        hud.SetStorm(State == GameState.Playing ? Mathf.Clamp01(depth / T.StormDarkDepth) : 0f);
 
         UpdateCombo();
 
@@ -289,7 +299,8 @@ public class DraftGame : MonoBehaviour
         Oxygen = Mathf.Clamp(level.oxygen, 1f, T.OxygenMax);
         hud.ResetOxygen(Oxygen / T.OxygenMax);
         hud.HideMessage();
-        hud.SetSignalLost(false);
+        hud.SetStormColor(level.stormColor);
+        hud.SetStorm(0f);
         hud.ShowTitle(levelIndex + "/" + levels.Length + "  " + level.levelName);
         if (level.ship != null && level.player != null)
             hud.SetCompass(level.ship.position - level.player.transform.position);

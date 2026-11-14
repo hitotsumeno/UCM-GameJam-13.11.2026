@@ -78,8 +78,16 @@ public class Tuning : ScriptableObject
     [Tooltip("was 1.5: air now also comes from destroyed rocks")]
     public float OxygenDrainPerSecond = 2f;
     public float OxygenPerShot = 1f;
-    [Tooltip("oxygen drains this much faster outside the level")]
+    [Tooltip("oxygen drains this much faster outside the level (in the storm)")]
     public float OutOfBoundsDrainMultiplier = 4f;
+
+    [Header("Storm at the level edge")]
+    [Tooltip("how hard the storm pushes the ship back into the level, units per second squared (at full depth)")]
+    public float StormPush = 8f;
+    [Tooltip("the push grows until the ship is this deep in the storm, units")]
+    public float StormPushDepth = 6f;
+    [Tooltip("the screen edges are fully dark this deep in the storm, units")]
+    public float StormDarkDepth = 6f;
 
     [Header("Levels from text files (Assets/_Resources/Levels)")]
     [Tooltip("one map character is a square of this many units")]

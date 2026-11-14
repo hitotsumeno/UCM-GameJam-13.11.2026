@@ -19,8 +19,10 @@ public class Level : MonoBehaviour
     [Header("Look")]
     [Tooltip("Colour of the light on rocks, the player and the ship (set on the Global Light 2D)")]
     public Color lightColor = Color.white;
+    [Tooltip("Colour of the storm wall at the level edge (level file: # frame=)")]
+    public Color stormColor = new Color(1f, 0.3f, 0.25f);
 
-    [Header("Area (world units). Outside it the air runs out faster")]
+    [Header("Area (world units). Outside it is the storm: air runs out faster, the ship is pushed back")]
     public Rect bounds = new Rect(-16f, -40f, 32f, 80f);
 
     [Header("Objects")]

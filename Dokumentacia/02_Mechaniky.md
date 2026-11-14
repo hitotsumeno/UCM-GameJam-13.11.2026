@@ -162,12 +162,20 @@ jediným výstrelom, ťažkú mínu zostreliť skôr, ako sa hniezdo okolo nej z
 - Okraj poľa ukazuje bodkovaný kruh. Popri planéte sa dá zatočiť bez streľby.
 - Dotyk planéty = prehra „crashed“. Kamene a míny ťah planéty necítia.
 
-## Hranice úrovne
+## Hranice úrovne: búrka
 
-- Úroveň má obdĺžnikové hranice, ktoré ukazuje tenký rám (farbu určuje úroveň).
-- Von sa dá vyletieť, ale vzduch tam ubúda **4×** rýchlejšie, obrazovka sčervenie
-  a bliká nápis „turn back“.
-- Kamene sa na hranici otáčajú späť.
+- Za okrajom úrovne stojí na všetkých štyroch stranách stena búrky: hustá, pomaly
+  sa prelievajúca oblačnosť so svetlými záhybmi, v ktorej občas zablýska. Ostrá čiara
+  tam nie je, oblaky hustnú postupne už kúsok pred okrajom.
+- Farba búrky je predvolene červená; úroveň ju môže zmeniť riadkom `# frame=`.
+- Do búrky sa dá vletieť, ale:
+  - vzduch tam ubúda **4×** rýchlejšie;
+  - búrka loď tlačí späť do úrovne: pri okraji jemne, hlbšie silnejšie
+    (až 8 jednotiek za sekundu², plná sila 6 jednotiek za okrajom). Výstrelmi sa dá
+    ísť ďalej, ale loď sa nedá nechať odplávať preč;
+  - okraje obrazovky stmavnú vo farbe búrky (čím hlbšie, tým viac) a ukazovateľ
+    vzduchu praská rušením. Žiadny nápis nie je potrebný.
+- Kamene sa na okraji úrovne otáčajú späť.
 
 ## Pristátie (dokovanie) k cieľovej lodi
 

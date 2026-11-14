@@ -47,6 +47,8 @@ nemenila, iba z nej vychádzala.
 - **Rozhranie bez „strojového“ dojmu:** najprv kratšie a tichšie texty, potom úplne nové
   rozhranie: vlastné pixelové písmo a ikony, žiadne nápovedy, šípka k lodi pri okraji
   obrazovky, krúžok pri pristávaní, koniec úrovne s klávesom v rámčeku.
+- **Okraj úrovne:** tenký červený rám nahradila stena búrky, ktorá loď tlačí späť
+  (vybraná z troch testovacích renderov: búrka, majáky, prázdnota).
 - **Prechod na štruktúru programátora:** hra sa už nestavia kódom pri spustení,
   ale z prefabov a scény; čísla balansu sú v assete `Tuning`. Celá doterajšia práca sa
   preniesla do novej štruktúry a overila sa automatickým testom na všetkých troch úrovniach.

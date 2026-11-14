@@ -37,8 +37,8 @@ public class Hud : MonoBehaviour
 
     [Header("Whole screen")]
     [SerializeField] Image damageFlash;
-    [SerializeField] GameObject outOverlay;
-    [SerializeField] PixelLabel outLabel;
+    [Tooltip("Dark screen edges in the storm colour while the ship is in the storm beyond the level edge")]
+    [SerializeField] Image stormVignette;
 
     [Header("Arrow to the ship")]
     [SerializeField] RectTransform shipArrow;
@@ -65,6 +65,8 @@ public class Hud : MonoBehaviour
 
     RectTransform canvasRect;
     float airFraction = 1f;
+    float storm;            // 0 = in the level, 1 = deep in the storm
+    Color stormColor = new Color(1f, 0.3f, 0.25f);
     float trail = 1f;       // where the pale tail of lost air ends
     float trailHold;
     float gainFrom = -1f;   // newly gained air starts here (-1 = none)
@@ -79,11 +81,11 @@ public class Hud : MonoBehaviour
     void Awake()
     {
         canvasRect = (RectTransform)transform;
-        if (airIcon == null || leakMarks == null || leakMarks.Length == 0 || GetComponent<ThreatMarkers>() == null)
-            Debug.LogWarning("HUD is out of date (no O2 sign, leak marks or danger markers): run Filip > Rebuild Prefabs And Scene.", this);
-        outLabel.Set(Texts.OutOfBounds);
+        if (airIcon == null || leakMarks == null || leakMarks.Length == 0 || GetComponent<ThreatMarkers>() == null
+            || stormVignette == null)
+            Debug.LogWarning("HUD is out of date: run Filip > Rebuild Prefabs And Scene.", this);
         HideMessage();
-        SetSignalLost(false);
+        SetStorm(0f);
         SetBreaches(0);
         toast.Show(false);
         title.Show(false);
@@ -109,7 +111,7 @@ public class Hud : MonoBehaviour
             damageTimer = Mathf.Max(0f, damageTimer - Time.deltaTime * 2.5f);
             damageFlash.color = new Color(1f, 0.1f, 0.05f, 0.45f * damageTimer);
         }
-        if (outOverlay.activeSelf) outLabel.Alpha(Blink(6f) ? 1f : 0.35f);
+        PaintStorm();
 
         if (toastTimer > 0f)
         {
@@ -193,6 +195,7 @@ public class Hud : MonoBehaviour
             {
                 c = Color.Lerp(empty, full, 0.35f + 0.65f * share);
                 if (i + 1 > gainStart) c = Color.Lerp(c, Color.white, 0.75f * glow); // just gained
+                if (Crackle(i)) c.a *= 0.3f;                                      // storm interference
             }
             else if (tail - i > 0f) c = LostColor;              // just lost
             else c = empty;
@@ -290,11 +293,43 @@ public class Hud : MonoBehaviour
         titleTimer = 3f;
     }
 
-    // Red tint and a blinking line while the player is outside the level.
-    public void SetSignalLost(bool on)
+    // --- Storm beyond the level edge ---
+
+    // amount: 0 = inside the level, 1 = deep in the storm. The screen edges darken in the
+    // storm colour and the air bar crackles with interference; no words needed.
+    public void SetStorm(float amount)
     {
-        if (outOverlay.activeSelf != on) outOverlay.SetActive(on);
-        outLabel.Show(on);
+        storm = Mathf.Clamp01(amount);
+        PaintStorm();
+    }
+
+    public void SetStormColor(Color c)
+    {
+        stormColor = c;
+    }
+
+    void PaintStorm()
+    {
+        if (stormVignette == null) return;
+        bool on = storm > 0.001f;
+        if (stormVignette.gameObject.activeSelf != on) stormVignette.gameObject.SetActive(on);
+        if (!on) return;
+        float flicker = 0.92f + 0.08f * Mathf.Sin(Time.unscaledTime * 13f);
+        float a = Mathf.Lerp(0.35f, 0.92f, storm) * flicker;
+        stormVignette.color = new Color(stormColor.r * 0.22f, stormColor.g * 0.22f, stormColor.b * 0.22f, a);
+    }
+
+    // Interference on the air bar in the storm: lit cells flicker at random.
+    bool Crackle(int cell)
+    {
+        if (storm <= 0f) return false;
+        int step = (int)(Time.unscaledTime * 14f);
+        unchecked
+        {
+            uint h = (uint)(cell * 374761393 + step * 668265263);
+            h = (h ^ (h >> 13)) * 1274126177u; h ^= h >> 16;
+            return (h & 0xFFFF) / 65536f < 0.4f * storm;
+        }
     }
 
     // --- End of a level ---

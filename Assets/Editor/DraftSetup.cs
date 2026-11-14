@@ -785,10 +785,11 @@ public static class DraftSetup
         level.star3 = data.star3;
         level.star2 = data.star2;
         level.lightColor = data.light;
+        level.stormColor = data.frame;
         level.bounds = data.Bounds;
 
         PrefabUtility.InstantiatePrefab(background, root.transform);
-        BuildBorder(root.transform, level.bounds, data.frame);
+        BuildStorm(root.transform, level.bounds, data.frame);
 
         var rockParent = Group("Rocks", root.transform);
         var tankParent = Group("OxygenTanks", root.transform);
@@ -894,8 +895,93 @@ public static class DraftSetup
         return t;
     }
 
-    // Thin frame showing where the level ends (red unless the level file sets its own colour).
-    // If you change Level.bounds, move these too.
+    // The level edge: a wall of storm on all four sides, in the level's frame colour (red unless the
+    // level file sets # frame=). Two layers of storm clouds flow along each side (StormEdge),
+    // lightning flickers in the part on screen (StormBolts), and far out a plain dark storm colour.
+    // Without the storm pictures the old thin frame is drawn. If you change Level.bounds, rebuild.
+    static void BuildStorm(Transform parent, Rect bounds, Color color)
+    {
+        foreach (var f in new[] { "storm_body", "storm_glow", "storm_bolt1", "storm_bolt2", "storm_bolt3" })
+        {
+            string path = "Assets/_Resources/Art/" + f + ".png";
+            if (File.Exists(path)) AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate); // apply ArtImportSettings
+        }
+        var body = Art.LoadExact("storm_body");
+        var glow = Art.LoadExact("storm_glow");
+        if (body == null || glow == null)
+        {
+            BuildBorder(parent, bounds, color);
+            return;
+        }
+
+        var storm = Group("Storm", parent);
+        Vector2 c = bounds.center;
+        StormSide(storm, "Right", new Vector2(bounds.xMax, c.y), 0f, bounds.height, body, glow, color);
+        StormSide(storm, "Top", new Vector2(c.x, bounds.yMax), 90f, bounds.width, body, glow, color);
+        StormSide(storm, "Left", new Vector2(bounds.xMin, c.y), 180f, bounds.height, body, glow, color);
+        StormSide(storm, "Bottom", new Vector2(c.x, bounds.yMin), 270f, bounds.width, body, glow, color);
+
+        var shapes = new List<Sprite>();
+        for (int i = 1; i <= 3; i++) { var s = Art.LoadExact("storm_bolt" + i); if (s != null) shapes.Add(s); }
+        var pool = new SpriteRenderer[3];
+        for (int i = 0; i < pool.Length; i++)
+        {
+            var go = new GameObject("Bolt");
+            go.transform.SetParent(storm, false);
+            pool[i] = go.AddComponent<SpriteRenderer>();
+            pool[i].sortingOrder = -29;
+            pool[i].enabled = false;
+        }
+        storm.gameObject.AddComponent<StormBolts>().Setup(bounds, pool, shapes.ToArray(),
+            Color.Lerp(color, Color.white, 0.6f));
+    }
+
+    // One side of the storm: its +X points out of the level, the edge runs along its Y.
+    static void StormSide(Transform storm, string name, Vector2 position, float angle, float length,
+        Sprite body, Sprite glow, Color color)
+    {
+        const float tile = 32f, across = 24f, centre = 8f, glowScale = 1.3f;
+        var side = Group(name, storm);
+        side.position = position;
+        side.rotation = Quaternion.Euler(0f, 0f, angle);
+
+        // Far out: plain dark storm colour, so the ship never flies out of the storm into space.
+        var deep = SpriteFactory.MakeSprite("Deep", side, SpriteFactory.Square(),
+            new Color(color.r * 0.2f, color.g * 0.2f, color.b * 0.2f, 0.94f), new Vector2(200f, length + 400f), -32);
+        deep.transform.localPosition = new Vector3(19f + 100f, 0f, 0f);
+
+        var b = TiledSprite("Body", side, body, color, new Vector2(across, length + 2f * tile), -31, 1f);
+        b.transform.localPosition = new Vector3(centre, 0f, 0f);
+        var gl = TiledSprite("Glow", side, glow, new Color(Mathf.Lerp(color.r, 1f, 0.4f), Mathf.Lerp(color.g, 1f, 0.4f),
+            Mathf.Lerp(color.b, 1f, 0.4f), 0.85f), new Vector2(across, (length + 2f * tile * glowScale) / glowScale), -30, glowScale);
+        gl.transform.localPosition = new Vector3(centre * glowScale, 0f, 0f);
+
+        var edge = side.gameObject.AddComponent<StormEdge>();
+        var so = new SerializedObject(edge);
+        so.FindProperty("body").objectReferenceValue = b;
+        so.FindProperty("glow").objectReferenceValue = gl;
+        so.FindProperty("tile").floatValue = tile;
+        so.FindProperty("centre").floatValue = centre;
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    static SpriteRenderer TiledSprite(string name, Transform parent, Sprite sprite, Color color, Vector2 size,
+        int sortingOrder, float scale)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        go.transform.localScale = new Vector3(scale, scale, 1f);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.color = color;
+        sr.sortingOrder = sortingOrder;
+        sr.drawMode = SpriteDrawMode.Tiled;
+        sr.tileMode = SpriteTileMode.Continuous;
+        sr.size = size;
+        return sr;
+    }
+
+    // Thin frame showing where the level ends: only used when the storm pictures are missing.
     static void BuildBorder(Transform parent, Rect bounds, Color frame)
     {
         var border = Group("Border", parent);
@@ -1013,11 +1099,13 @@ public static class DraftSetup
         var crackIcon = SpriteFactory.PixelIcon("crack", PixelFont.Crack);
         var arrowIcon = SpriteFactory.PixelIcon("arrow", PixelFont.Arrow);
 
-        // Red tint over the whole screen while outside the level (created first = drawn behind the rest).
-        var overlay = MakeImage("OutOverlay", root, new Color(1f, 0f, 0f, 0.2f));
-        Stretch(overlay.rectTransform);
-        overlay.gameObject.SetActive(false);
-        Ref(so, "outOverlay", overlay.gameObject);
+        // Dark screen edges in the storm colour while the ship is in the storm beyond the level edge
+        // (created first = drawn behind the rest).
+        var vignette = MakeImage("StormVignette", root, new Color(0.2f, 0.05f, 0.05f, 0f));
+        vignette.sprite = SpriteFactory.Vignette();
+        Stretch(vignette.rectTransform);
+        vignette.gameObject.SetActive(false);
+        Ref(so, "stormVignette", vignette);
 
         // Red flash over the whole screen when the hull is breached.
         var flash = MakeImage("DamageFlash", root, new Color(1f, 0.1f, 0.05f, 0f));
@@ -1075,10 +1163,6 @@ public static class DraftSetup
         Ref(so, "shipDistance", distance);
 
         // Blinking line while outside the level.
-        var outLabel = MakeLabel("OutLabel", root, Texts.OutOfBounds, 6, BadColor, true);
-        Place((RectTransform)outLabel.transform, TopMiddle, new Vector2(0f, -110f));
-        outLabel.gameObject.SetActive(false);
-        Ref(so, "outLabel", outLabel);
 
         // Level name, shown for a few seconds at the start of a level.
         var title = MakeLabel("Title", root, "1/3  ROCKS", 6, Color.white, true);

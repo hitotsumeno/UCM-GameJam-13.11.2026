@@ -95,6 +95,8 @@
 | `Ship.cs` | cieľová loď: dotyk a krúžok pri pristávaní |
 | `CameraRig.cs` | sledovanie lode a trasenie kamery |
 | `Hud.cs` | rozhranie: vzduch, značky trhlín, séria, šípka, nápisy, koniec úrovne |
+| `StormEdge.cs` | jedna strana búrky na okraji úrovne: dve vrstvy oblakov tečú pozdĺž okraja |
+| `StormBolts.cs` | blesky v časti búrky, ktorá je na obrazovke |
 | `ThreatMarkers.cs` | značky nebezpečenstva pri okraji obrazovky (meteory, prenasledujúce míny) |
 | `PixelFont.cs` | pixelové písmo 5 × 7 a pixelové ikony |
 | `PixelLabel.cs` | jeden riadok textu pixelovým písmom (funguje aj v editore) |
@@ -153,6 +155,7 @@ Spúšťajú sa cez PowerShell alebo bash, Unity ich nevidí.
 | `BackdropGen.cs`, `backdrop.ps1` | slnko, planéta s prstencom, čierna diera |
 | `StationBake.cs`, `station.ps1` | 3D trosky stanice vyrenderované do obrázka |
 | `RockBake.cs`, `rocks.ps1`, `FbxDump.cs`, `bake.ps1` | čítanie súborov FBX a staršie pečenie kameňov a hviezd mimo Unity (dnes to robí `ArtBake.cs` v Unity) |
+| `StormGen.cs`, `storm.ps1` | obrázky búrky na okraji úrovne a blesky |
 | `ShipGen.cs`, `ship.ps1` | starší pokus o raketu hráča (nepoužíva sa) |
 | `mklevels.sh` | rozmiestnenie úrovní do textových súborov |
 

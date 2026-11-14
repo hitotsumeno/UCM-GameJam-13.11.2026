@@ -6,7 +6,6 @@ public static class Texts
 {
     // Interface
     public const string Combo = "x";                 // followed by the number
-    public const string OutOfBounds = "turn back";
 
     // Short notices
     public const string TooFast = "too fast";

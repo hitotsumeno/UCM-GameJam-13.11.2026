@@ -27,6 +27,7 @@ Najčastejšie úpravy:
 | menej agresívni lovci | `MineSpeed` (5,5), `MineAccel` (12), `MineWakeRadius` (16) |
 | slabšie čierne diery | `HoleBigStrength` (520), `HoleSmallStrength` (200) |
 | ľahšie pristátie | `DockMaxSpeed` (5) |
+| slabší / silnejší tlak búrky na okraji | `StormPush` (8), `StormPushDepth` (6) |
 | menej trestajúce nárazy | `BreachImpactSpeed` (7), `BreachDrainPerSecond` (1) |
 
 Niektoré čísla sa použijú iba pri výrobe prefabov (veľkosti objektov, počty hviezd, žiara).

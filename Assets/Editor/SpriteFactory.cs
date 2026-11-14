@@ -56,6 +56,18 @@ public static class SpriteFactory
         });
     }
 
+    // Dark screen edges: clear in the middle, opaque toward the corners (stretched over the screen).
+    public static Sprite Vignette()
+    {
+        return Build("vignette", 128, (x, y, size) =>
+        {
+            float r = size * 0.5f;
+            float d = Mathf.Sqrt((x - r) * (x - r) + (y - r) * (y - r)) / r;
+            float t = Mathf.Clamp01((d - 0.5f) / 0.85f);
+            return t * t * (3f - 2f * t);
+        });
+    }
+
     // Solid square.
     public static Sprite Square()
     {

@@ -65,6 +65,22 @@ public class ArtImportSettings : AssetPostprocessor
         if (name.StartsWith("nebula"))
             importer.wrapMode = TextureWrapMode.Repeat; // edges blend into the next copy
 
+        if (name.StartsWith("storm"))
+        {
+            // The storm wall is drawn tiled along the level edges: whole rectangles, clean edges.
+            // Body and glow are 24 units wide (24 px per unit); bolts use the usual 100.
+            if (name == "storm_body" || name == "storm_glow")
+            {
+                importer.spritePixelsPerUnit = 24f;
+                importer.wrapMode = TextureWrapMode.Repeat;
+            }
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteMeshType = SpriteMeshType.FullRect;
+            importer.SetTextureSettings(settings);
+        }
+
         if (name.StartsWith("asteroid"))
             importer.textureCompression = TextureImporterCompression.CompressedHQ; // keep the rock relief clean
 

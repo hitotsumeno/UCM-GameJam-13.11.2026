@@ -18,7 +18,7 @@ Ikony (nápis O₂, trhlina, šípka) sú nakreslené rovnakým spôsobom.
 | Okraj obrazovky | zelená šípka smerom k cieľovej lodi a vzdialenosť k nej; zmizne, keď je loď v zábere |
 | Hore v strede | na začiatku úrovne „1/3 ROCKS“ (tri sekundy, potom pomaly zmizne) |
 | Stred | krátke hlásenie „TOO FAST“ pri príliš rýchlom pristátí |
-| Celá obrazovka | červený nádych a blikajúce „TURN BACK“ mimo hraníc úrovne; červený záblesk pri trhline |
+| Celá obrazovka | okraje obrazovky stmavnú vo farbe búrky, keď je loď za okrajom úrovne; červený záblesk pri trhline |
 
 **Koniec úrovne.** Obrazovka stmavne a v strede sa ukáže:
 
@@ -39,7 +39,7 @@ Názvy úrovní sú v súboroch úrovní (riadok `# name=`).
   **dnu, na hráča** (zelená šípka k cieľovej lodi mieri von, preto sa nepletú). Čím je hrozba
   bližšie, tým je značka väčšia, jasnejšia a rýchlejšie bliká.
 - Pole čiernej diery je vidieť ako mäkkú teplú žiaru.
-- Hranicu úrovne ukazuje tenký rám.
+- Hranicu úrovne ukazuje stena búrky (pozri nižšie).
 
 ## Vizuálny štýl
 
@@ -48,7 +48,7 @@ Názvy úrovní sú v súboroch úrovní (riadok `# name=`).
 - **Kamene** sú veľké, teplé a svetlé, s hlineným povrchom. Dobre sa odlišujú od chladného pozadia.
 - **Pozadie** je stlmené a nebliká, aby nesúperilo s kameňmi.
 - **Každá úroveň má vlastnú farebnú tému:** farba svetla (globálne 2D svetlo farbí kamene,
-  loď aj cieľ), sada oblakov, farba a hustota hviezd, farba rámu a veľký objekt v diaľke.
+  loď aj cieľ), sada oblakov, farba a hustota hviezd, farba búrky na okraji a veľký objekt v diaľke.
 
 ## Pozadie a paralaxa
 
@@ -76,6 +76,15 @@ na obrazovke posúva:
 **Veľké objekty v diaľke:** `sun` (vzdialené slnko), `wreck` (trosky kruhovej stanice,
 tmavé a mierne rozmazané, aby pôsobili ďaleko v tieni, nie ako niečo, k čomu sa dá letieť),
 `planet` (planéta s prstencom).
+
+## Búrka na okraji úrovne
+
+Namiesto tenkého rámu je okraj úrovne stena búrky. Na každej strane ležia dve vrstvy
+obrázka búrky: tmavé husté telo a svetlé záhyby. Tečú pozdĺž okraja proti sebe, takže
+oblaky sa zdanlivo prevaľujú. V časti búrky, ktorá je na obrazovke, občas zablýska.
+Ďaleko za okrajom je už len jednoliata tmavá farba búrky. Obrázky (`storm_body`,
+`storm_glow`, `storm_bolt1` – `3`) vygeneroval nástroj `Assets/Editor/Tools~/storm.ps1`
+(rovnaký šum s krútením ako pri oblakoch, opakuje sa pozdĺž okraja bez švu).
 
 ## Grafika a jej príprava
 

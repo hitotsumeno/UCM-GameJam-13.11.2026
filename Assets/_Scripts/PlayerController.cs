@@ -120,6 +120,22 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
+        // The storm beyond the level edge pushes the ship back in: gently at the edge,
+        // harder deeper in. The ship can still shoot its way in, but it cannot drift away.
+        var game = DraftGame.Instance;
+        if (game != null && game.State == GameState.Playing)
+        {
+            Rect b = game.LevelBounds;
+            Vector2 p = rb.position;
+            Vector2 back = new Vector2(Mathf.Clamp(p.x, b.xMin, b.xMax), Mathf.Clamp(p.y, b.yMin, b.yMax)) - p;
+            float depth = back.magnitude;
+            if (depth > 0.001f && b.width > 0f)
+            {
+                float k = 0.35f + 0.65f * Mathf.Clamp01(depth / T.StormPushDepth);
+                rb.AddForce(back / depth * T.StormPush * k * rb.mass);
+            }
+        }
+
         Vector2 v = rb.linearVelocity;
         if (v.sqrMagnitude > T.PlayerMaxSpeed * T.PlayerMaxSpeed)
             rb.linearVelocity = v.normalized * T.PlayerMaxSpeed;

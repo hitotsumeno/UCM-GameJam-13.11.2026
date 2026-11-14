@@ -87,7 +87,7 @@ Tieto riadky nie sú povinné; bez nich bude vzhľad obvyklý.
 | `# light=1.0,0.85,0.8` | farba svetla na kameňoch, lodi a cieli (červená, zelená, modrá od 0 do 1) |
 | `# starcolor=0.8,0.9,1.0` | farba hviezd |
 | `# stardensity=0.6` | počet hviezd: 1 obvykle, 0.5 polovica, 2 dvojnásobok |
-| `# frame=1.0,0.3,0.25` | farba rámu (hranice) úrovne |
+| `# frame=1.0,0.3,0.25` | farba búrky na okraji úrovne (predvolená červená) |
 | `# tint=0.9,0.8,1.0` | ďalší odtieň oblakov |
 | `# clouds=0.6` | jas oblakov: 1 obvykle, 0.6 tlmenejšie, 1.3 jasnejšie |
 

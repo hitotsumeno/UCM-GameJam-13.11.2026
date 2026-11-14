@@ -65,6 +65,6 @@ Prehra nie je trest na dlho: klávesom R sa úroveň okamžite začne odznova.
 ## Jazyk a texty
 
 Všetky texty v hre sú po anglicky, krátke a ukazujú sa veľkými písmenami:
-„docked“, „out of air“, „too fast“, „turn back“, názvy úrovní „rocks“, „mines“, „holes“.
+„docked“, „out of air“, „too fast“, názvy úrovní „rocks“, „mines“, „holes“.
 Píšu sa vlastným pixelovým písmom. Zámerne nie sú v hre žiadne vety ani nápovedy:
 rozhranie ukazuje ikony a čísla.
