@@ -1,6 +1,7 @@
 using UnityEngine;
 
-// Pick it up to restore oxygen. Set up in Assets/Prefabs/OxygenTank.prefab.
+// Pick it up to restore oxygen and seal one hull breach.
+// Set up in Assets/Prefabs/OxygenTank.prefab.
 public class OxygenTank : MonoBehaviour
 {
     [Tooltip("Balance numbers: Assets/_Settings/Tuning.asset")]
@@ -13,6 +14,7 @@ public class OxygenTank : MonoBehaviour
         var game = DraftGame.Instance;
         if (game == null || game.State != GameState.Playing) return;
         game.AddOxygen(T.OxygenTankAmount);
+        game.RepairBreach(); // a tank also seals one leak
         Destroy(gameObject);
     }
 }

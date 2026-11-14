@@ -1,9 +1,9 @@
 using UnityEngine;
 
-// A small piece of frozen oxygen left by a destroyed rock. It drifts, fades out after
-// a few seconds and gives oxygen when the player reaches it. The shot pushed the player
-// away from the rock, so collecting the crystals means flying back into the debris.
-// Set up in Assets/Prefabs/OxygenCrystal.prefab.
+// A small piece of frozen oxygen left by a destroyed rock or mine. It drifts, fades out
+// after a few seconds and gives oxygen when the player reaches it. The shot pushed the
+// player away, so collecting the crystals means flying back into the debris.
+// Black holes drag crystals in. Set up in Assets/Prefabs/OxygenCrystal.prefab.
 public class OxygenCrystal : MonoBehaviour
 {
     [Tooltip("Balance numbers: Assets/_Settings/Tuning.asset")]
@@ -66,6 +66,18 @@ public class OxygenCrystal : MonoBehaviour
             // Close crystals are pulled toward the player.
             if (dist < T.CrystalMagnetRadius)
                 velocity += toPlayer / dist * T.CrystalMagnetAccel * Time.deltaTime;
+        }
+
+        // Black holes drag crystals in: grab them fast or lose them.
+        for (int i = 0; i < BlackHole.All.Count; i++)
+        {
+            var hole = BlackHole.All[i];
+            if (hole.Swallows(pos, 0f))
+            {
+                Destroy(gameObject);
+                return;
+            }
+            velocity += hole.PullAt(pos) * T.HoleCrystalPull * Time.deltaTime;
         }
         transform.position = pos + velocity * Time.deltaTime;
 

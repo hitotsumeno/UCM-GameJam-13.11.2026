@@ -3,15 +3,34 @@ Art for the draft game. Put PNG files here.
 The game finds pictures by file name. If a file is missing, a placeholder is drawn.
 Size in the game is set by code (the larger side of the picture), not by the picture:
 
-  astronaut.png      1 unit    drawn facing RIGHT
-  ship.png           6 units   drawn nose to the RIGHT
+  player_ship.png    2.2 units the PLAYER's small ship (side of the picture), nose UP, main turbine at the
+                               bottom. The game turns it so the turbine faces the cursor; shots come out
+                               of the turbine. The collider follows the picture's outline.
+  ship.png           10 units  the GOAL to dock to (side of the picture), nose UP as drawn.
+                               The docking area follows the picture's outline.
+  stone1.png ...     the artist's rock renders, used for every rock size (small 2, medium 4, large 6
+  stone5.png         units) and for meteors. Each rock may be drawn at any size in its picture: the
+                     rebuild measures it (alpha) and scales it to its class. Add stone6.png ... to
+                     get more variety. Without stone pictures the older asteroid_* ones are used:
   asteroid_s1.png    2 units   variants: asteroid_s2.png, asteroid_s3.png ...
   asteroid_m1.png    4 units   variants: asteroid_m2.png, asteroid_m3.png ...
   asteroid_l1.png    6 units   variants: asteroid_l2.png, asteroid_l3.png ...
+  fire.png           meteor tail: flame base at the bottom, tongues up; the picture side is 3.6 rock
+                     diameters. Slice it in the Sprite Editor (Sprite Mode: Multiple) to make it a
+                     sprite sheet: after Filip > Rebuild Prefabs And Scene the frames play in a loop
+                     (12 per second, Tuning.MeteorFireFps).
   oxygen.png         0.8 unit
-  planet1.png        8 units
+  mine.png           1.1 unit  mine, round; a red or yellow lamp is drawn over its middle by the game
+  blackhole.png      square    black hole; the dark disc must be 32% of the picture across, centred
+  planet1.png        12 units  the ball must take the middle 88% of the picture (the rest is glow)
   background.png     square 4096x4096 px, shown as 48x48 units
-  star1.png          small, about 0.1-0.5 unit; variants: star2.png, star3.png, star4.png ...
+  star_render1.png   the artist's star renders (golden), used for all glowing stars when present.
+   ... star_render5  Each shape may be drawn at any size in its picture: the rebuild measures it and
+                     scales it to the star's size; a soft halo in the star palette sits behind.
+                     Named star_render so that Filip > Bake Rocks And Stars From FBX (which writes
+                     star1.png ...) never overwrites them. Add star_render6.png ... for more shapes.
+  star1.png          older stars, used only without star_render pictures: small, about 0.1-0.5 unit;
+                     variants: star2.png, star3.png, star4.png ...
                      (each star on screen picks a random variant)
 
 1 unit = 100 pixels. Transparent background (PNG with alpha), except background.png.
@@ -27,7 +46,12 @@ Already here (made for the draft, replace freely):
   asteroid_s1..4 .png               different sides (5 models -> 12 different-looking asteroids).
                                     The rock fills the picture so that a circle of 0.45 x picture size
                                     has the same area as the rock: that circle is used for collisions.
+  nebula_calm_*, nebula_alert_*,    cloud sets for level themes (level file: # nebula=calm). Blue and sparse,
+  nebula_planet_* (_far, _near)     crimson and dense, gold and green. nebula_far / nebula_near is the default set.
+  backdrop_sun, backdrop_wreck,     big far objects for a level (level file: # backdrop=sun): a distant sun,
+  backdrop_planet .png              the wreck of a station, a ringed planet. Generated: Assets/Editor/Tools~/backdrop.ps1.
 
 The 3D sources are in Assets/Art/Source (stone.fbx, stars.fbx; not part of the build).
 To re-make the asteroid and star pictures from them: menu Filip > Bake Rocks And Stars From FBX.
 Which model and view angle becomes which picture: the list at the top of Assets/Editor/ArtBake.cs.
+After adding or replacing a picture run Filip > Rebuild Prefabs And Scene: prefabs pick pictures up only then.

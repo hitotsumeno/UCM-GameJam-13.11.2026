@@ -1,6 +1,7 @@
 using UnityEngine;
 
-// The astronaut: cannot move on its own, only recoil from the gun pushes it.
+// The player: cannot move on its own, only recoil from the gun pushes it.
+// A hard hit breaches the hull: a Leak appears on the side the hit came from.
 // Set up in Assets/Prefabs/Player.prefab.
 public class PlayerController : MonoBehaviour
 {
@@ -15,8 +16,11 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Where bullets appear, a child of Visual")]
     [SerializeField] Transform muzzle;
     [SerializeField] Bullet bulletPrefab;
+    [Tooltip("Crack with a jet of air, added to Visual for every hull breach")]
+    [SerializeField] Leak leakPrefab;
 
     float nextFireTime;
+    float aimAngle;
 
     void Reset()
     {
@@ -34,8 +38,9 @@ public class PlayerController : MonoBehaviour
         if (aim.sqrMagnitude < 0.0001f) aim = Vector2.right;
         aim.Normalize();
 
-        float angle = Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg;
-        visual.rotation = Quaternion.Euler(0f, 0f, angle);
+        // The whole ship (with its collider) turns in FixedUpdate so that +X, the main turbine,
+        // faces the cursor.
+        aimAngle = Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg;
 
         var game = DraftGame.Instance;
         bool playing = game != null && game.State == GameState.Playing;
@@ -51,7 +56,15 @@ public class PlayerController : MonoBehaviour
         get { return rb.linearVelocity.magnitude; }
     }
 
-    // Called on docking: the astronaut stops drifting.
+    // Puts the player at a point, already flying (thrown out of a wormhole).
+    public void Launch(Vector2 position, Vector2 velocity)
+    {
+        transform.position = position;
+        rb.position = position;
+        rb.linearVelocity = velocity;
+    }
+
+    // Called on docking: the player stops drifting.
     public void Stop()
     {
         rb.linearVelocity = Vector2.zero;
@@ -76,23 +89,59 @@ public class PlayerController : MonoBehaviour
         CameraRig.Shake();
     }
 
-    // Hitting an asteroid too fast costs oxygen.
+    // Hitting a rock or a meteor too hard breaches the hull.
     void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.collider.GetComponent<Asteroid>() == null) return;
-        float speed = collision.relativeVelocity.magnitude;
-        if (speed <= T.ImpactSafeSpeed) return;
-        float loss = Mathf.Min((speed - T.ImpactSafeSpeed) * T.ImpactOxygenPerSpeed, T.ImpactMaxOxygen);
-        if (DraftGame.Instance != null)
-        {
-            DraftGame.Instance.SpendOxygen(loss);
-            DraftGame.Instance.BreakCombo(); // a hard hit ends the combo
-        }
-        CameraRig.Shake();
+        if (collision.relativeVelocity.magnitude <= T.BreachImpactSpeed) return;
+        if (DraftGame.Instance == null) return;
+        Vector2 from = collision.contactCount > 0 ? collision.GetContact(0).point : (Vector2)collision.transform.position;
+        DraftGame.Instance.BreachHull(from);
+    }
+
+    // Opens a breach on the side the hit came from. Called by DraftGame.
+    public void AddBreach(Vector2 from)
+    {
+        if (leakPrefab == null) return;
+        Vector2 dir = from - (Vector2)transform.position;
+        if (dir.sqrMagnitude < 0.0001f) dir = Random.insideUnitCircle;
+        if (dir.sqrMagnitude < 0.0001f) dir = Vector2.up;
+        dir.Normalize();
+
+        // In the ship's own frame, so the crack and the jet turn with the ship.
+        Vector2 local = visual.InverseTransformDirection(dir);
+        Leak.Spawn(leakPrefab, visual, local * (T.PlayerDiameter * 0.42f), local, rb, transform.parent);
+    }
+
+    // Removes the newest breach (sealed with an oxygen tank). Called by DraftGame.
+    public void RemoveBreach()
+    {
+        var leaks = visual.GetComponentsInChildren<Leak>();
+        if (leaks.Length > 0) Destroy(leaks[leaks.Length - 1].gameObject);
     }
 
     void FixedUpdate()
     {
+        // Turn toward the cursor; hits do not make the ship spin.
+        rb.angularVelocity = 0f;
+        rb.MoveRotation(aimAngle);
+
+        // The storm beyond the level edge pushes the ship back in: gently at the edge,
+        // harder deeper in. The ship can still shoot its way in, but it cannot drift away.
+        var game = DraftGame.Instance;
+        if (game != null && game.State == GameState.Playing)
+        {
+            Rect b = game.LevelBounds;
+            Vector2 p = rb.position;
+            Vector2 back = new Vector2(Mathf.Clamp(p.x, b.xMin, b.xMax), Mathf.Clamp(p.y, b.yMin, b.yMax)) - p;
+            float depth = back.magnitude;
+            if (depth > 0.001f && b.width > 0f)
+            {
+                float k = 0.35f + 0.65f * Mathf.Clamp01(depth / T.StormPushDepth);
+                rb.AddForce(back / depth * T.StormPush * k * rb.mass);
+            }
+        }
+
         Vector2 v = rb.linearVelocity;
         if (v.sqrMagnitude > T.PlayerMaxSpeed * T.PlayerMaxSpeed)
             rb.linearVelocity = v.normalized * T.PlayerMaxSpeed;

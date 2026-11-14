@@ -41,6 +41,8 @@ public class Bullet : MonoBehaviour
     {
         var asteroid = collision.collider.GetComponent<Asteroid>();
         if (asteroid != null) asteroid.Hit();
+        var mine = collision.collider.GetComponent<Mine>();
+        if (mine != null) mine.Shot();
         Destroy(gameObject);
     }
 }

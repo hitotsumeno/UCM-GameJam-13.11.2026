@@ -1,10 +1,11 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 public enum GameState { Playing, Won, Lost }
 
-// Runs the game. Lives on the "DraftGame" object in DraftScene; the camera, the HUD
-// and the level prefabs are assigned in the Inspector. Nothing is built from code:
-// a level is an ordinary prefab, instantiated on start and destroyed on restart.
+// Runs the game. Lives on the "DraftGame" object in DraftScene; the camera, the HUD,
+// the light and the level prefabs are assigned in the Inspector. Nothing is built from
+// code: a level is an ordinary prefab, instantiated on start and destroyed on restart.
 public class DraftGame : MonoBehaviour
 {
     [Tooltip("Balance numbers: Assets/_Settings/Tuning.asset")]
@@ -15,21 +16,37 @@ public class DraftGame : MonoBehaviour
 
     [SerializeField] Hud hud;
     [SerializeField] CameraRig cameraRig;
+    [Tooltip("Global Light 2D of the scene; every level gives it its own colour (Level.lightColor)")]
+    [SerializeField] Light2D globalLight;
     [Tooltip("Level prefabs in play order")]
     [SerializeField] Level[] levels;
     [Tooltip("Level started when pressing Play (1 = first)")]
     [SerializeField] int startLevel = 1;
     [Tooltip("Prefab used by Bullet.Spawn when the caller has none")]
     [SerializeField] Bullet bulletPrefab;
+    [Tooltip("Flash shown where the player falls into a black hole and where they come out")]
+    [SerializeField] Blast blastPrefab;
 
     public GameState State { get; private set; }
     public float Oxygen { get; private set; }
     public int Combo { get; private set; }
+    public int Breaches { get; private set; }   // holes in the hull; each one drains oxygen
     public Bullet BulletPrefab { get { return bulletPrefab; } }
 
     public Transform PlayerTransform
     {
         get { return level != null && level.player != null ? level.player.transform : null; }
+    }
+
+    // The level area; outside it is the storm.
+    public Rect LevelBounds
+    {
+        get { return level != null ? level.bounds : new Rect(); }
+    }
+
+    public float PlayerSpeed
+    {
+        get { return level != null && level.player != null ? level.player.Speed : 0f; }
     }
 
     Level level;           // current level instance; null when cleared
@@ -43,6 +60,10 @@ public class DraftGame : MonoBehaviour
         Instance = null;
         Tuning.ResetStatics();
         CameraRig.ResetStatics();
+        BlackHole.ResetStatics();
+        Meteor.ResetStatics();
+        Mine.ResetStatics();
+        PixelFont.ResetStatics();
     }
 
     void Awake()
@@ -77,6 +98,9 @@ public class DraftGame : MonoBehaviour
 
     void Update()
     {
+        // Esc closes the game (only matters in the built game, not in the editor).
+        if (Input.GetKeyDown(KeyCode.Escape)) Application.Quit();
+
         if (level == null) return;
 
         // R restarts the current level at any moment.
@@ -95,36 +119,71 @@ public class DraftGame : MonoBehaviour
         }
 
         bool outside = false;
-        string hint = null;
+        float depth = 0f;   // how deep the ship is in the storm beyond the level edge
         if (level.player != null)
         {
             Vector2 pos = level.player.transform.position;
-            outside = !level.bounds.Contains(pos);
+            Rect b = level.bounds;
+            Vector2 inside = new Vector2(Mathf.Clamp(pos.x, b.xMin, b.xMax), Mathf.Clamp(pos.y, b.yMin, b.yMax));
+            depth = Vector2.Distance(pos, inside);
+            outside = depth > 0f;
             if (level.ship != null) hud.SetCompass((Vector2)level.ship.position - pos);
-
-            float speed = level.player.Speed;
-            hud.SetSpeed(speed, speed <= T.DockMaxSpeed);
-
-            // The nearest hint place within reach decides which hint is shown.
-            float best = T.HintRadius;
-            foreach (var h in level.Hints)
-            {
-                if (h == null) continue;
-                float d = Vector2.Distance(pos, h.transform.position);
-                if (d < best) { best = d; hint = h.text; }
-            }
         }
-        hud.SetSignalLost(outside && State == GameState.Playing);
-        hud.SetHint(State == GameState.Playing ? hint : null);
+        hud.SetStorm(State == GameState.Playing ? Mathf.Clamp01(depth / T.StormDarkDepth) : 0f);
 
         UpdateCombo();
 
         if (State == GameState.Playing)
         {
-            float drain = T.OxygenDrainPerSecond * Time.deltaTime;
-            if (outside) drain *= T.OutOfBoundsDrainMultiplier;
-            SpendOxygen(drain);
+            float perSecond = T.OxygenDrainPerSecond;
+            if (outside) perSecond *= T.OutOfBoundsDrainMultiplier;
+            perSecond += Breaches * T.BreachDrainPerSecond; // every breach leaks air
+            SpendOxygen(perSecond * Time.deltaTime);
         }
+    }
+
+    // --- Hull breaches: there are no lives, every hard hit opens a leak ---
+
+    // from: where the hit came from (the crack appears on that side of the ship).
+    public void BreachHull(Vector2 from)
+    {
+        if (State != GameState.Playing) return;
+        if (Breaches < T.BreachMax)
+        {
+            Breaches++;
+            if (level != null && level.player != null) level.player.AddBreach(from);
+        }
+        BreakCombo();
+        hud.SetBreaches(Breaches);
+        hud.FlashDamage();
+        hud.Toast(Texts.Breach);
+        CameraRig.ShakeHard();
+    }
+
+    // The player fell into a black hole and came out of another one.
+    // from: the hole they fell into, to: where they are now.
+    public void ThrownThroughWormhole(Vector2 from, Vector2 to)
+    {
+        if (State != GameState.Playing) return;
+        BreachHull(from);                         // the hull does not like it
+        SpendOxygen(T.WormholeOxygenCost);
+        hud.Toast(Texts.Wormhole);
+        if (level != null)
+        {
+            Blast.Spawn(blastPrefab, from, 5f, level.transform); // flash where they vanished and where they came out
+            Blast.Spawn(blastPrefab, to, 5f, level.transform);
+        }
+        if (cameraRig != null) cameraRig.SnapToTarget();
+    }
+
+    // Seals one breach. Called when an oxygen tank is picked up.
+    public void RepairBreach()
+    {
+        if (State != GameState.Playing || Breaches <= 0) return;
+        Breaches--;
+        if (level != null && level.player != null) level.player.RemoveBreach();
+        hud.SetBreaches(Breaches);
+        hud.Toast(Texts.Sealed);
     }
 
     // --- Oxygen ---
@@ -134,7 +193,7 @@ public class DraftGame : MonoBehaviour
         if (State != GameState.Playing) return;
         Oxygen = Mathf.Max(0f, Oxygen - amount);
         hud.SetOxygen(Oxygen / T.OxygenMax);
-        if (Oxygen <= 0f) Lose();
+        if (Oxygen <= 0f) Lose(Texts.OutOfAir);
     }
 
     public void AddOxygen(float amount)
@@ -190,7 +249,7 @@ public class DraftGame : MonoBehaviour
         }
         player.BounceFrom(shipPosition);
         SpendOxygen(T.DockPenalty);
-        hud.Toast("TOO FAST");
+        hud.Toast(Texts.TooFast);
         CameraRig.Shake();
     }
 
@@ -199,18 +258,16 @@ public class DraftGame : MonoBehaviour
         if (State != GameState.Playing) return;
         State = GameState.Won;
         if (level != null && level.player != null) level.player.Stop();
-
-        bool last = levelIndex >= levels.Length;
-        string sub = "OXYGEN LEFT " + Mathf.RoundToInt(Oxygen) + "     "
-            + (last ? "ALL LEVELS COMPLETE. PRESS ENTER TO PLAY AGAIN" : "PRESS ENTER FOR THE NEXT LEVEL");
-        hud.ShowMessage("DOCKED", new Color(0.4f, 1f, 0.5f), sub);
+        hud.ShowMessage(Texts.Docked, new Color(0.45f, 1f, 0.55f), levelIndex + "/" + levels.Length,
+            Mathf.RoundToInt(Oxygen), Texts.KeyNext);
     }
 
-    public void Lose()
+    // title: what killed the player, shown in big letters.
+    public void Lose(string title)
     {
         if (State != GameState.Playing) return;
         State = GameState.Lost;
-        hud.ShowMessage("OUT OF OXYGEN", new Color(1f, 0.35f, 0.3f), "PRESS R TO RESTART");
+        hud.ShowMessage(title, new Color(1f, 0.35f, 0.3f), null, -1, Texts.KeyRetry);
     }
 
     // --- Level ---
@@ -234,14 +291,17 @@ public class DraftGame : MonoBehaviour
         level = Instantiate(prefab);
         level.name = prefab.name;
         Asteroid.Bounds = level.bounds;
+        if (globalLight != null) globalLight.color = level.lightColor;
 
         State = GameState.Playing;
+        Breaches = 0;
+        hud.SetBreaches(0);
         Oxygen = Mathf.Clamp(level.oxygen, 1f, T.OxygenMax);
-        hud.SetOxygen(Oxygen / T.OxygenMax);
+        hud.ResetOxygen(Oxygen / T.OxygenMax);
         hud.HideMessage();
-        hud.SetSignalLost(false);
-        hud.SetHint(null);
-        hud.ShowTitle("LEVEL " + levelIndex + ": " + level.levelName);
+        hud.SetStormColor(level.stormColor);
+        hud.SetStorm(0f);
+        hud.ShowTitle(levelIndex + "/" + levels.Length + "  " + level.levelName);
         if (level.ship != null && level.player != null)
             hud.SetCompass(level.ship.position - level.player.transform.position);
         BreakCombo();

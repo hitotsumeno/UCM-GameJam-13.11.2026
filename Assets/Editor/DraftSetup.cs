@@ -7,9 +7,11 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 
 // Makes the game's assets ONCE in the editor, so nothing is built at runtime:
-//   Assets/Prefabs/*.prefab           player, bullet, rocks, meteors, ship, tank, crystal, background
+//   Assets/Prefabs/*.prefab              player, bullet, rocks, meteors, ship, tank, crystal,
+//                                        mines, mine ring, black holes, planet, leak, air puff, blast,
+//                                        one background per level (Background_LevelN)
 //   Assets/Prefabs/Levels/LevelN.prefab  one per Assets/_Resources/Levels/levelN.txt
-//   Assets/_Scenes/DraftScene.unity    camera, light, HUD and the DraftGame object
+//   Assets/_Scenes/DraftScene.unity      camera, light, HUD and the DraftGame object
 // After that, edit the prefabs and the scene by hand like any Unity project.
 // Running it again OVERWRITES those prefabs and the HUD/DraftGame objects in the scene.
 public static class DraftSetup
@@ -39,6 +41,8 @@ public static class DraftSetup
     {
         var oldRandom = Random.state;
         Random.InitState(1311); // same layout every time
+        alphaFits.Clear();
+        reimported.Clear();
         try
         {
             tune = TuningConnector.GetOrCreate();
@@ -47,13 +51,20 @@ public static class DraftSetup
             EnsureFolder(LevelFolder);
             EnsureFolder(PhysicsFolder);
 
-            var bouncy = PhysicsMaterial("Bouncy");
+            var bouncy = PhysicsMaterial("Bouncy", tune.Bounciness);
+            var mineMaterial = PhysicsMaterial("Mine", 0.3f);
 
             var bullet = SavePrefab(BuildBullet(), "Bullet").GetComponent<Bullet>();
             var crystal = SavePrefab(BuildCrystal(), "OxygenCrystal").GetComponent<OxygenCrystal>();
             var tank = SavePrefab(BuildTank(), "OxygenTank");
             var ship = SavePrefab(BuildShip(), "Ship");
-            var player = SavePrefab(BuildPlayer(bullet, bouncy), "Player");
+
+            // Effects.
+            var puff = SavePrefab(BuildAirPuff(), "AirPuff").GetComponent<LeakPuff>();
+            var leak = SavePrefab(BuildLeak(puff), "Leak").GetComponent<Leak>();
+            var blast = SavePrefab(BuildBlast(), "Blast").GetComponent<Blast>();
+
+            var player = SavePrefab(BuildPlayer(bullet, leak, bouncy), "Player");
 
             var rocks = new Dictionary<AsteroidSize, Asteroid>();
             rocks[AsteroidSize.Small] = SavePrefab(BuildAsteroid(AsteroidSize.Small, null, crystal, bouncy, true),
@@ -68,14 +79,30 @@ public static class DraftSetup
             var meteorMedium = SavePrefab(BuildMeteor(AsteroidSize.Medium, crystal, bouncy), "Meteor_Medium")
                 .GetComponent<Asteroid>();
 
-            var background = SavePrefab(BuildBackground(), "Background");
+            // Mines, black holes, planet.
+            var things = new Things { player = player, ship = ship, tank = tank, rocks = rocks };
+            foreach (MineMode mode in System.Enum.GetValues(typeof(MineMode)))
+                things.mines[mode] = SavePrefab(BuildMine(mode, crystal, blast, mineMaterial), "Mine_" + mode);
+            things.mineRing = SavePrefab(BuildMineRing(things.mines[MineMode.Orbit]), "MineRing");
+            things.holeBig = SavePrefab(BuildBlackHole("BlackHole_Big", tune.HoleBigRadius, tune.HoleBigField,
+                tune.HoleBigStrength, false, tune.HoleOrbitRocks, true, rocks), "BlackHole_Big");
+            things.holeSmall = SavePrefab(BuildBlackHole("BlackHole_Small", tune.HoleSmallRadius, tune.HoleSmallField,
+                tune.HoleSmallStrength, false, tune.HoleSmallOrbitRocks, false, rocks), "BlackHole_Small");
+            things.holeDrift = SavePrefab(BuildBlackHole("BlackHole_Drift", tune.HoleSmallRadius, tune.HoleSmallField,
+                tune.HoleSmallStrength, true, 0, false, rocks), "BlackHole_Drift");
+            things.planet = SavePrefab(BuildPlanet(), "Planet");
+
+            // Every level gets its own background (Background_LevelN) in the level's colours.
+            // "Background" is the plain look, used by no level: a starting point for a new one.
+            SavePrefab(BuildBackground(new LevelData()), "Background");
 
             var levels = new List<Level>();
             int count = LevelData.Count();
             for (int i = 1; i <= count; i++)
             {
                 var data = LevelData.Load(i, tune);
-                var root = BuildLevel(data, player, ship, tank, rocks, background, meteorSmall, meteorMedium);
+                var background = SavePrefab(BuildBackground(data), "Background_Level" + i);
+                var root = BuildLevel(data, things, background, meteorSmall, meteorMedium);
                 TuningConnector.Connect(root, tune);
                 var asset = PrefabUtility.SaveAsPrefabAsset(root, LevelFolder + "/Level" + i + ".prefab");
                 Object.DestroyImmediate(root);
@@ -83,9 +110,10 @@ public static class DraftSetup
             }
             if (levels.Count == 0) Debug.LogWarning("DraftSetup: no level files in Assets/_Resources/Levels.");
 
-            SetupScene(levels.ToArray(), bullet);
+            SetupScene(levels.ToArray(), bullet, blast);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
+            EditorUtility.SetDirty(tune); // new balance numbers get written into the asset
             AssetDatabase.SaveAssets();
             Debug.Log("DraftSetup: prefabs, " + levels.Count + " levels and DraftScene are ready.");
         }
@@ -93,6 +121,14 @@ public static class DraftSetup
         {
             Random.state = oldRandom;
         }
+    }
+
+    // Prefabs that level maps place.
+    class Things
+    {
+        public GameObject player, ship, tank, mineRing, holeBig, holeSmall, holeDrift, planet;
+        public Dictionary<AsteroidSize, Asteroid> rocks;
+        public Dictionary<MineMode, GameObject> mines = new Dictionary<MineMode, GameObject>();
     }
 
     // --- Prefabs ---
@@ -173,10 +209,20 @@ public static class DraftSetup
         float len = tune.ShipLength, h = tune.ShipHeight;
         Vector2 size = new Vector2(len, h);
 
+        Reimport("ship");
         var art = Art.TryMake("ship", go.transform, len, 5);
-        if (art != null)
+        List<Vector2[]> outline = art != null ? CenteredOutline(art) : null;
+        if (outline != null)
         {
-            size = Art.WorldSize(art); // docking area matches the picture
+            // Docking area follows the outline of the picture.
+            var poly = go.AddComponent<PolygonCollider2D>();
+            SetPaths(poly, outline);
+            poly.isTrigger = true;
+            size = OutlineSize(outline);
+        }
+        else if (art != null)
+        {
+            size = Art.WorldSize(art); // no outline: the whole picture
         }
         else
         {
@@ -190,14 +236,60 @@ public static class DraftSetup
             engine.transform.localPosition = new Vector3(-len * 0.44f, 0f, 0f);
         }
 
-        var col = go.AddComponent<BoxCollider2D>();
-        col.size = size;
-        col.isTrigger = true;
-        go.AddComponent<Ship>();
+        // Docking ring: invisible until the player comes close (Ship.Update colours it).
+        float ringSize = Mathf.Max(size.x, size.y) + tune.DockRingMargin * 2f;
+        var ring = SpriteFactory.MakeSprite("DockRing", go.transform, SpriteFactory.Ring(),
+            new Color(1f, 1f, 1f, 0f), Vector2.one * ringSize, 4);
+
+        if (outline == null)
+        {
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = size;
+            col.isTrigger = true;
+        }
+        var s = go.AddComponent<Ship>();
+        Set(s, "dockRing", ring);
         return go;
     }
 
-    static GameObject BuildPlayer(Bullet bullet, PhysicsMaterial2D material)
+    // One puff of air escaping from a hull breach.
+    static GameObject BuildAirPuff()
+    {
+        var go = new GameObject("AirPuff");
+        var sr = SpriteFactory.MakeSprite("Puff", go.transform, SpriteFactory.Glow(),
+            new Color(0.85f, 0.97f, 1f, 0.7f), Vector2.one * 0.25f, 9);
+        var p = go.AddComponent<LeakPuff>();
+        Set(p, "sprite", sr);
+        return go;
+    }
+
+    // A hull breach: a dark crack that blows air puffs.
+    static GameObject BuildLeak(LeakPuff puff)
+    {
+        var go = new GameObject("Leak");
+        var crack = SpriteFactory.MakeSprite("Crack", go.transform, SpriteFactory.Square(),
+            new Color(0.05f, 0.05f, 0.08f), new Vector2(0.26f, 0.07f), 13);
+        var l = go.AddComponent<Leak>();
+        Set(l, "crack", crack.transform);
+        Set(l, "puffPrefab", puff);
+        return go;
+    }
+
+    // The flash of an explosion.
+    static GameObject BuildBlast()
+    {
+        var go = new GameObject("Blast");
+        var outer = SpriteFactory.MakeSprite("Outer", go.transform, SpriteFactory.Glow(),
+            new Color(1f, 0.45f, 0.15f, 0.9f), Vector2.one, 25);
+        var core = SpriteFactory.MakeSprite("Core", go.transform, SpriteFactory.Glow(),
+            new Color(1f, 0.95f, 0.8f, 1f), Vector2.one, 26);
+        var b = go.AddComponent<Blast>();
+        Set(b, "outer", outer);
+        Set(b, "core", core);
+        return go;
+    }
+
+    static GameObject BuildPlayer(Bullet bullet, Leak leak, PhysicsMaterial2D material)
     {
         var go = new GameObject("Player");
         var rb = go.AddComponent<Rigidbody2D>();
@@ -205,13 +297,9 @@ public static class DraftSetup
         rb.gravityScale = 0f;
         rb.linearDamping = 0f;
         rb.angularDamping = 0f;
-        rb.freezeRotation = true;
+        rb.freezeRotation = false; // PlayerController turns the whole body toward the cursor
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-
-        var col = go.AddComponent<CircleCollider2D>();
-        col.radius = tune.PlayerDiameter * 0.5f;
-        col.sharedMaterial = material;
 
         // Soft white glow under the player: the player is always the easiest thing to find.
         SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
@@ -220,10 +308,36 @@ public static class DraftSetup
 
         var visual = new GameObject("Visual").transform;
         visual.SetParent(go.transform, false);
+<<<<<<< HEAD
         // player_ship.png: mesh "1" from Assets/Art/Source/spaceship.fbx seen from the side, nose to +X.
         bool isShip = Art.TryMake("player_ship", visual, tune.PlayerDiameter * 1.3f, 10) != null;
         if (isShip) visual.Find("player_ship").name = "Body";
         else if (Art.TryMake("astronaut", visual, tune.PlayerDiameter, 10) == null)
+=======
+        // Picture "player_ship": drawn nose up with the main turbine at the bottom. It is turned so
+        // that the turbine points at +X (the cursor): shots come out of the turbine and the recoil
+        // pushes the nose forward. The collider follows the picture's outline.
+        Collider2D col = null;
+        Transform muzzle = null;
+        Reimport("player_ship");
+        var art = Art.TryMake("player_ship", visual, tune.PlayerShipSize, 10);
+        if (art != null)
+        {
+            art.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            var outline = CenteredOutline(art);
+            if (outline != null)
+            {
+                var poly = go.AddComponent<PolygonCollider2D>();
+                SetPaths(poly, outline);
+                col = poly;
+                // The turbine: the outline's furthest point toward +X, around the middle line.
+                muzzle = new GameObject("Muzzle").transform;
+                muzzle.SetParent(visual, false);
+                muzzle.localPosition = Turbine(outline);
+            }
+        }
+        else
+>>>>>>> filip-code-to-prod
         {
             SpriteFactory.MakeSprite("Body", visual, SpriteFactory.Circle(),
                 new Color(0.9f, 0.9f, 0.95f), Vector2.one * tune.PlayerDiameter, 10);
@@ -234,9 +348,25 @@ public static class DraftSetup
                 new Color(0.5f, 0.5f, 0.55f), new Vector2(0.7f, 0.2f), 12);
             gun.transform.localPosition = new Vector3(0.55f, -0.25f, 0f);
         }
+<<<<<<< HEAD
         var muzzle = new GameObject("Muzzle").transform;
         muzzle.SetParent(visual, false);
         muzzle.localPosition = isShip ? new Vector3(0.7f, 0f, 0f) : new Vector3(0.9f, -0.25f, 0f);
+=======
+        if (col == null)
+        {
+            var circle = go.AddComponent<CircleCollider2D>();
+            circle.radius = tune.PlayerDiameter * 0.5f;
+            col = circle;
+        }
+        col.sharedMaterial = material;
+        if (muzzle == null)
+        {
+            muzzle = new GameObject("Muzzle").transform;
+            muzzle.SetParent(visual, false);
+            muzzle.localPosition = new Vector3(0.9f, -0.25f, 0f);
+        }
+>>>>>>> filip-code-to-prod
 
         var p = go.AddComponent<PlayerController>();
         Set(p, "rb", rb);
@@ -244,7 +374,202 @@ public static class DraftSetup
         Set(p, "visual", visual);
         Set(p, "muzzle", muzzle);
         Set(p, "bulletPrefab", bullet);
+        Set(p, "leakPrefab", leak);
         return go;
+    }
+
+    // All sprites of a picture: one, or the frames of a sheet sliced in the Sprite Editor
+    // (in name order, numbers counted as numbers: fire_2 before fire_10).
+    static Sprite[] SheetFrames(string name)
+    {
+        var list = new List<Sprite>();
+        foreach (var ext in new[] { ".png", ".jpg", ".psd", ".tga" })
+        {
+            string path = "Assets/_Resources/Art/" + name + ext;
+            if (!File.Exists(path)) continue;
+            foreach (var o in AssetDatabase.LoadAllAssetsAtPath(path))
+            {
+                var s = o as Sprite;
+                if (s != null) list.Add(s);
+            }
+            break;
+        }
+        list.Sort((a, b) => EditorUtility.NaturalCompare(a.name, b.name));
+        return list.ToArray();
+    }
+
+    // The base of a flame picture in its parent's space: in the middle, a fifth up from the bottom
+    // of its outline (the round bright part).
+    static Vector3 FlameBase(SpriteRenderer fire)
+    {
+        var sprite = fire.sprite;
+        Vector2 min = sprite.bounds.min, max = sprite.bounds.max;
+        if (sprite.GetPhysicsShapeCount() > 0)
+        {
+            min = new Vector2(float.MaxValue, float.MaxValue); max = -min;
+            var pts = new List<Vector2>();
+            for (int i = 0; i < sprite.GetPhysicsShapeCount(); i++)
+            {
+                pts.Clear();
+                sprite.GetPhysicsShape(i, pts);
+                foreach (var p in pts) { min = Vector2.Min(min, p); max = Vector2.Max(max, p); }
+            }
+        }
+        var basePoint = new Vector2((min.x + max.x) * 0.5f, min.y + (max.y - min.y) * 0.22f);
+        return Vector3.Scale(basePoint, fire.transform.localScale);
+    }
+
+    // Measurements of the opaque pixels of a sprite, inside its own rectangle (a sprite may be the
+    // whole picture or a slice that Unity trimmed to the drawing), in the sprite's units from its
+    // pivot: the sprite's own space at scale 1.
+    struct AlphaFit
+    {
+        public float areaDiameter;  // diameter of a circle with the same area
+        public Vector2 centroid;    // middle of the opaque pixels
+        public Vector2 boxCenter;   // middle of the box around them
+        public float boxSize;       // the box's larger side
+    }
+
+    static readonly Dictionary<Sprite, AlphaFit> alphaFits = new Dictionary<Sprite, AlphaFit>();
+
+    static bool Measure(Sprite sprite, out AlphaFit fit)
+    {
+        if (alphaFits.TryGetValue(sprite, out fit)) return true;
+        fit = new AlphaFit();
+        string path = AssetDatabase.GetAssetPath(sprite);
+        if (!File.Exists(path)) return false;
+        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        bool ok = tex.LoadImage(File.ReadAllBytes(path));   // full size, whatever the import settings
+        var px = ok ? tex.GetPixels32() : null;             // rows from the bottom, like sprite rects
+        int w = tex.width, h = tex.height;
+        Object.DestroyImmediate(tex);
+        if (!ok) return false;
+
+        // The imported texture may be smaller than the PNG: map the sprite's rectangle onto the PNG.
+        float kx = w / (float)sprite.texture.width, ky = h / (float)sprite.texture.height;
+        Rect r = sprite.rect;
+        int x0 = Mathf.Clamp(Mathf.FloorToInt(r.xMin * kx), 0, w), x1 = Mathf.Clamp(Mathf.CeilToInt(r.xMax * kx), 0, w);
+        int y0 = Mathf.Clamp(Mathf.FloorToInt(r.yMin * ky), 0, h), y1 = Mathf.Clamp(Mathf.CeilToInt(r.yMax * ky), 0, h);
+        long n = 0; double sx = 0, sy = 0;
+        int bx0 = int.MaxValue, bx1 = -1, by0 = int.MaxValue, by1 = -1;
+        for (int y = y0; y < y1; y++)
+            for (int x = x0; x < x1; x++)
+                if (px[y * w + x].a > 128)
+                {
+                    n++; sx += x; sy += y;
+                    if (x < bx0) bx0 = x; if (x > bx1) bx1 = x;
+                    if (y < by0) by0 = y; if (y > by1) by1 = y;
+                }
+        if (n == 0) return false;
+
+        float ux = 1f / (sprite.pixelsPerUnit * kx), uy = 1f / (sprite.pixelsPerUnit * ky); // units per PNG pixel
+        float pvx = (r.xMin + sprite.pivot.x) * kx, pvy = (r.yMin + sprite.pivot.y) * ky;    // pivot in PNG pixels
+        fit.areaDiameter = 2f * Mathf.Sqrt(n / Mathf.PI) * ux;
+        fit.centroid = new Vector2(((float)(sx / n) + 0.5f - pvx) * ux, ((float)(sy / n) + 0.5f - pvy) * uy);
+        fit.boxCenter = new Vector2(((bx0 + bx1 + 1) * 0.5f - pvx) * ux, ((by0 + by1 + 1) * 0.5f - pvy) * uy);
+        fit.boxSize = Mathf.Max((bx1 - bx0 + 1) * ux, (by1 - by0 + 1) * uy);
+        alphaFits[sprite] = fit;
+        return true;
+    }
+
+    // The largest path of a sprite's physics outline (made by Unity from its alpha), in the
+    // sprite's own space; inner holes and specks are left out. Null without an outline.
+    static Vector2[] LargestOutline(Sprite sprite)
+    {
+        Vector2[] best = null;
+        float bestArea = 0f;
+        var pts = new List<Vector2>();
+        for (int i = 0; i < sprite.GetPhysicsShapeCount(); i++)
+        {
+            pts.Clear();
+            sprite.GetPhysicsShape(i, pts);
+            if (pts.Count < 3) continue;
+            float area = 0f;
+            for (int k = 0; k < pts.Count; k++)
+            {
+                Vector2 a = pts[k], b = pts[(k + 1) % pts.Count];
+                area += a.x * b.y - b.x * a.y;
+            }
+            area = Mathf.Abs(area) * 0.5f;
+            if (area > bestArea) { bestArea = area; best = pts.ToArray(); }
+        }
+        return best;
+    }
+
+    // Re-imports a picture so ArtImportSettings (mipmaps, physics outline) applies to it.
+    // Once per rebuild: big pictures take a while to compress.
+    static readonly HashSet<string> reimported = new HashSet<string>();
+
+    static void Reimport(string name)
+    {
+        if (!reimported.Add(name)) return;
+        foreach (var ext in new[] { ".png", ".jpg", ".psd", ".tga" })
+        {
+            string path = "Assets/_Resources/Art/" + name + ext;
+            if (File.Exists(path)) AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+        }
+    }
+
+    // The outline of a picture (the physics shape Unity makes from its alpha), in its parent's space.
+    // The picture is first moved so that the middle of the outline sits at the parent's origin:
+    // renders often have more empty space on one side, and the ship should turn around its middle.
+    // Null if the picture has no outline.
+    static List<Vector2[]> CenteredOutline(SpriteRenderer art)
+    {
+        var sprite = art.sprite;
+        int count = sprite.GetPhysicsShapeCount();
+        if (count == 0) return null;
+        var raw = new List<Vector2[]>();
+        var pts = new List<Vector2>();
+        Vector2 min = new Vector2(float.MaxValue, float.MaxValue), max = -min;
+        for (int i = 0; i < count; i++)
+        {
+            pts.Clear();
+            sprite.GetPhysicsShape(i, pts);
+            if (pts.Count < 3) continue;
+            raw.Add(pts.ToArray());
+            foreach (var p in pts) { min = Vector2.Min(min, p); max = Vector2.Max(max, p); }
+        }
+        if (raw.Count == 0) return null;
+
+        Transform t = art.transform;
+        Vector2 middle = (min + max) * 0.5f;
+        t.localPosition = -(Vector2)(t.localRotation * Vector3.Scale(middle, t.localScale));
+        var result = new List<Vector2[]>();
+        foreach (var path in raw)
+        {
+            var q = new Vector2[path.Length];
+            for (int k = 0; k < path.Length; k++)
+                q[k] = (Vector2)(t.localRotation * Vector3.Scale(path[k], t.localScale)) + (Vector2)t.localPosition;
+            result.Add(q);
+        }
+        return result;
+    }
+
+    static void SetPaths(PolygonCollider2D poly, List<Vector2[]> paths)
+    {
+        poly.pathCount = paths.Count;
+        for (int i = 0; i < paths.Count; i++) poly.SetPath(i, paths[i]);
+    }
+
+    static Vector2 OutlineSize(List<Vector2[]> paths)
+    {
+        Vector2 min = new Vector2(float.MaxValue, float.MaxValue), max = -min;
+        foreach (var path in paths) foreach (var p in path) { min = Vector2.Min(min, p); max = Vector2.Max(max, p); }
+        return max - min;
+    }
+
+    // Middle of the outline's far end toward +X, within the central third across.
+    static Vector3 Turbine(List<Vector2[]> paths)
+    {
+        Vector2 size = OutlineSize(paths);
+        float far = float.MinValue;
+        foreach (var path in paths) foreach (var p in path)
+            if (Mathf.Abs(p.y) < size.y / 6f) far = Mathf.Max(far, p.x);
+        float sum = 0f; int n = 0;
+        foreach (var path in paths) foreach (var p in path)
+            if (Mathf.Abs(p.y) < size.y / 6f && p.x > far - size.x * 0.04f) { sum += p.y; n++; }
+        return new Vector3(far, n > 0 ? sum / n : 0f, 0f);
     }
 
     static string ArtName(AsteroidSize size)
@@ -265,15 +590,52 @@ public static class DraftSetup
         float d = Asteroid.Diameter(tune, size);
         var go = new GameObject("Asteroid_" + size);
 
-        var variants = Art.LoadAll(ArtName(size));
+        // The artist's rock renders stone1..stone5 for every size; without them the older pictures
+        // baked from stone.fbx (asteroid_s / _m / _l). A render may show its rock at any size (and
+        // Unity may trim the sprite to it), so each rock is measured inside its own sprite and
+        // scaled until a circle with its area is 0.9 of the class size. Its collider follows the
+        // rock's outline; the older pictures keep the round collider (radius 0.45 d).
+        foreach (var n in new[] { "stone1", "stone2", "stone3", "stone4", "stone5", "stone6", "stone7", "stone8", "stone9" })
+            Reimport(n);
+        var variants = Art.LoadAll("stone");
+        bool renders = variants.Count > 0;
+        if (!renders) variants = Art.LoadAll(ArtName(size));
         float radius = d * 0.45f;
         SpriteRenderer body;
+        var scales = new float[variants.Count];
+        var offsets = new Vector2[variants.Count];
+        var outlines = new Vector2[variants.Count][];
+        bool allOutlines = renders;
         if (variants.Count > 0)
         {
             body = Art.Make("Body", variants[0], go.transform, d, 3);
+            for (int i = 0; i < variants.Count; i++)
+            {
+                AlphaFit fit;
+                if (renders && Measure(variants[i], out fit))
+                {
+                    scales[i] = 0.9f * d / fit.areaDiameter;
+                    offsets[i] = -fit.centroid * scales[i];
+                }
+                else
+                {
+                    scales[i] = d / Mathf.Max(variants[i].bounds.size.x, variants[i].bounds.size.y);
+                    offsets[i] = Vector2.zero;
+                }
+                var path = renders ? LargestOutline(variants[i]) : null;
+                if (path == null) allOutlines = false;
+                else
+                {
+                    outlines[i] = new Vector2[path.Length];
+                    for (int k = 0; k < path.Length; k++) outlines[i][k] = path[k] * scales[i] + offsets[i];
+                }
+            }
+            body.transform.localScale = new Vector3(scales[0], scales[0], 1f);
+            body.transform.localPosition = offsets[0];
         }
         else
         {
+            allOutlines = false;
             radius = d * 0.5f;
             body = SpriteFactory.MakeSprite("Body", go.transform, SpriteFactory.Circle(),
                 new Color(0.5f, 0.475f, 0.45f), Vector2.one * d, 3);
@@ -292,9 +654,20 @@ public static class DraftSetup
         rb.angularDamping = 0f;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
 
-        var col = go.AddComponent<CircleCollider2D>();
-        col.radius = radius;
-        col.sharedMaterial = material;
+        PolygonCollider2D poly = null;
+        if (allOutlines)
+        {
+            poly = go.AddComponent<PolygonCollider2D>();
+            poly.pathCount = 1;
+            poly.SetPath(0, outlines[0]);
+            poly.sharedMaterial = material;
+        }
+        else
+        {
+            var col = go.AddComponent<CircleCollider2D>();
+            col.radius = radius;
+            col.sharedMaterial = material;
+        }
 
         var a = go.AddComponent<Asteroid>();
         var so = new SerializedObject(a);
@@ -307,6 +680,22 @@ public static class DraftSetup
         var list = so.FindProperty("variants");
         list.arraySize = variants.Count;
         for (int i = 0; i < variants.Count; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = variants[i];
+        var sl = so.FindProperty("variantScales");
+        sl.arraySize = scales.Length;
+        for (int i = 0; i < scales.Length; i++) sl.GetArrayElementAtIndex(i).floatValue = scales[i];
+        var ol = so.FindProperty("variantOffsets");
+        ol.arraySize = offsets.Length;
+        for (int i = 0; i < offsets.Length; i++) ol.GetArrayElementAtIndex(i).vector2Value = offsets[i];
+        so.FindProperty("outline").objectReferenceValue = poly;
+        var vo = so.FindProperty("variantOutlines");
+        vo.arraySize = poly != null ? outlines.Length : 0;
+        if (poly != null)
+            for (int i = 0; i < outlines.Length; i++)
+            {
+                var pts = vo.GetArrayElementAtIndex(i).FindPropertyRelative("points");
+                pts.arraySize = outlines[i].Length;
+                for (int k = 0; k < outlines[i].Length; k++) pts.GetArrayElementAtIndex(k).vector2Value = outlines[i][k];
+            }
         so.ApplyModifiedPropertiesWithoutUndo();
         return go;
     }
@@ -320,27 +709,211 @@ public static class DraftSetup
         body.color *= new Color(1f, 0.7f, 0.5f); // warmer than normal rocks
 
         float d = Asteroid.Diameter(tune, size);
-        // Hot glow around the rock and a soft fiery streak behind it (both drawn under the rock).
+        // Hot glow around the rock and the fire tail behind it (both drawn under the rock).
         SpriteFactory.MakeSprite("Heat", go.transform, SpriteFactory.Glow(),
             new Color(1f, 0.5f, 0.15f, tune.MeteorHeatOpacity), Vector2.one * d * tune.MeteorHeatSize, 1);
-        var tail = SpriteFactory.MakeSprite("Tail", go.transform, SpriteFactory.Glow(),
-            new Color(1f, 0.6f, 0.2f, 0.6f), new Vector2(d * 1.1f, d * 5f), 2).transform;
-        tail.localPosition = new Vector3(0f, d * 2f, 0f);
-        var warning = SpriteFactory.MakeSprite("Warning", go.transform, SpriteFactory.Triangle(),
-            new Color(1f, 0.3f, 0.25f), Vector2.one * tune.MeteorWarningSize, 30).transform;
-        warning.gameObject.SetActive(false);
+
+        // Tail: Meteor turns it so its +Y points back along the flight. Picture "fire" is drawn with
+        // the base of the flame at the bottom and the tongues up: the base sits on the rock.
+        // If fire.png is a sliced sprite sheet, its frames play as an animation (SpriteFrames).
+        var tail = new GameObject("Tail").transform;
+        tail.SetParent(go.transform, false);
+        Reimport("fire");
+        var frames = SheetFrames("fire");
+        if (frames.Length > 0)
+        {
+            var fire = Art.Make("Fire", frames[0], tail, d * tune.MeteorFireSize, 2);
+            fire.transform.localPosition = -FlameBase(fire);
+            if (frames.Length > 1)
+                fire.gameObject.AddComponent<SpriteFrames>().Setup(fire, frames, tune.MeteorFireFps);
+        }
+        else
+        {
+            var streak = SpriteFactory.MakeSprite("Fire", tail, SpriteFactory.Glow(),
+                new Color(1f, 0.6f, 0.2f, 0.6f), new Vector2(d * 1.1f, d * 5f), 2);
+            streak.transform.localPosition = new Vector3(0f, d * 2f, 0f);
+        }
 
         var m = go.AddComponent<Meteor>();
         Set(m, "asteroid", a);
         Set(m, "rb", go.GetComponent<Rigidbody2D>());
         Set(m, "tail", tail);
-        Set(m, "warning", warning);
         return go;
     }
 
-    // Nebula (or the artist's background picture) and three layers of stars, centered at (0, 0).
-    // Draw order, back to front: far clouds, star dust, far stars, near clouds, near stars.
-    static GameObject BuildBackground()
+    // --- Mines ---
+
+    static readonly Color MineRed = new Color(1f, 0.25f, 0.2f);
+    static readonly Color MineYellow = new Color(1f, 0.8f, 0.2f);
+    static readonly Color MineOrange = new Color(1f, 0.5f, 0.1f);
+
+    // Picture "mine" (round, 1.1 units) or a placeholder: a dark ball with spikes.
+    // The lamp in the middle is drawn over the picture too: its colour tells the kind of mine.
+    static GameObject BuildMine(MineMode mode, OxygenCrystal crystal, Blast blast, PhysicsMaterial2D material)
+    {
+        bool heavy = mode == MineMode.Heavy;
+        float s = heavy ? tune.MineHeavySize : tune.MineSize;
+        Color color = mode == MineMode.Hunter ? MineRed : heavy ? MineOrange : MineYellow;
+
+        var go = new GameObject("Mine_" + mode);
+        // Glow in the mine's colour: everything dangerous glows.
+        var glow = SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
+            new Color(color.r, color.g, color.b, 0.45f), Vector2.one * s * 2.6f, 2);
+
+        if (Art.TryMake("mine", go.transform, s, 4) == null)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                var spike = SpriteFactory.MakeSprite("Spike", go.transform, SpriteFactory.Square(),
+                    new Color(0.2f, 0.21f, 0.26f), new Vector2(s * 1.25f, s * 0.16f), 4);
+                spike.transform.localRotation = Quaternion.Euler(0f, 0f, i * 45f);
+            }
+            SpriteFactory.MakeSprite("Body", go.transform, SpriteFactory.Circle(),
+                new Color(0.13f, 0.14f, 0.18f), Vector2.one * s * 0.82f, 4);
+        }
+        var lamp = SpriteFactory.MakeSprite("Lamp", go.transform, SpriteFactory.Circle(),
+            color, Vector2.one * s * 0.3f, 5);
+
+        var rb = go.AddComponent<Rigidbody2D>();
+        rb.gravityScale = 0f;
+        rb.mass = tune.MineMass;
+        rb.linearDamping = 0f;
+        rb.angularDamping = 0f;
+        rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+        var col = go.AddComponent<CircleCollider2D>();
+        col.radius = s * 0.45f;
+        col.sharedMaterial = material;
+
+        var m = go.AddComponent<Mine>();
+        var so = new SerializedObject(m);
+        so.FindProperty("mode").enumValueIndex = (int)mode;
+        so.FindProperty("rb").objectReferenceValue = rb;
+        so.FindProperty("lamp").objectReferenceValue = lamp;
+        so.FindProperty("glow").objectReferenceValue = glow;
+        so.FindProperty("hits").intValue = heavy ? tune.MineHeavyHits : 1;
+        so.FindProperty("size").floatValue = s;
+        so.FindProperty("blastScale").floatValue = heavy ? tune.MineHeavyBlastScale : 1f;
+        so.FindProperty("axis").vector2Value = Vector2.right;
+        so.FindProperty("crystalPrefab").objectReferenceValue = crystal;
+        so.FindProperty("blastPrefab").objectReferenceValue = blast;
+        so.ApplyModifiedPropertiesWithoutUndo();
+        return go;
+    }
+
+    // Mines circling a point (put an oxygen tank in the middle). They are spaced so that
+    // one blast does not set off the next. Each mine circles around this object.
+    static GameObject BuildMineRing(GameObject orbitMine)
+    {
+        var root = new GameObject("MineRing");
+        for (int i = 0; i < tune.MineRingCount; i++)
+        {
+            float angle = Mathf.PI * 2f * i / tune.MineRingCount;
+            Place(orbitMine, new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * tune.MineRingRadius, root.transform);
+        }
+        return root;
+    }
+
+    // --- Black holes and the planet ---
+
+    // The dark disc is this share of the "blackhole" picture's side (see Tools~/BackdropGen.cs).
+    const float HoleDiscShare = 0.16f;
+
+    // orbitRocks: rocks circling the hole. On the hole level they are the only air: shoot them
+    // with curved shots and grab the crystals before the hole eats them.
+    // twoCircles: every second rock is a medium one on a wider circle turning the other way.
+    static GameObject BuildBlackHole(string name, float bodyRadius, float fieldRadius, float strength,
+        bool drifts, int orbitRocks, bool twoCircles, Dictionary<AsteroidSize, Asteroid> rocks)
+    {
+        var go = new GameObject(name);
+
+        // Soft warm haze that gets denser toward the hole: where it is visible, the hole pulls.
+        SpriteFactory.MakeSprite("PullHaze", go.transform, SpriteFactory.Glow(),
+            new Color(1f, 0.55f, 0.3f, 0.2f), Vector2.one * fieldRadius * 2f, -41);
+
+        // Picture "blackhole" (dark disc with a glowing ring) or a placeholder.
+        Transform picture = null;
+        var art = Art.TryMake("blackhole", go.transform, bodyRadius / HoleDiscShare, 3);
+        if (art != null) picture = art.transform;
+        else
+        {
+            SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
+                new Color(1f, 0.6f, 0.25f, 0.6f), Vector2.one * bodyRadius * 5f, 2);
+            SpriteFactory.MakeSprite("Ring", go.transform, SpriteFactory.Ring(),
+                new Color(1f, 0.8f, 0.5f), Vector2.one * bodyRadius * 2.8f, 3);
+            SpriteFactory.MakeSprite("Disc", go.transform, SpriteFactory.Circle(),
+                Color.black, Vector2.one * bodyRadius * 2f, 4);
+        }
+
+        var hole = go.AddComponent<BlackHole>();
+        var so = new SerializedObject(hole);
+        so.FindProperty("bodyRadius").floatValue = bodyRadius;
+        so.FindProperty("fieldRadius").floatValue = fieldRadius;
+        so.FindProperty("strength").floatValue = strength;
+        so.FindProperty("drifts").boolValue = drifts;
+        so.FindProperty("axis").vector2Value = Vector2.right;
+        so.FindProperty("picture").objectReferenceValue = picture;
+        so.ApplyModifiedPropertiesWithoutUndo();
+
+        if (orbitRocks > 0)
+        {
+            var rockParent = Group("Rocks", go.transform);
+            for (int i = 0; i < orbitRocks; i++)
+            {
+                bool outer = twoCircles && i % 2 == 1;
+                float radius = bodyRadius + (twoCircles ? (outer ? 9f : 5f) : 4f);
+                float angle = Mathf.PI * 2f * i / orbitRocks + Random.Range(-0.3f, 0.3f);
+                Vector2 pos = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+
+                var prefab = rocks[outer ? AsteroidSize.Medium : AsteroidSize.Small];
+                var rock = PlaceRock(prefab, pos, rockParent);
+                SetBool(rock.GetComponent<Asteroid>(), "confined", false);
+                rock.AddComponent<Orbiter>().Setup(rock.GetComponent<Rigidbody2D>(), go.transform,
+                    radius, angle, outer ? -1f : 1f);
+            }
+        }
+        return go;
+    }
+
+    // Picture "planet1" (the ball takes 0.44 of it) or a placeholder ball with a glow.
+    static GameObject BuildPlanet()
+    {
+        var go = new GameObject("Planet");
+        float size = tune.PlanetSize;
+        float bodyRadius = size * tune.PlanetBodyShare;
+
+        if (Art.TryMake("planet", go.transform, size, 3) == null)
+        {
+            SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
+                new Color(1f, 0.7f, 0.4f, 0.5f), Vector2.one * bodyRadius * 3f, 2);
+            SpriteFactory.MakeSprite("Ball", go.transform, SpriteFactory.Circle(),
+                new Color(0.8f, 0.5f, 0.3f), Vector2.one * bodyRadius * 2f, 3);
+        }
+
+        // Dotted circle: the edge of the gravity field.
+        var edge = Group("FieldEdge", go.transform);
+        const int dots = 90;
+        for (int i = 0; i < dots; i++)
+        {
+            float a = Mathf.PI * 2f * i / dots;
+            var dot = SpriteFactory.MakeSprite("Dot", edge, SpriteFactory.Circle(),
+                new Color(1f, 0.8f, 0.55f, 0.4f), Vector2.one * 0.22f, -40);
+            dot.transform.localPosition = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f) * tune.GravityRadius;
+        }
+
+        // Solid body: rocks bounce off it, bullets vanish on it, the player dies on it.
+        var col = go.AddComponent<CircleCollider2D>();
+        col.radius = bodyRadius;
+        go.AddComponent<Planet>();
+        return go;
+    }
+
+    // --- Background (one prefab per level, in the level's own colours) ---
+
+    // Clouds (or the artist's background picture), a far backdrop object and three layers of
+    // stars, centered at (0, 0). theme: the look settings of the level file.
+    // Draw order, back to front: far clouds, backdrop, star dust, far stars, near clouds, near stars.
+    static GameObject BuildBackground(LevelData theme)
     {
         var root = new GameObject("Background");
         Vector2 center = Vector2.zero;
@@ -348,23 +921,36 @@ public static class DraftSetup
         var art = Art.TryMake("background", root.transform, tune.BackgroundSize, -200);
         if (art != null)
         {
-            art.gameObject.AddComponent<ParallaxBackground>()
-                .Setup(center, tune.BackgroundParallax, tune.BackgroundSize, false);
+            art.gameObject.AddComponent<ParallaxBackground>().Setup(center, tune.BackgroundParallax,
+                tune.BackgroundSize, ParallaxBackground.Mode.Clamped, Vector2.zero);
         }
         else
         {
-            float b = tune.NebulaFarBrightness;
-            Nebula("nebula_far", root.transform, center, tune.NebulaFarSize, tune.NebulaFarParallax, -200,
-                1.002f, new Color(b, b, b, 1f));
-            Nebula("nebula_near", root.transform, center, tune.NebulaNearSize, tune.NebulaNearParallax, -145,
-                1f, new Color(1f, 1f, 1f, tune.NebulaNearOpacity));
+            // Cloud set of this level; an unknown name falls back to the default clouds.
+            string set = string.IsNullOrEmpty(theme.nebula) ? "nebula" : "nebula_" + theme.nebula;
+            if (Art.LoadExact(set + "_far") == null) set = "nebula";
+
+            // The far clouds are darkened and the near ones made more transparent, so the
+            // background stays behind the rocks. The level can dim or tint its clouds.
+            float b = tune.NebulaFarBrightness * theme.clouds;
+            Color tint = theme.tint;
+            Nebula(set + "_far", root.transform, center, tune.NebulaFarSize, tune.NebulaFarParallax, -200,
+                1.002f, new Color(b * tint.r, b * tint.g, b * tint.b, 1f));
+            Nebula(set + "_near", root.transform, center, tune.NebulaNearSize, tune.NebulaNearParallax, -145,
+                1f, new Color(tint.r, tint.g, tint.b, Mathf.Clamp01(tune.NebulaNearOpacity * theme.clouds)));
+
+            Backdrop(theme.backdrop, root.transform, center);
         }
 
-        StarDust("StarDust", root.transform, center, tune.StarDustParallax, tune.StarDustCount, -160);
-        GlowingStars("StarsFar", root.transform, center, tune.StarsFarParallax, tune.StarsFarCount,
-            tune.StarFarSizeMin, tune.StarFarSizeMax, 0.45f, -150);
-        GlowingStars("StarsNear", root.transform, center, tune.StarsNearParallax, tune.StarsNearCount,
-            tune.StarNearSizeMin, tune.StarNearSizeMax, 0.75f, -140);
+        float density = theme.starDensity;
+        StarDust("StarDust", root.transform, center, tune.StarDustParallax,
+            Mathf.RoundToInt(tune.StarDustCount * density), -160, theme.starColor);
+        GlowingStars("StarsFar", root.transform, center, tune.StarsFarParallax,
+            Mathf.RoundToInt(tune.StarsFarCount * density),
+            tune.StarFarSizeMin, tune.StarFarSizeMax, 0.45f, -150, theme.starColor);
+        GlowingStars("StarsNear", root.transform, center, tune.StarsNearParallax,
+            Mathf.RoundToInt(tune.StarsNearCount * density),
+            tune.StarNearSizeMin, tune.StarNearSizeMax, 0.75f, -140, theme.starColor);
         return root;
     }
 
@@ -372,7 +958,7 @@ public static class DraftSetup
     static void Nebula(string artName, Transform parent, Vector2 anchor, float size, float factor,
         int sortingOrder, float tileScale, Color color)
     {
-        var sprite = Art.Load(artName);
+        var sprite = Art.LoadExact(artName);
         if (sprite == null) return;
 
         var go = new GameObject(artName);
@@ -391,26 +977,34 @@ public static class DraftSetup
             sr.color = color;
             sr.sortingOrder = sortingOrder;
         }
-        go.AddComponent<ParallaxBackground>().Setup(anchor, factor, size, true);
+        go.AddComponent<ParallaxBackground>().Setup(anchor, factor, size, ParallaxBackground.Mode.Repeating, Vector2.zero);
     }
 
-    // Colour of the level applied to the nebula tiles of a Background instance.
-    static void TintBackground(GameObject background, Color tint)
+    // One big far object, picture backdrop_<name>. Drawn over the far clouds and under the near ones.
+    static void Backdrop(string name, Transform parent, Vector2 anchor)
     {
-        float b = tune.NebulaFarBrightness;
-        TintLayer(background.transform.Find("nebula_far"), new Color(b * tint.r, b * tint.g, b * tint.b, 1f));
-        TintLayer(background.transform.Find("nebula_near"),
-            new Color(tint.r, tint.g, tint.b, tune.NebulaNearOpacity));
-    }
+        if (string.IsNullOrEmpty(name) || name == "none") return;
 
-    static void TintLayer(Transform layer, Color color)
-    {
-        if (layer == null) return;
-        foreach (var sr in layer.GetComponentsInChildren<SpriteRenderer>(true))
+        // Size in units, place on screen (units from the screen center, when the player is in
+        // the middle of the level) and colour. Kept dim: it is only scenery.
+        // The slower an object drifts across the screen, the farther away it feels.
+        float size = 20f, parallax = tune.BackdropParallax;
+        Vector2 offset = new Vector2(8f, 4f);
+        Color color = new Color(1f, 1f, 1f, 0.7f);
+        switch (name)
         {
-            sr.color = color;
-            PrefabUtility.RecordPrefabInstancePropertyModifications(sr);
+            case "sun": size = 14f; offset = new Vector2(11f, 6f); color = new Color(1f, 1f, 1f, 0.8f); parallax = 0.04f; break;
+            // The station wreck is rendered dark, hazy and slightly out of focus: it must read
+            // as far scenery in shadow, not as something the player can fly to.
+            case "wreck": size = 34f; offset = new Vector2(4f, 2f); color = new Color(0.85f, 0.9f, 1f, 1f); parallax = 0.06f; break;
+            case "planet": size = 46f; offset = new Vector2(16f, -8f); color = new Color(1f, 1f, 1f, 0.85f); break;
         }
+
+        var sprite = Art.LoadExact("backdrop_" + name);
+        if (sprite == null) return;
+        var sr = Art.Make("backdrop_" + name, sprite, parent, size, -190);
+        sr.color = color;
+        sr.gameObject.AddComponent<ParallaxBackground>().Setup(anchor, parallax, size, ParallaxBackground.Mode.Free, offset);
     }
 
     // Halo colours, picked to match the nebula; the last two are the artist's gold and plain white.
@@ -435,8 +1029,9 @@ public static class DraftSetup
         return local;
     }
 
-    // Tiny dim dots.
-    static void StarDust(string name, Transform parent, Vector2 anchor, float factor, int count, int sortingOrder)
+    // Tiny dim dots. levelColor: colour of the stars on this level (white = as usual).
+    static void StarDust(string name, Transform parent, Vector2 anchor, float factor, int count, int sortingOrder,
+        Color levelColor)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
@@ -445,7 +1040,7 @@ public static class DraftSetup
         var circle = SpriteFactory.Circle();
         for (int i = 0; i < count; i++)
         {
-            var color = new Color(0.84f, 0.9f, 1f, Random.Range(0.18f, 0.5f));
+            var color = new Color(0.84f * levelColor.r, 0.9f * levelColor.g, levelColor.b, Random.Range(0.18f, 0.5f));
             stars[i] = SpriteFactory.MakeSprite("Dust", go.transform, circle, color,
                 Vector2.one * Random.Range(0.03f, 0.07f), sortingOrder).transform;
         }
@@ -455,7 +1050,7 @@ public static class DraftSetup
 
     // Glowing stars: a bright core (star1, star2, ...) over a soft coloured halo (star_glow1, ...).
     static void GlowingStars(string name, Transform parent, Vector2 anchor, float factor, int count,
-        float minSize, float maxSize, float minBrightness, int sortingOrder)
+        float minSize, float maxSize, float minBrightness, int sortingOrder, Color levelColor)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent, false);
@@ -466,6 +1061,9 @@ public static class DraftSetup
         var phase = new float[count];
         var speed = new float[count];
 
+        for (int n = 1; n <= 9; n++) Reimport("star_render" + n);
+        var renders = Art.LoadAll("star_render");   // the artist's star renders, if any
+
         for (int i = 0; i < count; i++)
         {
             var star = new GameObject("Star").transform;
@@ -474,22 +1072,41 @@ public static class DraftSetup
 
             float size = Random.Range(minSize, maxSize);
             float brightness = Random.Range(minBrightness, 1f);
-            Color tint = StarPalette[Random.Range(0, StarPalette.Length)];
+            Color tint = StarPalette[Random.Range(0, StarPalette.Length)] * levelColor;
 
             SpriteRenderer core, glow;
-            var shape = Art.Load("star");
-            if (shape != null)
+            if (renders.Count > 0)
             {
-                // Core and glow pictures share one canvas, so both get the same size.
-                float canvas = size / StarShapeFraction;
-                var glowSprite = Art.LoadExact(shape.name.Replace("star", "star_glow"));
-                glow = Art.Make("Glow", glowSprite != null ? glowSprite : SpriteFactory.Glow(), star, canvas, sortingOrder);
-                core = Art.Make("Core", shape, star, canvas, sortingOrder + 1);
+                // The artist's star renders: each shape may be drawn at any size in its picture, so it
+                // is measured and the picture scaled until the shape itself is `size` across. Their
+                // golden colour stays; a soft halo in the palette colour sits behind.
+                var shape = renders[Random.Range(0, renders.Count)];
+                glow = Art.Make("Glow", SpriteFactory.Glow(), star, size * 2.6f, sortingOrder);
+                core = Art.Make("Core", shape, star, size, sortingOrder + 1);
+                AlphaFit fit;
+                if (Measure(shape, out fit))
+                {
+                    float k = size / fit.boxSize;
+                    core.transform.localScale = new Vector3(k, k, 1f);
+                    core.transform.localPosition = -fit.boxCenter * k;
+                }
             }
             else
             {
-                glow = Art.Make("Glow", SpriteFactory.Glow(), star, size * 2.4f, sortingOrder);
-                core = Art.Make("Core", SpriteFactory.Circle(), star, size * 0.4f, sortingOrder + 1);
+                var shape = Art.Load("star");
+                if (shape != null)
+                {
+                    // Core and glow pictures share one canvas, so both get the same size.
+                    float canvas = size / StarShapeFraction;
+                    var glowSprite = Art.LoadExact(shape.name.Replace("star", "star_glow"));
+                    glow = Art.Make("Glow", glowSprite != null ? glowSprite : SpriteFactory.Glow(), star, canvas, sortingOrder);
+                    core = Art.Make("Core", shape, star, canvas, sortingOrder + 1);
+                }
+                else
+                {
+                    glow = Art.Make("Glow", SpriteFactory.Glow(), star, size * 2.4f, sortingOrder);
+                    core = Art.Make("Core", SpriteFactory.Circle(), star, size * 0.4f, sortingOrder + 1);
+                }
             }
 
             Color coreColor = Color.Lerp(Color.white, tint, 0.25f);
@@ -510,8 +1127,8 @@ public static class DraftSetup
 
     // --- Levels ---
 
-    static GameObject BuildLevel(LevelData data, GameObject player, GameObject ship, GameObject tank,
-        Dictionary<AsteroidSize, Asteroid> rocks, GameObject background, Asteroid meteorSmall, Asteroid meteorMedium)
+    static GameObject BuildLevel(LevelData data, Things things, GameObject background,
+        Asteroid meteorSmall, Asteroid meteorMedium)
     {
         var root = new GameObject("Level" + data.index);
         var level = root.AddComponent<Level>();
@@ -521,15 +1138,17 @@ public static class DraftSetup
         level.movers = data.movers;
         level.star3 = data.star3;
         level.star2 = data.star2;
+        level.lightColor = data.light;
+        level.stormColor = data.frame;
         level.bounds = data.Bounds;
 
-        var bg = (GameObject)PrefabUtility.InstantiatePrefab(background, root.transform);
-        TintBackground(bg, data.tint);
-        BuildBorder(root.transform, level.bounds);
+        PrefabUtility.InstantiatePrefab(background, root.transform);
+        BuildStorm(root.transform, level.bounds, data.frame);
 
         var rockParent = Group("Rocks", root.transform);
         var tankParent = Group("OxygenTanks", root.transform);
-        var hintParent = Group("Hints", root.transform);
+        var mineParent = Group("Mines", root.transform);
+        var holeParent = Group("BlackHoles", root.transform);
 
         // Used if the map has no P or S.
         Vector2 start = new Vector2(level.bounds.center.x, level.bounds.yMin + tune.PlayerStartFromBottom);
@@ -547,25 +1166,31 @@ public static class DraftSetup
                 {
                     case 'P': start = p; break;
                     case 'S': shipPos = p; break;
-                    case 'a': PlaceRock(rocks[AsteroidSize.Small], p, rockParent); break;
-                    case 'A': PlaceRock(rocks[AsteroidSize.Medium], p, rockParent); break;
-                    case 'B': PlaceRock(rocks[AsteroidSize.Large], p, rockParent); break;
-                    case 'o': Place(tank, p, tankParent); break;
-                    default:
-                        if (char.IsDigit(c) && data.hints.ContainsKey(c))
-                        {
-                            var h = new GameObject("Hint" + c).AddComponent<HintMarker>();
-                            h.transform.SetParent(hintParent, false);
-                            h.transform.position = p;
-                            h.text = data.hints[c];
-                        }
-                        break;
+                    case 'a': PlaceRock(things.rocks[AsteroidSize.Small], p, rockParent); break;
+                    case 'A': PlaceRock(things.rocks[AsteroidSize.Medium], p, rockParent); break;
+                    case 'B': PlaceRock(things.rocks[AsteroidSize.Large], p, rockParent); break;
+                    case 'o': Place(things.tank, p, tankParent); break;
+
+                    // Mines: hunter, sideways and up-down patrol, chain wall, heavy, ring around a tank.
+                    case 'm': Place(things.mines[MineMode.Hunter], p, mineParent); break;
+                    case 'h': Place(things.mines[MineMode.Patrol], p, mineParent); break;
+                    case 'v': SetAxis(Place(things.mines[MineMode.Patrol], p, mineParent).GetComponent<Mine>(), Vector2.up); break;
+                    case 's': Place(things.mines[MineMode.Wall], p, mineParent); break;
+                    case 'M': Place(things.mines[MineMode.Heavy], p, mineParent); break;
+                    case 'R': Place(things.tank, p, tankParent); Place(things.mineRing, p, mineParent); break;
+
+                    // Gravity: planet, big and small black hole, small holes drifting sideways or up and down.
+                    case '@': Place(things.planet, p, holeParent); break;
+                    case 'O': Place(things.holeBig, p, holeParent); break;
+                    case 'c': Place(things.holeSmall, p, holeParent); break;
+                    case 'x': Place(things.holeDrift, p, holeParent); break;
+                    case 'y': SetAxis(Place(things.holeDrift, p, holeParent).GetComponent<BlackHole>(), Vector2.up); break;
                 }
             }
         }
 
-        level.player = Place(player, start, root.transform).GetComponent<PlayerController>();
-        level.ship = Place(ship, shipPos, root.transform).transform;
+        level.player = Place(things.player, start, root.transform).GetComponent<PlayerController>();
+        level.ship = Place(things.ship, shipPos, root.transform).transform;
 
         if (data.meteors)
         {
@@ -579,7 +1204,7 @@ public static class DraftSetup
     }
 
     // A rock from the map: random look, rotation and a little bigger or smaller than its class.
-    static void PlaceRock(Asteroid prefab, Vector2 position, Transform parent)
+    static GameObject PlaceRock(Asteroid prefab, Vector2 position, Transform parent)
     {
         var go = Place(prefab.gameObject, position, parent);
         go.transform.rotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
@@ -588,7 +1213,13 @@ public static class DraftSetup
         go.GetComponent<Asteroid>().PickRandomLook();
         PrefabUtility.RecordPrefabInstancePropertyModifications(go.transform);
         foreach (var sr in go.GetComponentsInChildren<SpriteRenderer>(true))
+        {
             PrefabUtility.RecordPrefabInstancePropertyModifications(sr);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(sr.transform); // variant scale and position
+        }
+        foreach (var c in go.GetComponents<Collider2D>())
+            PrefabUtility.RecordPrefabInstancePropertyModifications(c);          // variant outline
+        return go;
     }
 
     static GameObject Place(GameObject prefab, Vector2 position, Transform parent)
@@ -599,6 +1230,23 @@ public static class DraftSetup
         return go;
     }
 
+    // Direction of a patrol mine or a drifting hole placed in a level.
+    static void SetAxis(Object component, Vector2 axis)
+    {
+        var so = new SerializedObject(component);
+        so.FindProperty("axis").vector2Value = axis;
+        so.ApplyModifiedPropertiesWithoutUndo();
+        PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+    }
+
+    static void SetBool(Object component, string field, bool value)
+    {
+        var so = new SerializedObject(component);
+        so.FindProperty(field).boolValue = value;
+        so.ApplyModifiedPropertiesWithoutUndo();
+        PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+    }
+
     static Transform Group(string name, Transform parent)
     {
         var t = new GameObject(name).transform;
@@ -606,12 +1254,98 @@ public static class DraftSetup
         return t;
     }
 
-    // Thin red frame showing where the level ends. If you change Level.bounds, move these too.
-    static void BuildBorder(Transform parent, Rect bounds)
+    // The level edge: a wall of storm on all four sides, in the level's frame colour (red unless the
+    // level file sets # frame=). Two layers of storm clouds flow along each side (StormEdge),
+    // lightning flickers in the part on screen (StormBolts), and far out a plain dark storm colour.
+    // Without the storm pictures the old thin frame is drawn. If you change Level.bounds, rebuild.
+    static void BuildStorm(Transform parent, Rect bounds, Color color)
+    {
+        foreach (var f in new[] { "storm_body", "storm_glow", "storm_bolt1", "storm_bolt2", "storm_bolt3" })
+        {
+            string path = "Assets/_Resources/Art/" + f + ".png";
+            if (File.Exists(path)) AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate); // apply ArtImportSettings
+        }
+        var body = Art.LoadExact("storm_body");
+        var glow = Art.LoadExact("storm_glow");
+        if (body == null || glow == null)
+        {
+            BuildBorder(parent, bounds, color);
+            return;
+        }
+
+        var storm = Group("Storm", parent);
+        Vector2 c = bounds.center;
+        StormSide(storm, "Right", new Vector2(bounds.xMax, c.y), 0f, bounds.height, body, glow, color);
+        StormSide(storm, "Top", new Vector2(c.x, bounds.yMax), 90f, bounds.width, body, glow, color);
+        StormSide(storm, "Left", new Vector2(bounds.xMin, c.y), 180f, bounds.height, body, glow, color);
+        StormSide(storm, "Bottom", new Vector2(c.x, bounds.yMin), 270f, bounds.width, body, glow, color);
+
+        var shapes = new List<Sprite>();
+        for (int i = 1; i <= 3; i++) { var s = Art.LoadExact("storm_bolt" + i); if (s != null) shapes.Add(s); }
+        var pool = new SpriteRenderer[3];
+        for (int i = 0; i < pool.Length; i++)
+        {
+            var go = new GameObject("Bolt");
+            go.transform.SetParent(storm, false);
+            pool[i] = go.AddComponent<SpriteRenderer>();
+            pool[i].sortingOrder = -29;
+            pool[i].enabled = false;
+        }
+        storm.gameObject.AddComponent<StormBolts>().Setup(bounds, pool, shapes.ToArray(),
+            Color.Lerp(color, Color.white, 0.6f));
+    }
+
+    // One side of the storm: its +X points out of the level, the edge runs along its Y.
+    static void StormSide(Transform storm, string name, Vector2 position, float angle, float length,
+        Sprite body, Sprite glow, Color color)
+    {
+        const float tile = 32f, across = 24f, centre = 8f, glowScale = 1.3f;
+        var side = Group(name, storm);
+        side.position = position;
+        side.rotation = Quaternion.Euler(0f, 0f, angle);
+
+        // Far out: plain dark storm colour, so the ship never flies out of the storm into space.
+        var deep = SpriteFactory.MakeSprite("Deep", side, SpriteFactory.Square(),
+            new Color(color.r * 0.2f, color.g * 0.2f, color.b * 0.2f, 0.94f), new Vector2(200f, length + 400f), -32);
+        deep.transform.localPosition = new Vector3(19f + 100f, 0f, 0f);
+
+        var b = TiledSprite("Body", side, body, color, new Vector2(across, length + 2f * tile), -31, 1f);
+        b.transform.localPosition = new Vector3(centre, 0f, 0f);
+        var gl = TiledSprite("Glow", side, glow, new Color(Mathf.Lerp(color.r, 1f, 0.4f), Mathf.Lerp(color.g, 1f, 0.4f),
+            Mathf.Lerp(color.b, 1f, 0.4f), 0.85f), new Vector2(across, (length + 2f * tile * glowScale) / glowScale), -30, glowScale);
+        gl.transform.localPosition = new Vector3(centre * glowScale, 0f, 0f);
+
+        var edge = side.gameObject.AddComponent<StormEdge>();
+        var so = new SerializedObject(edge);
+        so.FindProperty("body").objectReferenceValue = b;
+        so.FindProperty("glow").objectReferenceValue = gl;
+        so.FindProperty("tile").floatValue = tile;
+        so.FindProperty("centre").floatValue = centre;
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    static SpriteRenderer TiledSprite(string name, Transform parent, Sprite sprite, Color color, Vector2 size,
+        int sortingOrder, float scale)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        go.transform.localScale = new Vector3(scale, scale, 1f);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.color = color;
+        sr.sortingOrder = sortingOrder;
+        sr.drawMode = SpriteDrawMode.Tiled;
+        sr.tileMode = SpriteTileMode.Continuous;
+        sr.size = size;
+        return sr;
+    }
+
+    // Thin frame showing where the level ends: only used when the storm pictures are missing.
+    static void BuildBorder(Transform parent, Rect bounds, Color frame)
     {
         var border = Group("Border", parent);
         var square = SpriteFactory.Square();
-        var color = new Color(1f, 0.3f, 0.25f, 0.6f);
+        var color = new Color(frame.r, frame.g, frame.b, 0.6f);
         const float t = 0.16f;
         Vector2 c = bounds.center;
 
@@ -627,7 +1361,7 @@ public static class DraftSetup
 
     // --- Scene ---
 
-    static void SetupScene(Level[] levels, Bullet bullet)
+    static void SetupScene(Level[] levels, Bullet bullet, Blast blast)
     {
         // Remove what an earlier run made.
         foreach (var name in new[] { "DraftGame", "HUD" })
@@ -636,7 +1370,7 @@ public static class DraftSetup
             while ((old = GameObject.Find(name)) != null) Object.DestroyImmediate(old);
         }
 
-        EnsureGlobalLight();
+        var light = EnsureGlobalLight();
         var rig = SetupCamera();
         var hud = BuildHud();
 
@@ -645,7 +1379,9 @@ public static class DraftSetup
         var so = new SerializedObject(game);
         so.FindProperty("hud").objectReferenceValue = hud;
         so.FindProperty("cameraRig").objectReferenceValue = rig;
+        so.FindProperty("globalLight").objectReferenceValue = light;
         so.FindProperty("bulletPrefab").objectReferenceValue = bullet;
+        so.FindProperty("blastPrefab").objectReferenceValue = blast;
         var list = so.FindProperty("levels");
         list.arraySize = levels.Length;
         for (int i = 0; i < levels.Length; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = levels[i];
@@ -653,18 +1389,20 @@ public static class DraftSetup
         so.ApplyModifiedPropertiesWithoutUndo();
         TuningConnector.Connect(go, tune);
         TuningConnector.Connect(rig.gameObject, tune);
+        TuningConnector.Connect(hud.gameObject, tune);
     }
 
-    static void EnsureGlobalLight()
+    static Light2D EnsureGlobalLight()
     {
         foreach (var l in Object.FindObjectsByType<Light2D>(FindObjectsSortMode.None))
-            if (l.lightType == Light2D.LightType.Global) return;
+            if (l.lightType == Light2D.LightType.Global) return l;
 
         var go = new GameObject("Global Light 2D");
         var light = go.AddComponent<Light2D>();
         light.lightType = Light2D.LightType.Global;
         light.intensity = 1f;
         light.color = Color.white;
+        return light;
     }
 
     static CameraRig SetupCamera()
@@ -687,10 +1425,19 @@ public static class DraftSetup
         return rig;
     }
 
-    // --- HUD ---
+    // --- HUD: icons and numbers in the game's pixel font, no sentences ---
 
-    static readonly Color OxygenColor = new Color(0.3f, 0.85f, 1f);
-    static readonly Color GoodColor = new Color(0.4f, 1f, 0.5f);
+    static readonly Color AirColor = new Color(0.35f, 0.9f, 1f);
+    static readonly Color LeakingColor = new Color(1f, 0.62f, 0.3f);
+    static readonly Color GoodColor = new Color(0.45f, 1f, 0.55f);
+    static readonly Color BadColor = new Color(1f, 0.35f, 0.3f);
+    static readonly Color ComboColor = new Color(1f, 0.85f, 0.3f);
+    static readonly Color EmptyCell = new Color(1f, 1f, 1f, 0.16f);
+    static readonly Color Ink = new Color(0.05f, 0.07f, 0.14f);
+    static readonly Vector2 TopLeft = new Vector2(0f, 1f), TopRight = new Vector2(1f, 1f),
+        TopMiddle = new Vector2(0.5f, 1f), Middle = new Vector2(0.5f, 0.5f);
+
+    const int AirCells = 20;
 
     static Hud BuildHud()
     {
@@ -705,144 +1452,209 @@ public static class DraftSetup
 
         var hud = go.AddComponent<Hud>();
         var so = new SerializedObject(hud);
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        Transform root = go.transform;
 
-        // Red tint over the whole screen while outside the level (created first = drawn behind the rest).
-        var overlay = MakeImage("SignalOverlay", go.transform, new Color(1f, 0f, 0f, 0.22f));
-        Stretch(overlay.rectTransform);
-        overlay.gameObject.SetActive(false);
-        Ref(so, "signalOverlay", overlay.gameObject);
+        var o2Icon = SpriteFactory.PixelIcon("o2", PixelFont.O2);
+        var crackIcon = SpriteFactory.PixelIcon("crack", PixelFont.Crack);
+        var arrowIcon = SpriteFactory.PixelIcon("arrow", PixelFont.Arrow);
 
-        var signal = MakeText("SignalText", go.transform, font, 72, TextAnchor.MiddleCenter, new Color(1f, 0.3f, 0.25f));
-        signal.text = "SIGNAL LOST";
-        Place(signal.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -60f), new Vector2(1200f, 100f));
-        signal.gameObject.SetActive(false);
-        Ref(so, "signalText", signal.gameObject);
+        // Dark screen edges in the storm colour while the ship is in the storm beyond the level edge
+        // (created first = drawn behind the rest).
+        var vignette = MakeImage("StormVignette", root, new Color(0.2f, 0.05f, 0.05f, 0f));
+        vignette.sprite = SpriteFactory.Vignette();
+        Stretch(vignette.rectTransform);
+        vignette.gameObject.SetActive(false);
+        Ref(so, "stormVignette", vignette);
 
-        // OXYGEN label and bar, top-left.
-        var label = MakeText("OxygenLabel", go.transform, font, 36, TextAnchor.UpperLeft, Color.white);
-        label.text = "OXYGEN";
-        Place(label.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -30f), new Vector2(400f, 44f));
+        // Red flash over the whole screen when the hull is breached.
+        var flash = MakeImage("DamageFlash", root, new Color(1f, 0.1f, 0.05f, 0f));
+        Stretch(flash.rectTransform);
+        Ref(so, "damageFlash", flash);
 
-        var bg = MakeImage("OxygenBar", go.transform, new Color(1f, 1f, 1f, 0.2f));
-        Place(bg.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -80f), new Vector2(400f, 28f));
-        var fill = MakeImage("Fill", bg.transform, OxygenColor);
-        Stretch(fill.rectTransform);
-        Ref(so, "oxygenFillImage", fill);
-        Ref(so, "oxygenFill", fill.rectTransform);
+        // Air, top-left: "O2", a bar cut into cells and a row of red cracks (one per leak).
+        // The first quarter of the bar has reddish empty cells: below that line air is low.
+        var o2 = MakeIcon("AirIcon", root, o2Icon, 5, Color.white, true);
+        Place(o2.rectTransform, TopLeft, new Vector2(40f, -30f));
+        Ref(so, "airIcon", o2);
 
-        BuildCompass(so, go.transform, font);
-        BuildCombo(so, go.transform, font);
+        const float barX = 100f, cellW = 12f, cellH = 26f, gap = 3f;
+        var cells = new Object[AirCells];
+        for (int i = 0; i < AirCells; i++)
+        {
+            var cell = MakeImage("AirCell", root, AirColor);
+            Place(cell.rectTransform, TopLeft, new Vector2(barX + i * (cellW + gap), -38f), new Vector2(cellW, cellH));
+            AddShadow(cell.gameObject, 4);
+            cells[i] = cell;
+        }
+        RefArray(so, "airCells", cells);
+
+        var marks = new Object[tune.BreachMax];
+        for (int i = 0; i < marks.Length; i++)
+        {
+            var mark = MakeIcon("Leak", root, crackIcon, 4, BadColor, true);
+            Place(mark.rectTransform, TopLeft, new Vector2(barX + i * 28f, -74f));
+            mark.gameObject.SetActive(false);
+            marks[i] = mark.gameObject;
+        }
+        RefArray(so, "leakMarks", marks);
+
+        // Combo, top-right, with a thin bar: the time left to continue it.
+        var combo = new GameObject("Combo", typeof(RectTransform)).GetComponent<RectTransform>();
+        combo.SetParent(root, false);
+        Place(combo, TopRight, new Vector2(-40f, -32f), new Vector2(200f, 80f));
+        var comboLabel = MakeLabel("Text", combo, "X2", 8, ComboColor, true);
+        Place((RectTransform)comboLabel.transform, TopRight, Vector2.zero);
+        var barBg = MakeImage("Bar", combo, EmptyCell);
+        Place(barBg.rectTransform, new Vector2(1f, 0f), Vector2.zero, new Vector2(140f, 8f));
+        var barFill = MakeImage("Fill", barBg.transform, ComboColor);
+        Stretch(barFill.rectTransform);
+        combo.gameObject.SetActive(false);
+        Ref(so, "comboRoot", combo.gameObject);
+        Ref(so, "comboLabel", comboLabel);
+        Ref(so, "comboBar", barFill.rectTransform);
+
+        // Arrow that slides along the screen edge and points at the ship, with the distance.
+        var arrow = MakeIcon("ShipArrow", root, arrowIcon, 6, GoodColor, true);
+        Place(arrow.rectTransform, Middle, new Vector2(0f, 460f));
+        Ref(so, "shipArrow", arrow.rectTransform);
+        var distance = MakeLabel("ShipDistance", root, "124", 4, Color.white, true);
+        Place((RectTransform)distance.transform, Middle, new Vector2(0f, 402f));
+        Ref(so, "shipDistance", distance);
+
+        // Blinking line while outside the level.
 
         // Level name, shown for a few seconds at the start of a level.
-        var title = MakeText("Title", go.transform, font, 44, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.9f));
-        Place(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -190f), new Vector2(1600f, 60f));
-        title.text = "LEVEL 1: NAME";
+        var title = MakeLabel("Title", root, "1/3  ROCKS", 6, Color.white, true);
+        Place((RectTransform)title.transform, TopMiddle, new Vector2(0f, -190f));
         title.gameObject.SetActive(false);
-        Ref(so, "titleText", title);
+        Ref(so, "title", title);
 
         // Short notice in the upper part of the screen (TOO FAST).
-        var toast = MakeText("Toast", go.transform, font, 60, TextAnchor.MiddleCenter, new Color(1f, 0.6f, 0.2f));
-        Place(toast.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 230f), new Vector2(1600f, 80f));
-        toast.text = "TOO FAST";
+        var toast = MakeLabel("Toast", root, Texts.TooFast, 5, LeakingColor, true);
+        Place((RectTransform)toast.transform, Middle, new Vector2(0f, 230f));
         toast.gameObject.SetActive(false);
-        Ref(so, "toastText", toast);
+        Ref(so, "toast", toast);
 
-        // Hint at the bottom of the screen.
-        var hint = MakeText("Hint", go.transform, font, 34, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.9f));
-        Place(hint.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 70f), new Vector2(1800f, 50f));
-        hint.text = "HINT";
-        hint.gameObject.SetActive(false);
-        Ref(so, "hintText", hint);
-
-        // Big message in the center (DOCKED / OUT OF OXYGEN) with a line under it.
-        var message = MakeText("Message", go.transform, font, 110, TextAnchor.MiddleCenter, Color.white);
-        Place(message.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 60f), new Vector2(1800f, 160f));
-        message.text = "DOCKED";
-        message.gameObject.SetActive(false);
-        Ref(so, "message", message);
-        var messageSub = MakeText("MessageSub", go.transform, font, 40, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.85f));
-        Place(messageSub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -60f), new Vector2(1800f, 60f));
-        messageSub.gameObject.SetActive(false);
-        Ref(so, "messageSub", messageSub);
+        BuildThreatMarkers(go, arrowIcon);
+        BuildEndScreen(so, root, o2Icon);
 
         so.ApplyModifiedPropertiesWithoutUndo();
         return hud;
     }
 
-    // Round compass on the left side, under the oxygen bar: the arrow on the rim points
-    // to the ship, the distance is in the middle, the player's speed is under it.
-    static void BuildCompass(SerializedObject so, Transform parent, Font font)
+    // Danger markers at the screen edge (ThreatMarkers): a pool of six. Each one is a soft glow,
+    // a pixel icon of the threat (set while playing) and an arrow pointing into the screen.
+    static void BuildThreatMarkers(GameObject hud, Sprite arrowIcon)
     {
-        const float size = 180f;
-        var root = new GameObject("Compass", typeof(RectTransform)).GetComponent<RectTransform>();
-        root.SetParent(parent, false);
-        Place(root, new Vector2(0f, 1f), new Vector2(40f, -135f), new Vector2(size, size));
+        const int count = 6;
+        var threats = hud.AddComponent<ThreatMarkers>();
+        var meteorIcon = SpriteFactory.PixelIcon("meteor", PixelFont.MeteorSign);
+        var mineIcon = SpriteFactory.PixelIcon("mine", PixelFont.MineSign);
 
-        var disc = MakeImage("Disc", root, new Color(0f, 0f, 0f, 0.45f));
-        disc.sprite = SpriteFactory.Circle();
-        Stretch(disc.rectTransform);
+        var group = new GameObject("DangerMarkers", typeof(RectTransform)).GetComponent<RectTransform>();
+        group.SetParent(hud.transform, false);
+        Stretch(group);
 
-        var ring = MakeImage("Ring", root, new Color(1f, 1f, 1f, 0.7f));
-        ring.sprite = SpriteFactory.Ring();
-        Stretch(ring.rectTransform);
+        var roots = new Object[count];
+        var glows = new Object[count];
+        var icons = new Object[count];
+        var arrows = new Object[count];
+        for (int i = 0; i < count; i++)
+        {
+            var m = new GameObject("Danger", typeof(RectTransform)).GetComponent<RectTransform>();
+            m.SetParent(group, false);
+            Place(m, Middle, Vector2.zero, Vector2.zero);
 
-        var needle = new GameObject("Needle", typeof(RectTransform)).GetComponent<RectTransform>();
-        needle.SetParent(root, false);
-        Place(needle, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-        Ref(so, "compassNeedle", needle);
+            var glow = MakeImage("Glow", m, new Color(1f, 0.3f, 0.25f, 0.3f));
+            glow.sprite = SpriteFactory.Glow();
+            Place(glow.rectTransform, Middle, Vector2.zero, new Vector2(130f, 130f));
+            var icon = MakeIcon("Icon", m, mineIcon, 4, Color.white, true);
+            Place(icon.rectTransform, Middle, Vector2.zero);
+            var arrow = MakeIcon("Arrow", m, arrowIcon, 4, Color.white, true);
+            Place(arrow.rectTransform, Middle, Vector2.zero);
 
-        var arrow = MakeImage("Arrow", needle, GoodColor);
-        arrow.sprite = SpriteFactory.Triangle();
-        Place(arrow.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, size * 0.5f - 26f), new Vector2(34f, 34f));
+            m.gameObject.SetActive(false);
+            roots[i] = m; glows[i] = glow; icons[i] = icon; arrows[i] = arrow;
+        }
 
-        var distance = MakeText("Distance", root, font, 28, TextAnchor.MiddleCenter, Color.white);
-        Place(distance.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size, 80f));
-        distance.text = "SHIP\n0 m";
-        Ref(so, "compassText", distance);
-
-        // Green while slow enough to dock, red when too fast.
-        var speed = MakeText("Speed", parent, font, 30, TextAnchor.UpperLeft, GoodColor);
-        Place(speed.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -325f), new Vector2(300f, 40f));
-        speed.text = "SPEED 0";
-        Ref(so, "speedText", speed);
+        var so = new SerializedObject(threats);
+        RefArray(so, "markers", roots);
+        RefArray(so, "glows", glows);
+        RefArray(so, "icons", icons);
+        RefArray(so, "arrows", arrows);
+        Ref(so, "meteorIcon", meteorIcon);
+        Ref(so, "mineIcon", mineIcon);
+        so.ApplyModifiedPropertiesWithoutUndo();
     }
 
-    // Combo counter in the top-right corner, with a bar showing the time left to continue it.
-    static void BuildCombo(SerializedObject so, Transform parent, Font font)
+    // End of a level: dark veil, big word, air left (after docking) and the key to press.
+    static void BuildEndScreen(SerializedObject so, Transform root, Sprite o2Icon)
     {
-        var root = new GameObject("Combo", typeof(RectTransform)).GetComponent<RectTransform>();
-        root.SetParent(parent, false);
-        Place(root, new Vector2(1f, 1f), new Vector2(-40f, -30f), new Vector2(420f, 100f));
+        var veil = MakeImage("EndScreen", root, new Color(0f, 0f, 0.03f, 0.55f));
+        Stretch(veil.rectTransform);
+        Transform t = veil.transform;
+        Ref(so, "endRoot", veil.gameObject);
 
-        var text = MakeText("Text", root, font, 64, TextAnchor.UpperRight, new Color(1f, 0.85f, 0.3f));
-        Stretch(text.rectTransform);
-        text.text = "COMBO x2";
+        var counter = MakeLabel("Counter", t, "1/3", 4, new Color(1f, 1f, 1f, 0.7f), true);
+        Place((RectTransform)counter.transform, Middle, new Vector2(0f, 150f));
+        Ref(so, "endCounter", counter);
 
-        var barBg = MakeImage("Bar", root, new Color(1f, 1f, 1f, 0.2f));
-        Place(barBg.rectTransform, new Vector2(1f, 0f), Vector2.zero, new Vector2(260f, 8f));
-        var barFill = MakeImage("Fill", barBg.transform, new Color(1f, 0.85f, 0.3f));
-        Stretch(barFill.rectTransform);
+        var title = MakeLabel("Title", t, Texts.Docked, 12, GoodColor, true);
+        Place((RectTransform)title.transform, Middle, new Vector2(0f, 60f));
+        Ref(so, "endTitle", title);
 
-        root.gameObject.SetActive(false);
-        Ref(so, "comboRoot", root.gameObject);
-        Ref(so, "comboText", text);
-        Ref(so, "comboBar", barFill.rectTransform);
+        var row = new GameObject("Air", typeof(RectTransform)).GetComponent<RectTransform>();
+        row.SetParent(t, false);
+        Place(row, Middle, new Vector2(0f, -50f), Vector2.zero);
+        Ref(so, "endAirRow", row.gameObject);
+        var icon = MakeIcon("Icon", row, o2Icon, 5, AirColor, true);
+        Place(icon.rectTransform, Middle, new Vector2(-50f, 0f));
+        Ref(so, "endAirIcon", icon.rectTransform);
+        var air = MakeLabel("Number", row, "43", 6, Color.white, true);
+        Place((RectTransform)air.transform, Middle, new Vector2(30f, 0f));
+        Ref(so, "endAir", air);
+
+        // The key to press, drawn as a keycap.
+        var key = MakeImage("Key", t, new Color(1f, 1f, 1f, 0.92f));
+        var keyLabel = MakeLabel("Text", key.transform, Texts.KeyNext, 4, Ink, false);
+        Place((RectTransform)keyLabel.transform, Middle, Vector2.zero);
+        Place(key.rectTransform, Middle, new Vector2(0f, -150f), new Vector2(keyLabel.Width + 36f, 52f));
+        Ref(so, "endKey", key.rectTransform);
+        Ref(so, "endKeyLabel", keyLabel);
+
+        veil.gameObject.SetActive(false);
     }
 
-    static Text MakeText(string name, Transform parent, Font font, int size, TextAnchor anchor, Color color)
+    // One line in the pixel font. Change the text, scale or colour in the Inspector.
+    static PixelLabel MakeLabel(string name, Transform parent, string text, int scale, Color color, bool shadow)
     {
         var go = new GameObject(name, typeof(RectTransform));
         go.transform.SetParent(parent, false);
-        var t = go.AddComponent<Text>();
-        t.font = font;
-        t.fontSize = size;
-        t.alignment = anchor;
-        t.color = color;
-        t.horizontalOverflow = HorizontalWrapMode.Overflow;
-        t.verticalOverflow = VerticalWrapMode.Overflow;
-        t.raycastTarget = false;
-        return t;
+        var img = go.AddComponent<RawImage>();
+        img.color = color;
+        img.raycastTarget = false;
+        if (shadow) AddShadow(go, scale);
+        var label = go.AddComponent<PixelLabel>();
+        label.Setup(text, scale);
+        return label;
+    }
+
+    // A pixel icon shown `scale` times bigger than drawn.
+    static Image MakeIcon(string name, Transform parent, Sprite sprite, int scale, Color color, bool shadow)
+    {
+        var img = MakeImage(name, parent, color);
+        img.sprite = sprite;
+        if (sprite != null) img.rectTransform.sizeDelta = sprite.rect.size * scale;
+        if (shadow) AddShadow(img.gameObject, scale);
+        return img;
+    }
+
+    // Hard dark shadow, half a font pixel down and right, so things read on any background.
+    static void AddShadow(GameObject go, int scale)
+    {
+        var s = go.AddComponent<Shadow>();
+        s.effectColor = new Color(0f, 0f, 0.05f, 0.7f);
+        s.effectDistance = new Vector2(scale * 0.5f, -scale * 0.5f);
     }
 
     static Image MakeImage(string name, Transform parent, Color color)
@@ -855,13 +1667,18 @@ public static class DraftSetup
         return img;
     }
 
-    // Anchors the rect to one point of the parent; pivot matches the anchor.
-    static void Place(RectTransform rt, Vector2 anchor, Vector2 position, Vector2 size)
+    // Pins the rect to one point of the parent; pivot matches the anchor. Size is left alone.
+    static void Place(RectTransform rt, Vector2 anchor, Vector2 position)
     {
         rt.anchorMin = anchor;
         rt.anchorMax = anchor;
         rt.pivot = anchor;
         rt.anchoredPosition = position;
+    }
+
+    static void Place(RectTransform rt, Vector2 anchor, Vector2 position, Vector2 size)
+    {
+        Place(rt, anchor, position);
         rt.sizeDelta = size;
     }
 
@@ -884,7 +1701,7 @@ public static class DraftSetup
         return asset;
     }
 
-    static PhysicsMaterial2D PhysicsMaterial(string name)
+    static PhysicsMaterial2D PhysicsMaterial(string name, float bounciness)
     {
         string path = PhysicsFolder + "/" + name + ".physicsMaterial2D";
         var m = AssetDatabase.LoadAssetAtPath<PhysicsMaterial2D>(path);
@@ -894,7 +1711,7 @@ public static class DraftSetup
             AssetDatabase.CreateAsset(m, path);
         }
         m.friction = 0f;
-        m.bounciness = tune.Bounciness;
+        m.bounciness = bounciness;
         EditorUtility.SetDirty(m);
         return m;
     }
@@ -923,5 +1740,17 @@ public static class DraftSetup
             return;
         }
         p.objectReferenceValue = value;
+    }
+
+    static void RefArray(SerializedObject so, string field, Object[] values)
+    {
+        var p = so.FindProperty(field);
+        if (p == null)
+        {
+            Debug.LogError("DraftSetup: field '" + field + "' not found on " + so.targetObject.GetType().Name);
+            return;
+        }
+        p.arraySize = values.Length;
+        for (int i = 0; i < values.Length; i++) p.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
     }
 }

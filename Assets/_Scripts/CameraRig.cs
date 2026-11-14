@@ -12,6 +12,7 @@ public class CameraRig : MonoBehaviour
     public Transform target;
     Vector3 basePos;
     float shakeTimer;
+    float shakeStrength = 1f;
 
     public static void ResetStatics()
     {
@@ -38,7 +39,19 @@ public class CameraRig : MonoBehaviour
 
     public static void Shake()
     {
-        if (Instance != null) Instance.shakeTimer = Instance.T.CameraShakeTime;
+        if (Instance == null) return;
+        // A light shake never cuts a hard one short.
+        if (Instance.shakeTimer > Instance.T.CameraShakeTime && Instance.shakeStrength > 1f) return;
+        Instance.shakeTimer = Instance.T.CameraShakeTime;
+        Instance.shakeStrength = 1f;
+    }
+
+    // Longer and stronger: the hull was breached.
+    public static void ShakeHard()
+    {
+        if (Instance == null) return;
+        Instance.shakeTimer = Instance.T.CameraHardShakeTime;
+        Instance.shakeStrength = Instance.T.CameraHardShakeStrength;
     }
 
     void LateUpdate()
@@ -54,7 +67,7 @@ public class CameraRig : MonoBehaviour
         if (shakeTimer > 0f)
         {
             shakeTimer -= Time.deltaTime;
-            offset = (Vector3)(Random.insideUnitCircle * T.CameraShakeStrength);
+            offset = (Vector3)(Random.insideUnitCircle * T.CameraShakeStrength * shakeStrength);
         }
         transform.position = basePos + offset;
     }

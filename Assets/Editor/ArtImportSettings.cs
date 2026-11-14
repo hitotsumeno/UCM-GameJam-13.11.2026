@@ -37,6 +37,14 @@ public class ArtImportSettings : AssetPostprocessor
         importer.bakeAxisConversion = false;                  // vertices stay as in the file (only X mirrored)
     }
 
+    static bool IsSlicedSheet(TextureImporter importer)
+    {
+#pragma warning disable 618 // the old spritesheet list is enough to see whether frames exist
+        return importer.spriteImportMode == SpriteImportMode.Multiple
+            && importer.spritesheet != null && importer.spritesheet.Length > 0;
+#pragma warning restore 618
+    }
+
     void OnPreprocessTexture()
     {
         string path = assetPath.Replace('\\', '/');
@@ -44,14 +52,16 @@ public class ArtImportSettings : AssetPostprocessor
 
         var importer = (TextureImporter)assetImporter;
         importer.textureType = TextureImporterType.Sprite;
-        importer.spriteImportMode = SpriteImportMode.Single;
+        // A sprite sheet already sliced in the Sprite Editor (Sprite Mode: Multiple, with frames)
+        // stays as it is; everything else is one picture.
+        if (!IsSlicedSheet(importer)) importer.spriteImportMode = SpriteImportMode.Single;
         importer.spritePixelsPerUnit = 100f;
 
         string name = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
         if (name == "background")
             importer.maxTextureSize = 4096;
 
-        if (name == "background" || name.StartsWith("nebula"))
+        if (name == "background" || name.StartsWith("nebula") || name.StartsWith("backdrop"))
         {
             // Smooth dark gradients look blocky with normal compression.
             importer.textureCompression = TextureImporterCompression.CompressedHQ;
@@ -65,6 +75,58 @@ public class ArtImportSettings : AssetPostprocessor
         if (name.StartsWith("nebula"))
             importer.wrapMode = TextureWrapMode.Repeat; // edges blend into the next copy
 
+        if (name.StartsWith("storm"))
+        {
+            // The storm wall is drawn tiled along the level edges: whole rectangles, clean edges.
+            // Body and glow are 24 units wide (24 px per unit); bolts use the usual 100.
+            if (name == "storm_body" || name == "storm_glow")
+            {
+                importer.spritePixelsPerUnit = 24f;
+                // Repeats only along the edge (V). Across it (U) the picture is clamped: its inner
+                // side is transparent and its outer side dense, and repeating would blend the two
+                // into a thin line where the storm begins.
+                importer.wrapModeU = TextureWrapMode.Clamp;
+                importer.wrapModeV = TextureWrapMode.Repeat;
+            }
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteMeshType = SpriteMeshType.FullRect;
+            importer.SetTextureSettings(settings);
+        }
+
+        if (name == "ship" || name.StartsWith("player_ship"))
+        {
+            // Big renders (2028 px) drawn small: smaller copies keep them clean, the alpha outline
+            // becomes the physics shape that DraftSetup turns into the collider.
+            importer.mipmapEnabled = true;
+            importer.maxTextureSize = name == "ship" ? 1024 : 512;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteGenerateFallbackPhysicsShape = true;
+            importer.SetTextureSettings(settings);
+        }
+
+        if (name.StartsWith("fire"))
+        {
+            // Meteor tail: drawn at about 7 units, its outline gives the base of the flame.
+            importer.mipmapEnabled = true;
+            importer.maxTextureSize = 512;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteGenerateFallbackPhysicsShape = true;
+            importer.SetTextureSettings(settings);
+        }
+
+        if (name.StartsWith("stone"))
+        {
+            // The artist's rock renders: shown much smaller than drawn and always turning.
+            importer.mipmapEnabled = true;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+        }
+
         if (name.StartsWith("asteroid"))
             importer.textureCompression = TextureImporterCompression.CompressedHQ; // keep the rock relief clean
 
@@ -76,6 +138,13 @@ public class ArtImportSettings : AssetPostprocessor
             importer.ReadTextureSettings(settings);
             settings.spriteMeshType = SpriteMeshType.FullRect;
             importer.SetTextureSettings(settings);
+        }
+
+        if (name.StartsWith("star_render"))
+        {
+            // The artist's star renders (2028 px) are shown only a few pixels big.
+            importer.maxTextureSize = 256;
+            importer.mipmapEnabled = true;
         }
     }
 }
