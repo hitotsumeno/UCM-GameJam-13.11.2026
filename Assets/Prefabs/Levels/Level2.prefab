@@ -287,6 +287,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b280fda9fc84ae43b69f63a37e7bc31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   smallMeteorPrefab: {fileID: 4869049428664027067, guid: b8233fae311434004b51dbb552d19708, type: 3}
   mediumMeteorPrefab: {fileID: 147483947281870696, guid: c9e52effdb72f4eb098f8b5f29c61b2e, type: 3}
   intervalMin: 6
@@ -369,6 +370,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e79efd95e5224011bff2a05439383c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   text: BIG ROCKS SPLIT IN TWO. DESTROY THEM IN A ROW FOR A COMBO
 --- !u!1 &4256069668286390941
 GameObject:

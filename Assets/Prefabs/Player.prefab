@@ -438,6 +438,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bd9eb9ac614ca94687159f332163710, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   rb: {fileID: 5118224194766917144}
   col: {fileID: 3450959668883021036}
   visual: {fileID: 4646074866228025839}

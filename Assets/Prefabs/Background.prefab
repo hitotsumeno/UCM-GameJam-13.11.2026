@@ -5968,6 +5968,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e9184be72cface41ad379cd3a3ad803, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   anchor: {x: 0, y: 0}
   factor: 0.3
   tile: 56
@@ -35615,6 +35616,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e9184be72cface41ad379cd3a3ad803, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   anchor: {x: 0, y: 0}
   factor: 0.45
   tile: 56
@@ -46255,6 +46257,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e9184be72cface41ad379cd3a3ad803, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   anchor: {x: 0, y: 0}
   factor: 0.2
   tile: 56

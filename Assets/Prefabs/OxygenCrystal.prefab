@@ -220,5 +220,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42bc9905ff7da644696a72717226a62c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   core: {fileID: 4050261670123505786}
   glow: {fileID: 2094461646756034801}

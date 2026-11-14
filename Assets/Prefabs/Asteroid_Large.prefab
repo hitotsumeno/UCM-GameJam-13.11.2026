@@ -110,6 +110,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67901f877cdcf2e41a1f22cbf65f5843, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   size: 2
   body: {fileID: 3154018268774570175}
   rb: {fileID: 6186974945937073869}

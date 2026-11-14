@@ -288,6 +288,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67901f877cdcf2e41a1f22cbf65f5843, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   size: 1
   body: {fileID: 1003840739653502652}
   rb: {fileID: 280002767221373047}
@@ -311,6 +312,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a1cedde032ac7746b02eb04d5676399, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   asteroid: {fileID: 147483947281870696}
   rb: {fileID: 280002767221373047}
   tail: {fileID: 153612978598474856}

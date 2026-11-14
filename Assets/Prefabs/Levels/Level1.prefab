@@ -230,6 +230,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e79efd95e5224011bff2a05439383c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   text: DESTROY ROCKS AND GRAB THE CRYSTALS. CRYSTALS ARE AIR
 --- !u!1 &2690366001931037227
 GameObject:
@@ -568,6 +569,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e79efd95e5224011bff2a05439383c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   text: 'LEFT MOUSE BUTTON: SHOOT. THE RECOIL MOVES YOU'
 --- !u!1 &7444545151279325783
 GameObject:
@@ -692,6 +694,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e79efd95e5224011bff2a05439383c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   text: SHOOT TOWARD THE SHIP TO BRAKE. DOCK SLOWER THAN SPEED 5
 --- !u!1001 &393469288050299529
 PrefabInstance:

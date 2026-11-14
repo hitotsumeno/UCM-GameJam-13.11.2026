@@ -111,6 +111,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e81a88ced19e47149a10690d1383a9b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
   rb: {fileID: 8030898926459038701}
   col: {fileID: 8763139537522082876}
 --- !u!1 &5799125591388399835
