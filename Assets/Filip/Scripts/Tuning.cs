@@ -188,7 +188,7 @@ public static class Tuning
 
 
     // --- Oxygen crystals: destroyed rocks leave air behind ("destroy to breathe") ---
-    public const float CrystalOxygen = 2f;        // oxygen per crystal (before the combo bonus)
+    public const float CrystalOxygen = 3.5f;       // oxygen per crystal (before the combo bonus)
     public const int CrystalsFromSmall = 2;       // crystals left by a destroyed rock
     public const int CrystalsFromMedium = 3;
     public const int CrystalsFromLarge = 4;
