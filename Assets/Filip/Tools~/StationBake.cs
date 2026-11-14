@@ -171,6 +171,40 @@ public static class StationBake
         Sphere(V(10.9, 2.2, 0.6), 0.22, 3); Sphere(V(-7.0, -8.4, 0.3), 0.22, 3); Sphere(V(0, 0, 7.2), 0.18, 3);
     }
 
+    // Soft blur of a picture with transparency (b, g, r, a bytes). Colours are blurred weighted
+    // by their opacity, so transparent pixels do not darken the edges.
+    static byte[] Soften(byte[] px, int n, int radius)
+    {
+        float[] cur = new float[n * n * 4], tmp = new float[n * n * 4];
+        for (int i = 0; i < n * n; i++)
+        {
+            float a = px[i * 4 + 3] / 255f;
+            for (int k = 0; k < 3; k++) cur[i * 4 + k] = px[i * 4 + k] / 255f * a;
+            cur[i * 4 + 3] = a;
+        }
+        for (int pass = 0; pass < 2; pass++)
+        {
+            for (int y = 0; y < n; y++) for (int x = 0; x < n; x++) for (int k = 0; k < 4; k++)
+            {
+                float s = 0; for (int d = -radius; d <= radius; d++) { int xx = x + d; if (xx >= 0 && xx < n) s += cur[(y * n + xx) * 4 + k]; }
+                tmp[(y * n + x) * 4 + k] = s / (2 * radius + 1);
+            }
+            for (int y = 0; y < n; y++) for (int x = 0; x < n; x++) for (int k = 0; k < 4; k++)
+            {
+                float s = 0; for (int d = -radius; d <= radius; d++) { int yy = y + d; if (yy >= 0 && yy < n) s += tmp[(yy * n + x) * 4 + k]; }
+                cur[(y * n + x) * 4 + k] = s / (2 * radius + 1);
+            }
+        }
+        byte[] res = new byte[n * n * 4];
+        for (int i = 0; i < n * n; i++)
+        {
+            float a = cur[i * 4 + 3];
+            for (int k = 0; k < 3; k++) res[i * 4 + k] = (byte)(a > 0.001f ? RockBake.C01(cur[i * 4 + k] / a) * 255f : 0f);
+            res[i * 4 + 3] = (byte)(RockBake.C01(a) * 255f);
+        }
+        return res;
+    }
+
     public static string Bake(string outFile, int size)
     {
         Build();
@@ -197,7 +231,8 @@ public static class StationBake
         {
             int i = y * W + x; if (float.IsNegativeInfinity(zb[i])) continue;
             int mat = (int)mb[i];
-            if (mat == 3) { rgb[i * 3] = 1f; rgb[i * 3 + 1] = 0.62f; rgb[i * 3 + 2] = 0.28f; continue; }
+            // The lights are almost dead: a bright dot would look like something to fly to.
+            if (mat == 3) { rgb[i * 3] = 0.30f; rgb[i * 3 + 1] = 0.20f; rgb[i * 3 + 2] = 0.14f; continue; }
 
             float nx = nb[i * 3], ny = nb[i * 3 + 1], nz = nb[i * 3 + 2];
             float nl = (float)Math.Sqrt(nx * nx + ny * ny + nz * nz); if (nl < 1e-6f) nl = 1f; nx /= nl; ny /= nl; nz /= nl;
@@ -228,15 +263,19 @@ public static class StationBake
                 float k = wear * (seam ? 0.6f : 1f);
                 r = 0.60f * k; g = 0.64f * k; b = 0.72f * k;
             }
-            else if (mat == 1) { r = 0.07f * wear; g = 0.15f * wear; b = 0.40f * wear; }
+            else if (mat == 1) { r = 0.06f * wear; g = 0.10f * wear; b = 0.22f * wear; }
             else { r = 0.30f * wear; g = 0.32f * wear; b = 0.38f * wear; }
 
-            float diff = (0.10f + 0.28f * ndv + 0.85f * ndl) * ao;
-            float sheen = mat == 1 ? (float)Math.Pow(ndl, 6) * 0.35f : 0f;
-            float rim = (float)Math.Pow(1f - ndv, 3) * 0.42f;
-            rgb[i * 3] = RockBake.C01(r * diff + sheen * 0.5f + rim * 0.45f);
-            rgb[i * 3 + 1] = RockBake.C01(g * diff + sheen * 0.7f + rim * 0.65f);
-            rgb[i * 3 + 2] = RockBake.C01(b * diff + sheen + rim * 1.00f);
+            // Far away and in shadow: almost no direct light, only a thin cold edge
+            // on the side turned to the light, and everything sunk into blue haze.
+            float diff = (0.05f + 0.10f * ndv + 0.26f * ndl) * ao;
+            float lit = RockBake.C01(nx * -0.62f + ny * 0.70f + 0.15f);
+            float rim = (float)Math.Pow(1f - ndv, 2.6) * 0.50f * lit;
+            float cr = r * diff + rim * 0.35f, cg = g * diff + rim * 0.55f, cb = b * diff + rim * 0.95f;
+            const float haze = 0.30f;
+            rgb[i * 3] = RockBake.C01(cr * (1f - haze) + 0.020f * haze);
+            rgb[i * 3 + 1] = RockBake.C01(cg * (1f - haze) + 0.035f * haze);
+            rgb[i * 3 + 2] = RockBake.C01(cb * (1f - haze) + 0.090f * haze);
         }
 
         byte[] px = new byte[size * size * 4];
@@ -253,6 +292,8 @@ public static class StationBake
             px[o] = (byte)(b / n * 255f); px[o + 1] = (byte)(g / n * 255f); px[o + 2] = (byte)(r / n * 255f);
             px[o + 3] = (byte)(255f * n / (SS * SS));
         }
+        px = Soften(px, size, 2);   // slightly out of focus, unlike the crisp things in the game
+
         var bmp = new Bitmap(size, size, PixelFormat.Format32bppArgb);
         var data = bmp.LockBits(new Rectangle(0, 0, size, size), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
         Marshal.Copy(px, 0, data.Scan0, px.Length);

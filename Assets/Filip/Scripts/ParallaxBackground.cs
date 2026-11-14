@@ -81,14 +81,16 @@ public class ParallaxBackground : MonoBehaviour
 
         // Size in units, place on screen (units from the screen center, when the player
         // is in the middle of the level) and colour. Kept dim: it is only scenery.
-        float size = 20f;
+        // The slower an object drifts across the screen, the farther away it feels.
+        float size = 20f, parallax = Tuning.BackdropParallax;
         Vector2 offset = new Vector2(8f, 4f);
         Color color = new Color(1f, 1f, 1f, 0.7f);
         switch (name)
         {
-            case "sun": size = 14f; offset = new Vector2(11f, 6f); color = new Color(1f, 1f, 1f, 0.8f); break;
-            // The station wreck is a full 3D render; darkened and cooled so it stays far away.
-            case "wreck": size = 32f; offset = new Vector2(4f, 2f); color = new Color(0.42f, 0.47f, 0.62f, 1f); break;
+            case "sun": size = 14f; offset = new Vector2(11f, 6f); color = new Color(1f, 1f, 1f, 0.8f); parallax = 0.04f; break;
+            // The station wreck is rendered dark, hazy and slightly out of focus: it must read
+            // as far scenery in shadow, not as something the player can fly to.
+            case "wreck": size = 34f; offset = new Vector2(4f, 2f); color = new Color(0.85f, 0.9f, 1f, 1f); parallax = 0.06f; break;
             case "planet": size = 46f; offset = new Vector2(16f, -8f); color = new Color(1f, 1f, 1f, 0.85f); break;
         }
 
@@ -96,7 +98,7 @@ public class ParallaxBackground : MonoBehaviour
         if (sr == null) return;
         sr.color = color;
         sr.gameObject.AddComponent<ParallaxBackground>()
-            .Setup(anchor, Tuning.BackdropParallax, size, Mode.Free, offset);
+            .Setup(anchor, parallax, size, Mode.Free, offset);
     }
 
     void Setup(Vector2 anchor, float factor, float size, Mode mode, Vector2 baseOffset)
