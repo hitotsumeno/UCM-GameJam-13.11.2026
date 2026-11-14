@@ -207,10 +207,20 @@ public static class DraftSetup
         float len = tune.ShipLength, h = tune.ShipHeight;
         Vector2 size = new Vector2(len, h);
 
+        Reimport("ship");
         var art = Art.TryMake("ship", go.transform, len, 5);
-        if (art != null)
+        List<Vector2[]> outline = art != null ? CenteredOutline(art) : null;
+        if (outline != null)
         {
-            size = Art.WorldSize(art); // docking area matches the picture
+            // Docking area follows the outline of the picture.
+            var poly = go.AddComponent<PolygonCollider2D>();
+            SetPaths(poly, outline);
+            poly.isTrigger = true;
+            size = OutlineSize(outline);
+        }
+        else if (art != null)
+        {
+            size = Art.WorldSize(art); // no outline: the whole picture
         }
         else
         {
@@ -229,9 +239,12 @@ public static class DraftSetup
         var ring = SpriteFactory.MakeSprite("DockRing", go.transform, SpriteFactory.Ring(),
             new Color(1f, 1f, 1f, 0f), Vector2.one * ringSize, 4);
 
-        var col = go.AddComponent<BoxCollider2D>();
-        col.size = size;
-        col.isTrigger = true;
+        if (outline == null)
+        {
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = size;
+            col.isTrigger = true;
+        }
         var s = go.AddComponent<Ship>();
         Set(s, "dockRing", ring);
         return go;
@@ -282,13 +295,9 @@ public static class DraftSetup
         rb.gravityScale = 0f;
         rb.linearDamping = 0f;
         rb.angularDamping = 0f;
-        rb.freezeRotation = true;
+        rb.freezeRotation = false; // PlayerController turns the whole body toward the cursor
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-
-        var col = go.AddComponent<CircleCollider2D>();
-        col.radius = tune.PlayerDiameter * 0.5f;
-        col.sharedMaterial = material;
 
         // Soft white glow under the player: the player is always the easiest thing to find.
         SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
@@ -297,7 +306,29 @@ public static class DraftSetup
 
         var visual = new GameObject("Visual").transform;
         visual.SetParent(go.transform, false);
-        if (Art.TryMake("astronaut", visual, tune.PlayerDiameter, 10) == null)
+        // Picture "player_ship": drawn nose up with the main turbine at the bottom. It is turned so
+        // that the turbine points at +X (the cursor): shots come out of the turbine and the recoil
+        // pushes the nose forward. The collider follows the picture's outline.
+        Collider2D col = null;
+        Transform muzzle = null;
+        Reimport("player_ship");
+        var art = Art.TryMake("player_ship", visual, tune.PlayerShipSize, 10);
+        if (art != null)
+        {
+            art.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            var outline = CenteredOutline(art);
+            if (outline != null)
+            {
+                var poly = go.AddComponent<PolygonCollider2D>();
+                SetPaths(poly, outline);
+                col = poly;
+                // The turbine: the outline's furthest point toward +X, around the middle line.
+                muzzle = new GameObject("Muzzle").transform;
+                muzzle.SetParent(visual, false);
+                muzzle.localPosition = Turbine(outline);
+            }
+        }
+        else
         {
             SpriteFactory.MakeSprite("Body", visual, SpriteFactory.Circle(),
                 new Color(0.9f, 0.9f, 0.95f), Vector2.one * tune.PlayerDiameter, 10);
@@ -308,9 +339,19 @@ public static class DraftSetup
                 new Color(0.5f, 0.5f, 0.55f), new Vector2(0.7f, 0.2f), 12);
             gun.transform.localPosition = new Vector3(0.55f, -0.25f, 0f);
         }
-        var muzzle = new GameObject("Muzzle").transform;
-        muzzle.SetParent(visual, false);
-        muzzle.localPosition = new Vector3(0.9f, -0.25f, 0f);
+        if (col == null)
+        {
+            var circle = go.AddComponent<CircleCollider2D>();
+            circle.radius = tune.PlayerDiameter * 0.5f;
+            col = circle;
+        }
+        col.sharedMaterial = material;
+        if (muzzle == null)
+        {
+            muzzle = new GameObject("Muzzle").transform;
+            muzzle.SetParent(visual, false);
+            muzzle.localPosition = new Vector3(0.9f, -0.25f, 0f);
+        }
 
         var p = go.AddComponent<PlayerController>();
         Set(p, "rb", rb);
@@ -320,6 +361,78 @@ public static class DraftSetup
         Set(p, "bulletPrefab", bullet);
         Set(p, "leakPrefab", leak);
         return go;
+    }
+
+    // Re-imports a picture so ArtImportSettings (mipmaps, physics outline) applies to it.
+    static void Reimport(string name)
+    {
+        foreach (var ext in new[] { ".png", ".jpg", ".psd", ".tga" })
+        {
+            string path = "Assets/_Resources/Art/" + name + ext;
+            if (File.Exists(path)) AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+        }
+    }
+
+    // The outline of a picture (the physics shape Unity makes from its alpha), in its parent's space.
+    // The picture is first moved so that the middle of the outline sits at the parent's origin:
+    // renders often have more empty space on one side, and the ship should turn around its middle.
+    // Null if the picture has no outline.
+    static List<Vector2[]> CenteredOutline(SpriteRenderer art)
+    {
+        var sprite = art.sprite;
+        int count = sprite.GetPhysicsShapeCount();
+        if (count == 0) return null;
+        var raw = new List<Vector2[]>();
+        var pts = new List<Vector2>();
+        Vector2 min = new Vector2(float.MaxValue, float.MaxValue), max = -min;
+        for (int i = 0; i < count; i++)
+        {
+            pts.Clear();
+            sprite.GetPhysicsShape(i, pts);
+            if (pts.Count < 3) continue;
+            raw.Add(pts.ToArray());
+            foreach (var p in pts) { min = Vector2.Min(min, p); max = Vector2.Max(max, p); }
+        }
+        if (raw.Count == 0) return null;
+
+        Transform t = art.transform;
+        Vector2 middle = (min + max) * 0.5f;
+        t.localPosition = -(Vector2)(t.localRotation * Vector3.Scale(middle, t.localScale));
+        var result = new List<Vector2[]>();
+        foreach (var path in raw)
+        {
+            var q = new Vector2[path.Length];
+            for (int k = 0; k < path.Length; k++)
+                q[k] = (Vector2)(t.localRotation * Vector3.Scale(path[k], t.localScale)) + (Vector2)t.localPosition;
+            result.Add(q);
+        }
+        return result;
+    }
+
+    static void SetPaths(PolygonCollider2D poly, List<Vector2[]> paths)
+    {
+        poly.pathCount = paths.Count;
+        for (int i = 0; i < paths.Count; i++) poly.SetPath(i, paths[i]);
+    }
+
+    static Vector2 OutlineSize(List<Vector2[]> paths)
+    {
+        Vector2 min = new Vector2(float.MaxValue, float.MaxValue), max = -min;
+        foreach (var path in paths) foreach (var p in path) { min = Vector2.Min(min, p); max = Vector2.Max(max, p); }
+        return max - min;
+    }
+
+    // Middle of the outline's far end toward +X, within the central third across.
+    static Vector3 Turbine(List<Vector2[]> paths)
+    {
+        Vector2 size = OutlineSize(paths);
+        float far = float.MinValue;
+        foreach (var path in paths) foreach (var p in path)
+            if (Mathf.Abs(p.y) < size.y / 6f) far = Mathf.Max(far, p.x);
+        float sum = 0f; int n = 0;
+        foreach (var path in paths) foreach (var p in path)
+            if (Mathf.Abs(p.y) < size.y / 6f && p.x > far - size.x * 0.04f) { sum += p.y; n++; }
+        return new Vector3(far, n > 0 ? sum / n : 0f, 0f);
     }
 
     static string ArtName(AsteroidSize size)

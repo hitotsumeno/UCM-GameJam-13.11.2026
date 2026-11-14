@@ -20,6 +20,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] Leak leakPrefab;
 
     float nextFireTime;
+    float aimAngle;
 
     void Reset()
     {
@@ -37,8 +38,9 @@ public class PlayerController : MonoBehaviour
         if (aim.sqrMagnitude < 0.0001f) aim = Vector2.right;
         aim.Normalize();
 
-        float angle = Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg;
-        visual.rotation = Quaternion.Euler(0f, 0f, angle);
+        // The whole ship (with its collider) turns in FixedUpdate so that +X, the main turbine,
+        // faces the cursor.
+        aimAngle = Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg;
 
         var game = DraftGame.Instance;
         bool playing = game != null && game.State == GameState.Playing;
@@ -120,6 +122,10 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Turn toward the cursor; hits do not make the ship spin.
+        rb.angularVelocity = 0f;
+        rb.MoveRotation(aimAngle);
+
         // The storm beyond the level edge pushes the ship back in: gently at the edge,
         // harder deeper in. The ship can still shoot its way in, but it cannot drift away.
         var game = DraftGame.Instance;

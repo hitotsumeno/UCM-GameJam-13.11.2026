@@ -47,7 +47,7 @@ MonoBehaviour:
   LevelHeight: 120
   PlayerStartFromBottom: 5
   ShipFromTop: 3
-  ShipLength: 6
+  ShipLength: 10
   ShipHeight: 2.5
   DockRingMargin: 1.2
   DockRingShowDistance: 22

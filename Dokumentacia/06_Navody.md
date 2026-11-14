@@ -55,8 +55,8 @@ sa zástupný tvar. Veľkosť v hre určuje kód (dlhšia strana obrázka), nie 
 
 | Súbor | Veľkosť v hre | Poznámka |
 |---|---|---|
-| `astronaut.png` | 1 jednotka | loď hráča, nakreslená **smerom doprava** |
-| `ship.png` | 6 jednotiek | cieľová loď, nosom **doprava** |
+| `player_ship.png` | 2,2 (strana obrázka) | loď hráča, nosom **nahor**, hlavná turbína dole; zrážky podľa obrysu |
+| `ship.png` | 10 (strana obrázka) | cieľová loď, nosom **nahor**; pristátie podľa obrysu |
 | `asteroid_s1.png` … | 2 | malé kamene; varianty `asteroid_s2`, `asteroid_s3` … |
 | `asteroid_m1.png` … | 4 | stredné kamene |
 | `asteroid_l1.png` … | 6 | veľké kamene |

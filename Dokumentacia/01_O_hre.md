@@ -10,9 +10,9 @@ skôr ako vzduch dôjde.
 
 Pôvodne mal byť hráč astronaut odnesený od lode, ktorý drží v rukách zbraň.
 Tím neskôr rozhodol, že hráč je malá loď bez paliva. Pravidlá zostali rovnaké.
-Na obrazovke je hráčova loď zatiaľ zobrazená dočasným zástupným obrázkom:
-biely kruh s modrým priezorom a sivou zbraňou. Loď od výtvarníčky je pripravená
-(pozri kapitolu 7).
+Hráčova loď je malá zelená loď od výtvarníčky. Natáča sa hlavnou turbínou ku kurzoru:
+strely vyletujú z turbíny a spätný ráz ju tlačí nosom dopredu. Cieľová loď je veľká
+fialová materská loď.
 
 ## Cieľ úrovne
 

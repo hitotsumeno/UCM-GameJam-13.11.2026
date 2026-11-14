@@ -179,7 +179,8 @@ jediným výstrelom, ťažkú mínu zostreliť skôr, ako sa hniezdo okolo nej z
 
 ## Pristátie (dokovanie) k cieľovej lodi
 
-- Cieľová loď je zatiaľ zástupný obdĺžnik 6 × 2,5 jednotky.
+- Cieľová loď je veľká fialová materská loď (obrázok so stranou 10 jednotiek, loď asi 7 × 6,7),
+  nosom nahor. Pristáva sa dotykom jej obrysu.
 - Dotyk rýchlosťou do **5** = úspech („docked“), koniec úrovne.
 - Rýchlejší dotyk: loď sa odrazí (60 % rýchlosti, aspoň 3), stratí 5 kyslíka,
   ukáže sa nápis „too fast“ a kamera sa zatrasie.

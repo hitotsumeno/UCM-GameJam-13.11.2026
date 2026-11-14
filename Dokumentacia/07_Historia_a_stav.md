@@ -56,7 +56,10 @@ nemenila, iba z nej vychádzala.
   s dvoma zbraňami pri motore je hotová aj s textúrami a bola zapečená do obrázka hráča:
   loď sa otáča zadnou časťou (motorom a zbraňami) ku kurzoru, zbrane strieľajú striedavo a spätný ráz ju tlačí nosom
   dopredu. Na žiadosť tímu bola zatiaľ vrátená späť, uložená je pod značkou
-  `ship-player-backup`. Veľká materská loď z toho istého súboru zatiaľ textúry nemá.
+  `ship-player-backup`.
+- **Rendery lodí od výtvarníčky:** malá zelená loď je hráč (natáča sa turbínou ku kurzoru,
+  strely letia z hlavnej turbíny), veľká fialová materská loď je cieľ pristátia. Zrážky
+  oboch lodí sa počítajú podľa obrysu obrázka.
 
 ## Čo je hotové
 
@@ -81,8 +84,7 @@ nemenila, iba z nej vychádzala.
 - **„Posledný nádych“**: krátka núdzová rezerva, keď kyslík klesne na nulu.
 - **Prepojenie úvodného menu programátora s hrou**: menu načíta ďalšiu scénu v Build
   Settings, scéna `DraftScene` tam zatiaľ nie je.
-- **Grafika od výtvarníčky**: loď hráča je pripravená (pozri vyššie), materská loď ako cieľ
-  pristátia čaká na textúry, model míny ešte nie je.
+- **Grafika od výtvarníčky**: model míny ešte nie je.
 - **Planéta v úrovniach**: kód je hotový, žiadna úroveň ju zatiaľ nepoužíva.
 - **Testovanie úrovní hráčmi a doladenie balansu**: úrovne sú rozmiestnené bez dlhého hrania.
 - **Finálny build a zlúčenie do `main`**: iba so súhlasom tímu.

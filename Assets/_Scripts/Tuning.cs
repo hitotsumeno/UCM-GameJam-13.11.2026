@@ -54,6 +54,8 @@ public class Tuning : ScriptableObject
     [Header("Player")]
     public float PlayerMaxSpeed = 12f;
     public float PlayerDiameter = 1f;
+    [Tooltip("side of the player's ship picture (player_ship.png); its round body is about one PlayerDiameter")]
+    public float PlayerShipSize = 2.2f;
     public float PlayerMass = 1f;
     [Tooltip("white glow under the player, in player diameters")]
     public float PlayerGlowSize = 3f;
@@ -111,7 +113,7 @@ public class Tuning : ScriptableObject
     public float ShipFromTop = 3f;
 
     [Header("Sizes in the world, in units (the larger side of the picture)")]
-    public float ShipLength = 6f;
+    public float ShipLength = 10f;
     [Tooltip("placeholder only; real art keeps its own proportions")]
     public float ShipHeight = 2.5f;
     [Tooltip("gap between the goal ship and its docking ring")]

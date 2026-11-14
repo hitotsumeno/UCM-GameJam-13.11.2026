@@ -3,8 +3,11 @@ Art for the draft game. Put PNG files here.
 The game finds pictures by file name. If a file is missing, a placeholder is drawn.
 Size in the game is set by code (the larger side of the picture), not by the picture:
 
-  astronaut.png      1 unit    the PLAYER (in the story now a small ship), drawn facing RIGHT
-  ship.png           6 units   the GOAL to dock to, drawn nose to the RIGHT
+  player_ship.png    2.2 units the PLAYER's small ship (side of the picture), nose UP, main turbine at the
+                               bottom. The game turns it so the turbine faces the cursor; shots come out
+                               of the turbine. The collider follows the picture's outline.
+  ship.png           10 units  the GOAL to dock to (side of the picture), nose UP as drawn.
+                               The docking area follows the picture's outline.
   asteroid_s1.png    2 units   variants: asteroid_s2.png, asteroid_s3.png ...
   asteroid_m1.png    4 units   variants: asteroid_m2.png, asteroid_m3.png ...
   asteroid_l1.png    6 units   variants: asteroid_l2.png, asteroid_l3.png ...

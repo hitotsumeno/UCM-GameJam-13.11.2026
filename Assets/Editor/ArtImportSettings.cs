@@ -81,6 +81,19 @@ public class ArtImportSettings : AssetPostprocessor
             importer.SetTextureSettings(settings);
         }
 
+        if (name == "ship" || name.StartsWith("player_ship"))
+        {
+            // Big renders (2028 px) drawn small: smaller copies keep them clean, the alpha outline
+            // becomes the physics shape that DraftSetup turns into the collider.
+            importer.mipmapEnabled = true;
+            importer.maxTextureSize = name == "ship" ? 1024 : 512;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteGenerateFallbackPhysicsShape = true;
+            importer.SetTextureSettings(settings);
+        }
+
         if (name.StartsWith("asteroid"))
             importer.textureCompression = TextureImporterCompression.CompressedHQ; // keep the rock relief clean
 

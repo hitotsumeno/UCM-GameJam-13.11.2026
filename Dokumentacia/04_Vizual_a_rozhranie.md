@@ -100,10 +100,12 @@ do hry priamo: Unity z nich v editore „zapečie“ (vyrenderuje) 2D obrázky.
 | Trosky stanice | 3D scéna z jednoduchých telies (valce, časti prstenca, nosníky, solárne panely, úlomky) vyrenderovaná vlastným softvérovým rendererom, tým istým ako kamene. |
 | Jednoduché tvary (kruh, žiara, prstenec, trojuholník, štvorec) a ikony rozhrania | Vytvorené kódom, uložené v `Assets/Art/Shapes`. |
 
+**Lode od výtvarníčky:** loď hráča (`player_ship.png`, malá zelená loď) a cieľová materská
+loď (`ship.png`, veľká fialová) sú rendery z 3D programu. Zrážky sa počítajú podľa obrysu
+obrázka (Unity ho vytvorí z priehľadnosti), nie podľa kruhu alebo obdĺžnika.
+
 **Zástupné obrázky** (kým nie sú hotové obrázky od výtvarníčky):
 
-- loď hráča: biely kruh s modrým priezorom a sivou zbraňou;
-- cieľová loď: modrosivý obdĺžnik s nosom a motorom;
 - míny: tmavá guľa s ostňami a farebnou lampou;
 - kyslíková fľaša: azúrová fľaša s bielym uzáverom;
 - kryštál: malý azúrový kosoštvorec.
@@ -112,7 +114,5 @@ Keď sa do `Assets/_Resources/Art` pridá obrázok so správnym menom (napr. `mi
 a spustí sa Filip > Rebuild Prefabs And Scene, zástupný obrázok sa nahradí.
 Zoznam mien a veľkostí je v kapitole 6.
 
-**Pripravené, zatiaľ nepoužité:** loď hráča z 3D modelu výtvarníčky (`spaceship.fbx`).
-Bola zapečená z farebnej textúry, normálovej mapy a mapy drsnosti a vložená do hry,
-na žiadosť tímu však bola dočasne vrátená späť. Celá táto verzia je uložená
-pod značkou `ship-player-backup` (pozri kapitolu 7).
+**Staršia skúška:** loď hráča zapečená priamo z 3D modelu (`spaceship.fbx`) je uložená
+pod značkou `ship-player-backup`; v hre sa namiesto nej používajú rendery výtvarníčky.
