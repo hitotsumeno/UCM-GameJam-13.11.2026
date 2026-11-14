@@ -52,6 +52,8 @@ public static class Tuning
     // --- Sizes in the world, in units (the larger side of the picture) ---
     public const float ShipLength = 6f;
     public const float ShipHeight = 2.5f;         // placeholder only; real art keeps its own proportions
+    public const float DockRingMargin = 1.2f;     // gap between the goal ship and its docking ring
+    public const float DockRingShowDistance = 22f; // the ring starts to appear at this distance
     public const float AsteroidSmallSize = 2f;    // 1 level cell
     public const float AsteroidMediumSize = 4f;   // 2x2 level cells
     public const float AsteroidLargeSize = 6f;    // 3x3 level cells

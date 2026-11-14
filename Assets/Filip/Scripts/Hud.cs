@@ -1,47 +1,80 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-// On-screen interface, built from code: oxygen bar, ship compass with speed,
-// combo counter, hints, short notices and the big end-of-level message.
+// On-screen interface, built from code. Icons and numbers instead of sentences:
+//   top-left   tank icon + air bar cut into cells, red drops = leaks in the hull
+//   top-right  combo
+//   screen edge  arrow to the ship with the distance (hidden while the ship is in view)
+// All lettering is the game's own pixel font (PixelFont).
 public class Hud : MonoBehaviour
 {
-    static readonly Color OxygenColor = new Color(0.3f, 0.85f, 1f);
-    static readonly Color GoodColor = new Color(0.4f, 1f, 0.5f);
-    static readonly Color BadColor = new Color(1f, 0.35f, 0.3f);
-
+    static readonly Color AirColor = new Color(0.35f, 0.9f, 1f);
     static readonly Color LeakingColor = new Color(1f, 0.62f, 0.3f);
+    static readonly Color GoodColor = new Color(0.45f, 1f, 0.55f);
+    static readonly Color BadColor = new Color(1f, 0.35f, 0.3f);
+    static readonly Color ComboColor = new Color(1f, 0.85f, 0.3f);
+    static readonly Color EmptyCell = new Color(1f, 1f, 1f, 0.16f);
+    static readonly Color Ink = new Color(0.05f, 0.07f, 0.14f);
 
-    RectTransform oxygenFill;
-    Image oxygenFillImage;
-    Color oxygenBase = OxygenColor;   // cyan normally, orange while the hull leaks
-    float oxygenFlash;
-    Text breachText;
+    const int AirCells = 20;
+    const float LowAir = 0.25f;   // below this share the bar turns red and blinks
+
+    // One line of pixel text.
+    class Label
+    {
+        public RawImage image;
+        public int scale;
+        string shown;
+
+        public void Set(string text)
+        {
+            if (text == shown) return;
+            shown = text;
+            var tex = PixelFont.Text(text);
+            image.texture = tex;
+            image.rectTransform.sizeDelta = new Vector2(tex.width * scale, tex.height * scale);
+        }
+
+        public float Width { get { return image.rectTransform.sizeDelta.x; } }
+        public void Show(bool on) { if (image.gameObject.activeSelf != on) image.gameObject.SetActive(on); }
+        public void Alpha(float a) { var c = image.color; c.a = a; image.color = c; }
+    }
+
+    RectTransform canvasRect;
+
+    Image[] airCells = new Image[AirCells];
+    float airFraction = 1f;
+    float airFlash;
+    bool leaking;
+    RawImage[] leakDrops;
+
     Image damageFlash;
     float damageTimer;
+    GameObject outOverlay;
+    Label outLabel;
 
-    Text message;
-    Text messageSub;
-    GameObject signalOverlay;
-    GameObject signalText;
-
-    RectTransform compassNeedle;
-    Text compassText;
+    RectTransform shipArrow;
+    Label shipDistance;
     int shownDistance = -1;
-    Text speedText;
-    int shownSpeed = -1;
-    bool shownSpeedOk;
 
     GameObject comboRoot;
-    Text comboText;
+    Label comboLabel;
     RectTransform comboBar;
     int shownCombo = -1;
 
-    Text hintText;
-    string shownHint;
-    Text toastText;
+    Label toast;
     float toastTimer;
-    Text titleText;
+    Label title;
     float titleTimer;
+
+    GameObject endRoot;
+    Label endCounter;
+    Label endTitle;
+    GameObject endAirRow;
+    RectTransform endAirIcon;
+    Label endAir;
+    RectTransform endKey;
+    Label endKeyLabel;
 
     public static Hud Create()
     {
@@ -55,164 +88,198 @@ public class Hud : MonoBehaviour
         scaler.matchWidthOrHeight = 0.5f;
 
         var hud = go.AddComponent<Hud>();
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-
-        // Red tint over the whole screen while outside the level (created first = drawn behind the rest).
-        var overlay = MakeImage("SignalOverlay", go.transform, new Color(1f, 0f, 0f, 0.22f));
-        Stretch(overlay.rectTransform);
-        hud.signalOverlay = overlay.gameObject;
-
-        // Red flash over the whole screen when the hull is breached.
-        hud.damageFlash = MakeImage("DamageFlash", go.transform, new Color(1f, 0.1f, 0.05f, 0f));
-        Stretch(hud.damageFlash.rectTransform);
-
-        // Number of leaks, next to the OXYGEN label. Hidden while the hull is whole.
-        hud.breachText = MakeText("Breaches", go.transform, font, 24, TextAnchor.UpperLeft, BadColor);
-        Place(hud.breachText.rectTransform, new Vector2(0f, 1f), new Vector2(110f, -28f), new Vector2(300f, 34f));
-        hud.breachText.gameObject.SetActive(false);
-
-        var signal = MakeText("SignalText", go.transform, font, 44, TextAnchor.MiddleCenter, new Color(1f, 0.3f, 0.25f));
-        signal.text = Texts.OutOfBounds;
-        Place(signal.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -60f), new Vector2(1200f, 100f));
-        hud.signalText = signal.gameObject;
-
-        // OXYGEN label, top-left.
-        var label = MakeText("OxygenLabel", go.transform, font, 24, TextAnchor.UpperLeft, Color.white);
-        label.text = Texts.Air;
-        Place(label.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -28f), new Vector2(400f, 34f));
-
-        // Oxygen bar under the label: thin, so it does not shout.
-        var bg = MakeImage("OxygenBar", go.transform, new Color(1f, 1f, 1f, 0.2f));
-        Place(bg.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -62f), new Vector2(320f, 12f));
-        var fill = MakeImage("Fill", bg.transform, OxygenColor);
-        hud.oxygenFillImage = fill;
-        hud.oxygenFill = fill.rectTransform;
-        Stretch(hud.oxygenFill);
-
-        hud.BuildCompass(go.transform, font);
-        hud.BuildCombo(go.transform, font);
-
-        // Level name, shown for a few seconds at the start of a level.
-        hud.titleText = MakeText("Title", go.transform, font, 30, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.9f));
-        Place(hud.titleText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -190f), new Vector2(1600f, 60f));
-
-        // Short notice in the upper part of the screen (TOO FAST).
-        hud.toastText = MakeText("Toast", go.transform, font, 36, TextAnchor.MiddleCenter, new Color(1f, 0.6f, 0.2f));
-        Place(hud.toastText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 230f), new Vector2(1600f, 80f));
-
-        // Hint at the bottom of the screen.
-        hud.hintText = MakeText("Hint", go.transform, font, 28, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.9f));
-        Place(hud.hintText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 70f), new Vector2(1800f, 50f));
-
-        // Big message in the center (DOCKED / OUT OF OXYGEN) with a line under it.
-        hud.message = MakeText("Message", go.transform, font, 72, TextAnchor.MiddleCenter, Color.white);
-        Place(hud.message.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 60f), new Vector2(1800f, 160f));
-        hud.messageSub = MakeText("MessageSub", go.transform, font, 26, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.85f));
-        Place(hud.messageSub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -60f), new Vector2(1800f, 60f));
-
-        hud.HideMessage();
-        hud.SetSignalLost(false);
-        hud.SetHint(null);
-        hud.toastText.gameObject.SetActive(false);
-        hud.titleText.gameObject.SetActive(false);
+        hud.canvasRect = (RectTransform)go.transform;
+        hud.Build(go.transform);
         return hud;
     }
 
-    // Round compass on the left side, under the oxygen bar: the arrow on the rim points
-    // to the ship, the distance is in the middle, the player's speed is under it.
-    void BuildCompass(Transform parent, Font font)
+    void Build(Transform root)
     {
-        const float size = 130f;
-        var root = new GameObject("Compass", typeof(RectTransform)).GetComponent<RectTransform>();
-        root.SetParent(parent, false);
-        Place(root, new Vector2(0f, 1f), new Vector2(40f, -92f), new Vector2(size, size));
+        // Created first = drawn behind the rest.
+        var overlay = MakeImage("OutOverlay", root, new Color(1f, 0f, 0f, 0.2f));
+        Stretch(overlay.rectTransform);
+        outOverlay = overlay.gameObject;
 
-        var disc = MakeImage("Disc", root, new Color(0f, 0f, 0f, 0.3f));
-        disc.sprite = SpriteFactory.Circle();
-        Stretch(disc.rectTransform);
+        damageFlash = MakeImage("DamageFlash", root, new Color(1f, 0.1f, 0.05f, 0f));
+        Stretch(damageFlash.rectTransform);
 
-        var ring = MakeImage("Ring", root, new Color(1f, 1f, 1f, 0.4f));
-        ring.sprite = SpriteFactory.Ring();
-        Stretch(ring.rectTransform);
+        BuildAir(root);
+        BuildCombo(root);
+        BuildShipArrow(root);
 
-        compassNeedle = new GameObject("Needle", typeof(RectTransform)).GetComponent<RectTransform>();
-        compassNeedle.SetParent(root, false);
-        Place(compassNeedle, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        outLabel = MakeLabel("OutLabel", root, 6, BadColor);
+        Place(outLabel.image.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -110f));
+        outLabel.Set(Texts.OutOfBounds);
 
-        var arrow = MakeImage("Arrow", compassNeedle, GoodColor);
-        arrow.sprite = SpriteFactory.Triangle();
-        Place(arrow.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, size * 0.5f - 20f), new Vector2(26f, 26f));
+        title = MakeLabel("Title", root, 6, Color.white);
+        Place(title.image.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -190f));
 
-        compassText = MakeText("Distance", root, font, 24, TextAnchor.MiddleCenter, Color.white);
-        Place(compassText.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size, 60f));
+        toast = MakeLabel("Toast", root, 5, LeakingColor);
+        Place(toast.image.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 230f));
 
-        // Green while slow enough to dock, red when too fast.
-        speedText = MakeText("Speed", parent, font, 22, TextAnchor.UpperLeft, GoodColor);
-        Place(speedText.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -230f), new Vector2(300f, 34f));
+        BuildEndScreen(root);
+
+        HideMessage();
+        SetSignalLost(false);
+        SetBreaches(0);
+        toast.Show(false);
+        title.Show(false);
+        shipArrow.gameObject.SetActive(false);
+        shipDistance.Show(false);
     }
 
-    // Combo counter in the top-right corner, with a bar showing the time left to continue it.
-    void BuildCombo(Transform parent, Font font)
+    // Tank icon, the air bar cut into cells, and a row of red drops under it (one per leak).
+    void BuildAir(Transform root)
     {
-        var root = new GameObject("Combo", typeof(RectTransform)).GetComponent<RectTransform>();
-        root.SetParent(parent, false);
-        Place(root, new Vector2(1f, 1f), new Vector2(-40f, -30f), new Vector2(420f, 100f));
-        comboRoot = root.gameObject;
+        var tank = MakeIcon("AirIcon", root, PixelFont.Icon("tank", PixelFont.Tank), 5, Color.white);
+        Place(tank.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -32f));
 
-        comboText = MakeText("Text", root, font, 48, TextAnchor.UpperRight, new Color(1f, 0.85f, 0.3f));
-        Stretch(comboText.rectTransform);
+        const float cellW = 12f, cellH = 26f, gap = 3f;
+        for (int i = 0; i < AirCells; i++)
+        {
+            var cell = MakeImage("AirCell", root, AirColor);
+            Place(cell.rectTransform, new Vector2(0f, 1f), new Vector2(92f + i * (cellW + gap), -40f));
+            cell.rectTransform.sizeDelta = new Vector2(cellW, cellH);
+            airCells[i] = cell;
+        }
 
-        var barBg = MakeImage("Bar", root, new Color(1f, 1f, 1f, 0.2f));
-        Place(barBg.rectTransform, new Vector2(1f, 0f), Vector2.zero, new Vector2(260f, 8f));
-        var barFill = MakeImage("Fill", barBg.transform, new Color(1f, 0.85f, 0.3f));
-        comboBar = barFill.rectTransform;
+        leakDrops = new RawImage[Tuning.BreachMax];
+        for (int i = 0; i < leakDrops.Length; i++)
+        {
+            leakDrops[i] = MakeIcon("Leak", root, PixelFont.Icon("drop", PixelFont.Drop), 4, BadColor);
+            Place(leakDrops[i].rectTransform, new Vector2(0f, 1f), new Vector2(92f + i * 30f, -76f));
+        }
+    }
+
+    // Combo in the top-right corner with a thin bar: the time left to continue it.
+    void BuildCombo(Transform root)
+    {
+        var rt = new GameObject("Combo", typeof(RectTransform)).GetComponent<RectTransform>();
+        rt.SetParent(root, false);
+        Place(rt, new Vector2(1f, 1f), new Vector2(-40f, -32f));
+        rt.sizeDelta = new Vector2(200f, 80f);
+        comboRoot = rt.gameObject;
+
+        comboLabel = MakeLabel("Text", rt, 8, ComboColor);
+        Place(comboLabel.image.rectTransform, new Vector2(1f, 1f), Vector2.zero);
+
+        var barBg = MakeImage("Bar", rt, EmptyCell);
+        Place(barBg.rectTransform, new Vector2(1f, 0f), Vector2.zero);
+        barBg.rectTransform.sizeDelta = new Vector2(140f, 8f);
+        var fill = MakeImage("Fill", barBg.transform, ComboColor);
+        comboBar = fill.rectTransform;
         Stretch(comboBar);
 
         comboRoot.SetActive(false);
     }
 
+    // Arrow that slides along the screen edge and points at the ship.
+    void BuildShipArrow(Transform root)
+    {
+        var arrow = MakeIcon("ShipArrow", root, PixelFont.Icon("arrow", PixelFont.Arrow), 6, GoodColor);
+        shipArrow = arrow.rectTransform;
+        Place(shipArrow, new Vector2(0.5f, 0.5f), Vector2.zero);
+
+        shipDistance = MakeLabel("ShipDistance", root, 4, Color.white);
+        Place(shipDistance.image.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero);
+    }
+
+    // End of a level: dark veil, big word, air left (after docking) and the key to press.
+    void BuildEndScreen(Transform root)
+    {
+        var veil = MakeImage("EndScreen", root, new Color(0f, 0f, 0.03f, 0.55f));
+        Stretch(veil.rectTransform);
+        endRoot = veil.gameObject;
+        Transform t = veil.transform;
+        Vector2 mid = new Vector2(0.5f, 0.5f);
+
+        endCounter = MakeLabel("Counter", t, 4, new Color(1f, 1f, 1f, 0.7f));
+        Place(endCounter.image.rectTransform, mid, new Vector2(0f, 150f));
+
+        endTitle = MakeLabel("Title", t, 12, Color.white);
+        Place(endTitle.image.rectTransform, mid, new Vector2(0f, 60f));
+
+        var row = new GameObject("Air", typeof(RectTransform)).GetComponent<RectTransform>();
+        row.SetParent(t, false);
+        Place(row, mid, new Vector2(0f, -50f));
+        endAirRow = row.gameObject;
+        endAirIcon = MakeIcon("Icon", row, PixelFont.Icon("tank", PixelFont.Tank), 5, AirColor).rectTransform;
+        endAir = MakeLabel("Number", row, 6, Color.white);
+
+        // The key to press, drawn as a keycap.
+        var key = MakeImage("Key", t, new Color(1f, 1f, 1f, 0.92f));
+        endKey = key.rectTransform;
+        Place(endKey, mid, new Vector2(0f, -150f));
+        endKeyLabel = MakeLabel("Text", endKey, 4, Ink, false);
+        Place(endKeyLabel.image.rectTransform, mid, Vector2.zero);
+    }
+
     void Update()
     {
-        if (oxygenFlash > 0f)
-        {
-            oxygenFlash = Mathf.Max(0f, oxygenFlash - Time.deltaTime * 4f);
-            oxygenFillImage.color = Color.Lerp(oxygenBase, Color.white, oxygenFlash);
-        }
+        if (airFlash > 0f) airFlash = Mathf.Max(0f, airFlash - Time.deltaTime * 4f);
+        PaintAir();
+
         if (damageTimer > 0f)
         {
             damageTimer = Mathf.Max(0f, damageTimer - Time.deltaTime * 2.5f);
             damageFlash.color = new Color(1f, 0.1f, 0.05f, 0.45f * damageTimer);
         }
+        if (outOverlay.activeSelf) outLabel.Alpha(Blink(6f) ? 1f : 0.35f);
+
         if (toastTimer > 0f)
         {
             toastTimer -= Time.deltaTime;
-            if (toastTimer <= 0f) toastText.gameObject.SetActive(false);
+            if (toastTimer <= 0f) toast.Show(false);
         }
         if (titleTimer > 0f)
         {
             titleTimer -= Time.deltaTime;
-            if (titleTimer <= 0f) titleText.gameObject.SetActive(false);
+            title.Alpha(Mathf.Clamp01(titleTimer * 2f)); // fades out over the last half second
+            if (titleTimer <= 0f) title.Show(false);
         }
     }
 
+    static bool Blink(float perSecond)
+    {
+        return Mathf.Repeat(Time.unscaledTime * perSecond, 2f) < 1f;
+    }
+
+    // --- Air ---
+
     public void SetOxygen(float fraction)
     {
-        oxygenFill.anchorMax = new Vector2(Mathf.Clamp01(fraction), 1f);
+        airFraction = Mathf.Clamp01(fraction);
+        PaintAir();
     }
 
-    // The oxygen bar flashes white when a crystal is collected.
+    // The air bar flashes white when a crystal is collected.
     public void FlashOxygen()
     {
-        oxygenFlash = 1f;
+        airFlash = 1f;
     }
 
-    // count: holes in the hull. The oxygen bar turns orange while there is at least one.
+    void PaintAir()
+    {
+        bool low = airFraction < LowAir;
+        Color full = low ? BadColor : (leaking ? LeakingColor : AirColor);
+        if (low && !Blink(5f)) full.a = 0.45f;
+        full = Color.Lerp(full, Color.white, airFlash);
+
+        float lit = airFraction * AirCells;
+        for (int i = 0; i < AirCells; i++)
+        {
+            float share = Mathf.Clamp01(lit - i);            // 1 = full cell, 0 = empty
+            airCells[i].color = share <= 0f ? EmptyCell : Color.Lerp(EmptyCell, full, 0.35f + 0.65f * share);
+        }
+    }
+
+    // count: holes in the hull. One red drop each; the air bar turns orange while it leaks.
     public void SetBreaches(int count)
     {
-        breachText.gameObject.SetActive(count > 0);
-        if (count > 0) breachText.text = Texts.Leaks + count;
-        oxygenBase = count > 0 ? LeakingColor : OxygenColor;
-        oxygenFillImage.color = oxygenBase;
+        leaking = count > 0;
+        for (int i = 0; i < leakDrops.Length; i++)
+            leakDrops[i].gameObject.SetActive(i < count);
+        PaintAir();
     }
 
     // Red flash of the whole screen: the hull was just breached.
@@ -222,30 +289,41 @@ public class Hud : MonoBehaviour
         damageFlash.color = new Color(1f, 0.1f, 0.05f, 0.45f);
     }
 
+    // --- Ship arrow ---
+
     // toShip: vector from the player to the ship, in world units.
     public void SetCompass(Vector2 toShip)
     {
-        float angle = Mathf.Atan2(toShip.y, toShip.x) * Mathf.Rad2Deg - 90f;
-        compassNeedle.localRotation = Quaternion.Euler(0f, 0f, angle);
+        Vector2 size = canvasRect.rect.size;
+        if (size.x < 1f || size.y < 1f) size = new Vector2(1920f, 1080f);
+
+        // While the ship is on screen the arrow is not needed.
+        float viewH = Tuning.CameraSize, viewW = viewH * size.x / size.y;
+        bool inView = Mathf.Abs(toShip.x) < viewW - 2f && Mathf.Abs(toShip.y) < viewH - 2f;
+        shipArrow.gameObject.SetActive(!inView);
+        shipDistance.Show(!inView);
+        if (inView) return;
+
+        Vector2 dir = toShip.normalized;
+        float halfW = size.x * 0.5f - 80f, halfH = size.y * 0.5f - 80f;
+        float reach = Mathf.Min(
+            Mathf.Abs(dir.x) > 0.001f ? halfW / Mathf.Abs(dir.x) : float.MaxValue,
+            Mathf.Abs(dir.y) > 0.001f ? halfH / Mathf.Abs(dir.y) : float.MaxValue);
+        Vector2 pos = dir * reach;
+
+        shipArrow.anchoredPosition = pos;
+        shipArrow.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f);
+        shipDistance.image.rectTransform.anchoredPosition = pos - dir * 58f;
 
         int distance = Mathf.RoundToInt(toShip.magnitude);
         if (distance != shownDistance)
         {
             shownDistance = distance;
-            compassText.text = distance + Texts.Metres;
+            shipDistance.Set(distance.ToString());
         }
     }
 
-    // slowEnough: the player may dock at this speed.
-    public void SetSpeed(float speed, bool slowEnough)
-    {
-        int rounded = Mathf.RoundToInt(speed);
-        if (rounded == shownSpeed && slowEnough == shownSpeedOk) return;
-        shownSpeed = rounded;
-        shownSpeedOk = slowEnough;
-        speedText.text = Texts.Speed + rounded;
-        speedText.color = slowEnough ? GoodColor : BadColor;
-    }
+    // --- Combo ---
 
     // combo: kills in a row (shown from x2). timeLeft: 1 = just continued, 0 = about to end.
     public void SetCombo(int combo, float timeLeft)
@@ -257,26 +335,19 @@ public class Hud : MonoBehaviour
         if (combo != shownCombo)
         {
             shownCombo = combo;
-            comboText.text = Texts.Combo + combo;
+            comboLabel.Set(Texts.Combo + combo);
         }
         comboBar.anchorMin = new Vector2(1f - Mathf.Clamp01(timeLeft), 0f); // shrinks toward the right edge
     }
 
-    // text == null hides the hint.
-    public void SetHint(string text)
-    {
-        if (text == shownHint && hintText.gameObject.activeSelf == (text != null)) return;
-        shownHint = text;
-        hintText.gameObject.SetActive(text != null);
-        if (text != null) hintText.text = text;
-    }
+    // --- Short lines ---
 
     // Short notice that disappears by itself.
     public void Toast(string text)
     {
         if (string.IsNullOrEmpty(text)) return;
-        toastText.text = text;
-        toastText.gameObject.SetActive(true);
+        toast.Set(text);
+        toast.Show(true);
         toastTimer = 1.2f;
     }
 
@@ -284,47 +355,84 @@ public class Hud : MonoBehaviour
     public void ShowTitle(string text)
     {
         bool show = !string.IsNullOrEmpty(text);
-        titleText.gameObject.SetActive(show);
+        title.Show(show);
         if (!show) { titleTimer = 0f; return; }
-        titleText.text = text;
-        titleTimer = 4f;
+        title.Set(text);
+        title.Alpha(1f);
+        titleTimer = 3f;
     }
 
+    // Red tint and a blinking line while the player is outside the level.
     public void SetSignalLost(bool on)
     {
-        if (signalOverlay.activeSelf == on) return;
-        signalOverlay.SetActive(on);
-        signalText.SetActive(on);
+        if (outOverlay.activeSelf == on && outLabel.image.gameObject.activeSelf == on) return;
+        outOverlay.SetActive(on);
+        outLabel.Show(on);
     }
 
-    public void ShowMessage(string text, Color color, string sub)
+    // --- End of a level ---
+
+    // counter: small line over the word ("2/3"), may be null. air: air left, -1 hides it.
+    // key: the key that continues ("ENTER", "R").
+    public void ShowMessage(string text, Color color, string counter, int air, string key)
     {
-        message.text = text;
-        message.color = color;
-        messageSub.text = sub;
-        message.gameObject.SetActive(true);
-        messageSub.gameObject.SetActive(true);
+        endRoot.SetActive(true);
+
+        endCounter.Show(!string.IsNullOrEmpty(counter));
+        if (!string.IsNullOrEmpty(counter)) endCounter.Set(counter);
+
+        endTitle.Set(text);
+        endTitle.image.color = color;
+
+        endAirRow.SetActive(air >= 0);
+        if (air >= 0)
+        {
+            // Icon and number side by side, centred as one piece.
+            endAir.Set(air.ToString());
+            float iconW = endAirIcon.sizeDelta.x, gap = 16f;
+            float total = iconW + gap + endAir.Width;
+            Place(endAirIcon, new Vector2(0.5f, 0.5f), new Vector2(-total * 0.5f + iconW * 0.5f, 0f));
+            Place(endAir.image.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(total * 0.5f - endAir.Width * 0.5f, 0f));
+        }
+
+        endKeyLabel.Set(key);
+        endKey.sizeDelta = new Vector2(endKeyLabel.Width + 36f, 52f);
     }
 
     public void HideMessage()
     {
-        message.gameObject.SetActive(false);
-        messageSub.gameObject.SetActive(false);
+        endRoot.SetActive(false);
     }
 
-    static Text MakeText(string name, Transform parent, Font font, int size, TextAnchor anchor, Color color)
+    // --- Building blocks ---
+
+    static Label MakeLabel(string name, Transform parent, int scale, Color color, bool shadow = true)
+    {
+        var label = new Label { image = MakeIcon(name, parent, null, scale, color, shadow), scale = scale };
+        label.Set(" ");
+        return label;
+    }
+
+    // A pixel picture shown scale times bigger, with a hard dark shadow so it reads on any background.
+    static RawImage MakeIcon(string name, Transform parent, Texture2D tex, int scale, Color color, bool shadow = true)
     {
         var go = new GameObject(name, typeof(RectTransform));
         go.transform.SetParent(parent, false);
-        var t = go.AddComponent<Text>();
-        t.font = font;
-        t.fontSize = size;
-        t.alignment = anchor;
-        t.color = color;
-        t.horizontalOverflow = HorizontalWrapMode.Overflow;
-        t.verticalOverflow = VerticalWrapMode.Overflow;
-        t.raycastTarget = false;
-        return t;
+        var img = go.AddComponent<RawImage>();
+        img.color = color;
+        img.raycastTarget = false;
+        if (tex != null)
+        {
+            img.texture = tex;
+            img.rectTransform.sizeDelta = new Vector2(tex.width * scale, tex.height * scale);
+        }
+        if (shadow)
+        {
+            var s = go.AddComponent<Shadow>();
+            s.effectColor = new Color(0f, 0f, 0.05f, 0.7f);
+            s.effectDistance = new Vector2(scale * 0.5f, -scale * 0.5f);
+        }
+        return img;
     }
 
     static Image MakeImage(string name, Transform parent, Color color)
@@ -337,14 +445,13 @@ public class Hud : MonoBehaviour
         return img;
     }
 
-    // Anchors the rect to one point of the parent; pivot matches the anchor.
-    static void Place(RectTransform rt, Vector2 anchor, Vector2 position, Vector2 size)
+    // Pins the rect to one point of the parent; the pivot matches the anchor. Size is left alone.
+    static void Place(RectTransform rt, Vector2 anchor, Vector2 position)
     {
         rt.anchorMin = anchor;
         rt.anchorMax = anchor;
         rt.pivot = anchor;
         rt.anchoredPosition = position;
-        rt.sizeDelta = size;
     }
 
     // Fills the whole parent.

@@ -1,8 +1,11 @@
 using UnityEngine;
 
 // The goal. Touching it wins the level. Drawn nose to the right (+X).
+// A ring around it shows whether the player may dock: green = slow enough, red = too fast.
 public class Ship : MonoBehaviour
 {
+    SpriteRenderer dockRing;
+
     public static Ship Create(Vector2 position, Transform parent)
     {
         var go = new GameObject("Ship");
@@ -34,7 +37,27 @@ public class Ship : MonoBehaviour
         col.size = size;
         col.isTrigger = true;
 
-        return go.AddComponent<Ship>();
+        // Docking ring: invisible until the player comes close (see Update).
+        var ship = go.AddComponent<Ship>();
+        float ringSize = Mathf.Max(size.x, size.y) + Tuning.DockRingMargin * 2f;
+        ship.dockRing = SpriteFactory.MakeSprite("DockRing", go.transform, SpriteFactory.Ring(),
+            new Color(1f, 1f, 1f, 0f), Vector2.one * ringSize, 4);
+        return ship;
+    }
+
+    void Update()
+    {
+        var game = DraftGame.Instance;
+        Transform player = game != null ? game.PlayerTransform : null;
+        if (player == null || dockRing == null) return;
+
+        // Fades in as the player approaches, slowly breathes so it is noticed.
+        float dist = Vector2.Distance(player.position, transform.position);
+        float near = Mathf.InverseLerp(Tuning.DockRingShowDistance, Tuning.DockRingShowDistance * 0.6f, dist);
+        bool ok = game.PlayerSpeed <= Tuning.DockMaxSpeed;
+        Color c = ok ? new Color(0.45f, 1f, 0.55f) : new Color(1f, 0.35f, 0.3f);
+        c.a = near * (0.55f + 0.2f * Mathf.Sin(Time.time * 4f));
+        dockRing.color = c;
     }
 
     void OnTriggerEnter2D(Collider2D other)

@@ -22,6 +22,11 @@ public class DraftGame : MonoBehaviour
         get { return world != null && world.player != null ? world.player.transform : null; }
     }
 
+    public float PlayerSpeed
+    {
+        get { return world != null && world.player != null ? world.player.Speed : 0f; }
+    }
+
     LevelWorld world;      // current level; null when cleared
     CameraRig cameraRig;
     Hud hud;
@@ -39,6 +44,7 @@ public class DraftGame : MonoBehaviour
         SpriteFactory.ResetStatics();
         Art.ResetStatics();
         BlackHole.ResetStatics();
+        PixelFont.ResetStatics();
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -86,26 +92,13 @@ public class DraftGame : MonoBehaviour
         }
 
         bool outside = false;
-        string hint = null;
         if (world != null && world.player != null)
         {
             Vector2 pos = world.player.transform.position;
             outside = !world.bounds.Contains(pos);
             if (world.ship != null) hud.SetCompass((Vector2)world.ship.position - pos);
-
-            float speed = world.player.Speed;
-            hud.SetSpeed(speed, speed <= Tuning.DockMaxSpeed);
-
-            // The nearest hint place within reach decides which hint is shown.
-            float best = Tuning.HintRadius;
-            for (int i = 0; i < world.hintPositions.Count; i++)
-            {
-                float d = Vector2.Distance(pos, world.hintPositions[i]);
-                if (d < best) { best = d; hint = world.hintTexts[i]; }
-            }
         }
         hud.SetSignalLost(outside && State == GameState.Playing);
-        hud.SetHint(State == GameState.Playing ? hint : null);
 
         UpdateCombo();
 
@@ -235,10 +228,8 @@ public class DraftGame : MonoBehaviour
         State = GameState.Won;
         if (world != null && world.player != null) world.player.Stop();
 
-        bool last = levelIndex >= levelCount;
-        string sub = Texts.AirLeft + Mathf.RoundToInt(Oxygen) + "      "
-            + (last ? Texts.TheEnd : Texts.Next);
-        hud.ShowMessage(Texts.Docked, new Color(0.4f, 1f, 0.5f), sub);
+        string counter = levelCount > 0 ? levelIndex + "/" + levelCount : null;
+        hud.ShowMessage(Texts.Docked, new Color(0.45f, 1f, 0.55f), counter, Mathf.RoundToInt(Oxygen), Texts.KeyNext);
     }
 
     // title: what killed the player, shown in big letters.
@@ -246,7 +237,7 @@ public class DraftGame : MonoBehaviour
     {
         if (State != GameState.Playing) return;
         State = GameState.Lost;
-        hud.ShowMessage(title, new Color(1f, 0.35f, 0.3f), Texts.Retry);
+        hud.ShowMessage(title, new Color(1f, 0.35f, 0.3f), null, -1, Texts.KeyRetry);
     }
 
     // --- Scene setup ---
@@ -312,8 +303,7 @@ public class DraftGame : MonoBehaviour
         hud.SetOxygen(Oxygen / Tuning.OxygenMax);
         hud.HideMessage();
         hud.SetSignalLost(false);
-        hud.SetHint(null);
-        hud.ShowTitle(level != null ? level.index + " / " + levelCount + "   " + level.name : null);
+        hud.ShowTitle(level != null ? level.index + "/" + levelCount + "  " + level.name : null);
         hud.SetCompass(world.ship.position - world.player.transform.position);
         BreakCombo();
 
