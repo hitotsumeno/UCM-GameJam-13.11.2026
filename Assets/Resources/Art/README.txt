@@ -9,7 +9,8 @@ Size in the game is set by code (the larger side of the picture), not by the pic
   asteroid_m1.png    4 units   variants: asteroid_m2.png, asteroid_m3.png ...
   asteroid_l1.png    6 units   variants: asteroid_l2.png, asteroid_l3.png ...
   oxygen.png         0.8 unit
-  mine.png           1.1 unit  homing mine, round; a red lamp is drawn over its middle by the game
+  mine.png           1.1 unit  mine, round; a red or yellow lamp is drawn over its middle by the game
+  blackhole.png      square    black hole; the dark disc must be 32% of the picture across, centred
   planet1.png        12 units  the ball must take the middle 88% of the picture (the rest is glow)
   background.png     square 4096x4096 px, shown as 48x48 units
   star1.png          small, about 0.1-0.5 unit; variants: star2.png, star3.png, star4.png ...

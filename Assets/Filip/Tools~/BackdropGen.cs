@@ -131,6 +131,46 @@ public static class BackdropGen
         Save(px, R, R, path);
     }
 
+    // Black hole: a dark disc (0.16 of the picture's side in radius, the game relies on it),
+    // a thin bright ring around it and a swirling disc of hot matter.
+    public static void BlackHole(string path)
+    {
+        int R = 512; byte[] px = new byte[R * R * 4];
+        var streaks = new PNoise(55);
+        for (int y = 0; y < R; y++) for (int x = 0; x < R; x++)
+        {
+            float u = (x + 0.5f) / R - 0.5f, v = 0.5f - (y + 0.5f) / R;
+            float d = (float)Math.Sqrt(u * u + v * v);
+            float ang = (float)Math.Atan2(v, u);
+            float r = 0, g = 0, b = 0, a = 0;
+
+            // Swirling disc between 0.17 and 0.46: spiral streaks, hot inside, dark red outside.
+            float t = (d - 0.17f) / 0.29f;
+            if (t > 0f && t < 1f)
+            {
+                float swirl = ang / (float)(Math.PI * 2) + 0.5f + t * 1.4f;   // spiral arms
+                float n = streaks.Fbm(swirl, t * 0.9f + 0.05f, 6, 4, 0.55f) * 2.2f + 0.5f;
+                float dens = C01(n) * (float)Math.Pow(1f - t, 1.6) * C01(t / 0.06f);
+                float heat = 1f - t;
+                r = 1.00f; g = 0.35f + 0.60f * heat * heat; b = 0.10f + 0.75f * heat * heat * heat;
+                a = C01(dens * 1.5f);
+            }
+            // Soft glow under everything.
+            float glow = (float)Math.Exp(-(d - 0.16f) * (d - 0.16f) / (0.13f * 0.13f)) * 0.35f * C01((0.5f - d) / 0.08f);
+            if (d > 0.16f && glow > a) { float k = glow; r = r * a + 1.0f * k * (1 - a); g = g * a + 0.55f * k * (1 - a); b = b * a + 0.25f * k * (1 - a); a = a + k * (1 - a); if (a > 0.001f) { r /= a; g /= a; b /= a; } }
+            // Thin bright ring right at the edge of the dark disc.
+            float ring = (float)Math.Exp(-(d - 0.172f) * (d - 0.172f) / (0.006f * 0.006f));
+            r = r * (1 - ring) + 1.0f * ring; g = g * (1 - ring) + 0.92f * ring; b = b * (1 - ring) + 0.75f * ring; a = Math.Max(a, ring);
+            // The hole itself.
+            if (d < 0.16f) { r = 0f; g = 0f; b = 0f; a = 1f; }
+            else if (d < 0.166f) { float k = (0.166f - d) / 0.006f; r *= 1 - k; g *= 1 - k; b *= 1 - k; a = Math.Max(a, k); }
+
+            int i = (y * R + x) * 4;
+            px[i] = B(b); px[i + 1] = B(g); px[i + 2] = B(r); px[i + 3] = B(a);
+        }
+        Save(px, R, R, path);
+    }
+
     // The wreck of a station: dark silhouettes with a faint edge and a few dying lights.
     public static void Wreck(string path)
     {

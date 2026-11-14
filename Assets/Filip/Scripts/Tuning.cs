@@ -156,6 +156,31 @@ public static class Tuning
     public const float MineChainDelay = 0.12f;    // seconds before a neighbouring mine goes off too
     public const int CrystalsFromMine = 2;        // a mine shot by the player leaves crystals
 
+    // --- Mine behaviours ---
+    public const float MinePatrolRange = 6f;      // a patrol mine glides this far to each side of its place
+    public const float MinePatrolSpeed = 3.5f;
+    public const int MineRingCount = 6;           // mines circling a guarded tank
+    public const float MineRingRadius = 4.5f;
+    public const float MineRingSpeed = 2.5f;      // units per second along the circle
+
+    // --- Black holes: they pull the player, bullets and crystals; the dark middle is fatal ---
+    public const float HoleBigRadius = 2.2f;      // the dark middle of a big hole
+    public const float HoleBigField = 20f;        // its pull reaches this far (dotted circle)
+    public const float HoleBigStrength = 320f;    // pull = this / distance squared
+    public const float HoleSmallRadius = 1.1f;
+    public const float HoleSmallField = 11f;
+    public const float HoleSmallStrength = 110f;
+    public const float HoleMaxAccel = 12f;        // the pull never gets stronger than this
+    public const float HoleCrystalPull = 0.7f;    // crystals feel this share of the pull
+    public const float HoleDriftRange = 8f;       // a drifting hole glides this far to each side
+    public const float HoleDriftSpeed = 2.2f;
+    public const int HoleOrbitRocks = 4;          // rocks circling a big hole
+    public const float HoleOrbitSpeed = 3f;       // units per second along the circle
+    public const float HoleSpinSpeed = 25f;       // degrees per second: how fast the picture turns
+
+    // --- Checkpoints inside a level ---
+    public const float CheckpointRadius = 3f;     // fly this close to the beacon to save the place
+
     // --- Oxygen crystals: destroyed rocks leave air behind ("destroy to breathe") ---
     public const float CrystalOxygen = 2f;        // oxygen per crystal (before the combo bonus)
     public const int CrystalsFromSmall = 2;       // crystals left by a destroyed rock

@@ -57,8 +57,22 @@ public static class WorldBuilder
                     case 'A': SpawnRock(AsteroidSize.Medium, p, level.movers, w.root); break;
                     case 'B': SpawnRock(AsteroidSize.Large, p, level.movers, w.root); break;
                     case 'o': OxygenTank.Create(p, w.root); break;
-                    case 'm': Mine.Create(p, w.root); break;
+                    // Mines: hunter, horizontal and vertical patrol, chain wall, ring around a tank.
+                    case 'm': Mine.CreateHunter(p, w.root); break;
+                    case 'h': Mine.CreatePatrol(p, Vector2.right, w.root); break;
+                    case 'v': Mine.CreatePatrol(p, Vector2.up, w.root); break;
+                    case 's': Mine.CreateWall(p, w.root); break;
+                    case 'R': OxygenTank.Create(p, w.root); Mine.CreateRing(p, w.root); break;
+                    // Gravity: planet, big and small black hole, small holes drifting sideways or up and down.
                     case '@': Planet.Create(p, w.root); break;
+                    case 'O': BlackHole.Create(p, w.root, true); break;
+                    case 'c': BlackHole.Create(p, w.root, false); break;
+                    case 'x': BlackHole.CreateDrifting(p, Vector2.right, w.root); break;
+                    case 'y': BlackHole.CreateDrifting(p, Vector2.up, w.root); break;
+                    case 'C':
+                        Checkpoint.Create(p, w.root,
+                            DraftGame.Instance != null && DraftGame.Instance.IsCheckpointUsed(p));
+                        break;
                     default:
                         if (char.IsDigit(c) && level.hints.ContainsKey(c))
                         {

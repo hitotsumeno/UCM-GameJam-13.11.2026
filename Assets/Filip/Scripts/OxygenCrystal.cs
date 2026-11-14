@@ -77,6 +77,17 @@ public class OxygenCrystal : MonoBehaviour
             if (dist < Tuning.CrystalMagnetRadius)
                 velocity += toPlayer / dist * Tuning.CrystalMagnetAccel * Time.deltaTime;
         }
+        // Black holes drag crystals in: grab them fast or lose them.
+        for (int i = 0; i < BlackHole.All.Count; i++)
+        {
+            var hole = BlackHole.All[i];
+            if (hole.Swallows(pos, 0f))
+            {
+                Destroy(gameObject);
+                return;
+            }
+            velocity += hole.PullAt(pos) * Tuning.HoleCrystalPull * Time.deltaTime;
+        }
         transform.position = pos + velocity * Time.deltaTime;
 
         // Blink before disappearing.

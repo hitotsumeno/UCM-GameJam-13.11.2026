@@ -6,4 +6,6 @@ Add-Type -ReferencedAssemblies System.Drawing -Path "$PSScriptRoot\NebulaGen.cs"
 [BackdropGen]::Planet("$Out\backdrop_planet.png")
 # The planet the player flies around on level 4 (not scenery):
 [BackdropGen]::GamePlanet("$Out\planet1.png")
+# Black hole (level 3):
+[BackdropGen]::BlackHole("$Out\blackhole.png")
 "backdrops done"
