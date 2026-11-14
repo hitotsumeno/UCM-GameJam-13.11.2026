@@ -5,5 +5,5 @@ Add-Type -ReferencedAssemblies System.Drawing -Path "$PSScriptRoot\NebulaGen.cs"
 # backdrop_wreck.png is made by station.ps1 (a 3D render), not here.
 [BackdropGen]::Planet("$Out\backdrop_planet.png")
 # The planet the player flies around on level 4 (not scenery):
-[BackdropGen]::GamePlanet("$Outplanet1.png")
+[BackdropGen]::GamePlanet("$Out\planet1.png")
 "backdrops done"
