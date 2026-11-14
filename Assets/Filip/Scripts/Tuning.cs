@@ -37,20 +37,21 @@ public static class Tuning
     public const float CellSize = 2f;             // one map character is a square of this many units
     public const float HintRadius = 9f;           // a hint is shown while the player is this close to its place
 
-    // --- Docking: reach the station slowly ---
+    // --- Docking: reach the ship slowly ---
     public const float DockMaxSpeed = 5f;         // faster than this the player bounces off
     public const float DockBounce = 0.6f;         // share of speed kept after bouncing off
     public const float DockBounceMinSpeed = 3f;
-    public const float DockPenalty = 5f;          // oxygen lost for hitting the station too fast
+    public const float DockPenalty = 5f;          // oxygen lost for hitting the ship too fast
 
     // --- Test ground (only used when there are no level files) ---
     public const float LevelWidth = 60f;
     public const float LevelHeight = 120f;
     public const float PlayerStartFromBottom = 5f; // player starts this far above the bottom border
-    public const float GoalFromTop = 3f;           // station center is this far below the top border
+    public const float ShipFromTop = 3f;           // ship center is this far below the top border
 
     // --- Sizes in the world, in units (the larger side of the picture) ---
-    public const float StationSize = 6f;          // the goal of a level
+    public const float ShipLength = 6f;
+    public const float ShipHeight = 2.5f;         // placeholder only; real art keeps its own proportions
     public const float AsteroidSmallSize = 2f;    // 1 level cell
     public const float AsteroidMediumSize = 4f;   // 2x2 level cells
     public const float AsteroidLargeSize = 6f;    // 3x3 level cells
@@ -151,7 +152,7 @@ public static class Tuning
     public const int ScatterAsteroids = 24;
     public const int ScatterTanks = 3;
     public const float ScatterHalfWidth = 11f;    // asteroids lie this far left/right of the straight path
-    public const float ScatterClearance = 10f;    // free space around the player start and the station
+    public const float ScatterClearance = 10f;    // free space around the player start and the ship
     public const float TankSideOffsetMin = 15f;   // tanks lie this far off the straight path
     public const float TankSideOffsetMax = 20f;
 }

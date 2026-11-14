@@ -85,7 +85,7 @@ public class DraftGame : MonoBehaviour
         {
             Vector2 pos = world.player.transform.position;
             outside = !world.bounds.Contains(pos);
-            if (world.station != null) hud.SetCompass((Vector2)world.station.position - pos);
+            if (world.ship != null) hud.SetCompass((Vector2)world.ship.position - pos);
 
             float speed = world.player.Speed;
             hud.SetSpeed(speed, speed <= Tuning.DockMaxSpeed);
@@ -163,8 +163,8 @@ public class DraftGame : MonoBehaviour
 
     // --- Docking, winning, losing ---
 
-    // Called by the station when the player touches it. Docking only works at low speed.
-    public void PlayerReachedStation(PlayerController player, Vector2 stationPosition)
+    // Called by the ship when the player touches it. Docking only works at low speed.
+    public void PlayerReachedShip(PlayerController player, Vector2 shipPosition)
     {
         if (State != GameState.Playing) return;
         if (player.Speed <= Tuning.DockMaxSpeed)
@@ -172,7 +172,7 @@ public class DraftGame : MonoBehaviour
             Win();
             return;
         }
-        player.BounceFrom(stationPosition);
+        player.BounceFrom(shipPosition);
         SpendOxygen(Tuning.DockPenalty);
         hud.Toast("TOO FAST");
         CameraRig.Shake();
@@ -257,7 +257,7 @@ public class DraftGame : MonoBehaviour
         hud.SetSignalLost(false);
         hud.SetHint(null);
         hud.ShowTitle(level != null ? "LEVEL " + level.index + ": " + level.name : null);
-        hud.SetCompass(world.station.position - world.player.transform.position);
+        hud.SetCompass(world.ship.position - world.player.transform.position);
         BreakCombo();
 
         cameraRig.target = world.player.transform;

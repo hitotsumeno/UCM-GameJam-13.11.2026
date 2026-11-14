@@ -1,5 +1,5 @@
 # name=ADRIFT
-# radio=Fuel is gone. The gun still fires. Recoil is our engine.
+# radio=Tether lost. You have a rivet gun and one tank of air.
 # tint=0.75,0.85,1.0
 # oxygen=70
 # meteors=off
@@ -7,7 +7,7 @@
 # stars=65,35
 # hint1=LEFT MOUSE BUTTON: SHOOT. THE RECOIL MOVES YOU
 # hint2=DESTROY ROCKS AND GRAB THE CRYSTALS. CRYSTALS ARE AIR
-# hint3=SHOOT TOWARD THE STATION TO BRAKE. DOCK SLOWER THAN SPEED 5
+# hint3=SHOOT TOWARD THE SHIP TO BRAKE. DOCK SLOWER THAN SPEED 5
 ................
 ................
 .......S........

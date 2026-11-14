@@ -7,7 +7,7 @@ public class LevelWorld
     public Transform root;
     public LevelData level;      // null on the test ground (no level files)
     public PlayerController player;
-    public Transform station;
+    public Transform ship;
     public Rect bounds;          // level area; outside it the signal is lost
     public List<Vector2> hintPositions = new List<Vector2>();
     public List<string> hintTexts = new List<string>();
@@ -39,7 +39,7 @@ public static class WorldBuilder
 
         // Used if the map has no P or S.
         Vector2 start = new Vector2(w.bounds.center.x, w.bounds.yMin + Tuning.PlayerStartFromBottom);
-        Vector2 goalPos = new Vector2(w.bounds.center.x, w.bounds.yMax - Tuning.GoalFromTop);
+        Vector2 shipPos = new Vector2(w.bounds.center.x, w.bounds.yMax - Tuning.ShipFromTop);
 
         for (int row = 0; row < level.rows.Count; row++)
         {
@@ -52,7 +52,7 @@ public static class WorldBuilder
                 switch (c)
                 {
                     case 'P': start = p; break;
-                    case 'S': goalPos = p; break;
+                    case 'S': shipPos = p; break;
                     case 'a': SpawnRock(AsteroidSize.Small, p, level.movers, w.root); break;
                     case 'A': SpawnRock(AsteroidSize.Medium, p, level.movers, w.root); break;
                     case 'B': SpawnRock(AsteroidSize.Large, p, level.movers, w.root); break;
@@ -69,7 +69,7 @@ public static class WorldBuilder
         }
 
         w.player = PlayerController.Create(start, w.root);
-        w.station = Station.Create(goalPos, w.root).transform;
+        w.ship = Ship.Create(shipPos, w.root).transform;
         if (level.meteors)
             MeteorSpawner.Create(w.root, w.player.transform, level.meteorMin, level.meteorMax);
     }
@@ -93,21 +93,21 @@ public static class WorldBuilder
             Tuning.LevelWidth, Tuning.LevelHeight);
         Asteroid.Bounds = w.bounds;
         Vector2 start = new Vector2(w.bounds.center.x, w.bounds.yMin + Tuning.PlayerStartFromBottom);
-        Vector2 goalPos = new Vector2(w.bounds.center.x, w.bounds.yMax - Tuning.GoalFromTop);
+        Vector2 shipPos = new Vector2(w.bounds.center.x, w.bounds.yMax - Tuning.ShipFromTop);
 
         BuildBackground(w.root, w.bounds.center, Color.white);
         BuildBorder(w.root, w.bounds);
         w.player = PlayerController.Create(start, w.root);
-        w.station = Station.Create(goalPos, w.root).transform;
-        Scatter(w.root, start, goalPos);
+        w.ship = Ship.Create(shipPos, w.root).transform;
+        Scatter(w.root, start, shipPos);
         MeteorSpawner.Create(w.root, w.player.transform, Tuning.MeteorIntervalMin, Tuning.MeteorIntervalMax);
     }
 
-    // Random asteroids on the way to the station and oxygen tanks off to the sides.
-    static void Scatter(Transform parent, Vector2 start, Vector2 goalPos)
+    // Random asteroids on the way to the ship and oxygen tanks off to the sides.
+    static void Scatter(Transform parent, Vector2 start, Vector2 shipPos)
     {
         float yMin = start.y + Tuning.ScatterClearance;
-        float yMax = goalPos.y - Tuning.ScatterClearance;
+        float yMax = shipPos.y - Tuning.ScatterClearance;
         var placed = new List<Vector3>(); // x, y, radius
 
         for (int i = 0; i < Tuning.ScatterAsteroids; i++)

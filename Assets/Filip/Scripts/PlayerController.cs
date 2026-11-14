@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// The player (a ship in the story): cannot move on its own, only recoil from the gun pushes it.
+// The astronaut: cannot move on its own, only recoil from the gun pushes it.
 public class PlayerController : MonoBehaviour
 {
     Rigidbody2D rb;
@@ -34,8 +34,8 @@ public class PlayerController : MonoBehaviour
 
         var visual = new GameObject("Visual").transform;
         visual.SetParent(go.transform, false);
-        // Picture "ship" (drawn nose to the right) or the placeholder: a white circle with a visor and a gun.
-        if (Art.TryMake("ship", visual, Tuning.PlayerDiameter, 10) == null)
+        // Picture "astronaut" (drawn nose to the right) or a placeholder.
+        if (Art.TryMake("astronaut", visual, Tuning.PlayerDiameter, 10) == null)
         {
             SpriteFactory.MakeSprite("Body", visual, SpriteFactory.Circle(),
                 new Color(0.9f, 0.9f, 0.95f), Vector2.one * Tuning.PlayerDiameter, 10);
@@ -83,13 +83,13 @@ public class PlayerController : MonoBehaviour
         get { return rb.linearVelocity.magnitude; }
     }
 
-    // Called on docking: the player stops drifting.
+    // Called on docking: the astronaut stops drifting.
     public void Stop()
     {
         rb.linearVelocity = Vector2.zero;
     }
 
-    // Thrown back from a point (hit the station too fast).
+    // Thrown back from a point (hit the ship too fast).
     public void BounceFrom(Vector2 point)
     {
         Vector2 away = (Vector2)transform.position - point;
