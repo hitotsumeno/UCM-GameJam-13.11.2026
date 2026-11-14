@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// The goal. Touching it slowly wins the level. Set up in Assets/Filip/Prefabs/Ship.prefab
+// The goal. Touching it slowly wins the level. Set up in Assets/Prefabs/Ship.prefab
 // (a trigger collider matching the picture). Drawn nose to the right (+X).
 public class Ship : MonoBehaviour
 {

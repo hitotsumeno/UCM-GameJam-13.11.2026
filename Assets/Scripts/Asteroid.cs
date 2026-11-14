@@ -3,7 +3,7 @@ using UnityEngine;
 public enum AsteroidSize { Small, Medium, Large }
 
 // Drifts slowly, bounces off other asteroids and the player. Bullets break it.
-// Prefabs: Assets/Filip/Prefabs/Asteroid_Small / _Medium / _Large.
+// Prefabs: Assets/Prefabs/Asteroid_Small / _Medium / _Large.
 // Scale the object to make one rock bigger or smaller: collider and mass follow.
 public class Asteroid : MonoBehaviour
 {

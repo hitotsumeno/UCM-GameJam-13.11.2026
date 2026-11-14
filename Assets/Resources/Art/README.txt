@@ -1,4 +1,4 @@
-Art for the draft game (Assets/Filip). Put PNG files here.
+Art for the draft game. Put PNG files here.
 
 The game finds pictures by file name. If a file is missing, a placeholder is drawn.
 Size in the game is set by code (the larger side of the picture), not by the picture:
@@ -27,3 +27,7 @@ Already here (made for the draft, replace freely):
   asteroid_s1..4 .png               different sides (5 models -> 12 different-looking asteroids).
                                     The rock fills the picture so that a circle of 0.45 x picture size
                                     has the same area as the rock: that circle is used for collisions.
+
+The 3D sources are in Assets/Art/Source (stone.fbx, stars.fbx; not part of the build).
+To re-make the asteroid and star pictures from them: menu Filip > Bake Rocks And Stars From FBX.
+Which model and view angle becomes which picture: the list at the top of Assets/Editor/ArtBake.cs.

@@ -1,6 +1,6 @@
 УРОВНИ ИГРЫ. Файлы level1.txt, level2.txt, ... (номера подряд, без пропусков).
 В ветке filip/editor-objects это только исходник: меню
-Filip > Rebuild Prefabs And Scene превращает их в Assets/Filip/Prefabs/Levels/LevelN.prefab.
+Filip > Rebuild Prefabs And Scene превращает их в Assets/Prefabs/Levels/LevelN.prefab.
 Дальше уровень правят прямо в префабе (двигать камни, добавлять баллоны).
 Повторный запуск меню перезапишет префабы уровней.
 

@@ -4,7 +4,7 @@ using UnityEngine;
 // Stars repeat (wrap around the camera), so the layer never runs out.
 // The stars are child objects made in the editor (Filip > Rebuild Prefabs And Scene);
 // this component only moves them and, for glowing stars, makes them twinkle.
-// Part of Assets/Filip/Prefabs/Background.prefab.
+// Part of Assets/Prefabs/Background.prefab.
 [DefaultExecutionOrder(100)] // after CameraRig has moved the camera
 public class StarLayer : MonoBehaviour
 {

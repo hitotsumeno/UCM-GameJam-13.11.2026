@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Pick it up to restore oxygen. Set up in Assets/Filip/Prefabs/OxygenTank.prefab.
+// Pick it up to restore oxygen. Set up in Assets/Prefabs/OxygenTank.prefab.
 public class OxygenTank : MonoBehaviour
 {
     void OnTriggerEnter2D(Collider2D other)

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Root of one level prefab (Assets/Filip/Prefabs/Levels/LevelN.prefab).
+// Root of one level prefab (Assets/Prefabs/Levels/LevelN.prefab).
 // Everything the level needs lives under it: player, ship, rocks, tanks, hints,
 // background and border. Edit the prefab in the editor: move, add or remove objects.
 // DraftGame instantiates the prefab on start and destroys it on restart.

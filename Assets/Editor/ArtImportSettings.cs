@@ -6,9 +6,36 @@ using UnityEngine;
 // 100 pixels per unit. The picture named "background" also gets Max Size 4096.
 // Seamless cloud pictures (nebula_...) repeat without visible seams.
 // This runs automatically whenever Unity imports a picture from that folder.
+//
+// 3D models in Assets/Art/Source (stone.fbx, stars.fbx) are only a source for those
+// pictures (Filip > Bake Rocks And Stars From FBX): they are imported as plain meshes,
+// without materials, cameras, lights or animation, and are not part of the build.
 public class ArtImportSettings : AssetPostprocessor
 {
     const string ArtFolder = "Assets/Resources/Art/";
+    public const string ModelFolder = "Assets/Art/Source/";
+
+    void OnPreprocessModel()
+    {
+        string path = assetPath.Replace('\\', '/');
+        if (!path.StartsWith(ModelFolder)) return;
+
+        var importer = (ModelImporter)assetImporter;
+        importer.materialImportMode = ModelImporterMaterialImportMode.None;
+        importer.importCameras = false;
+        importer.importLights = false;
+        importer.importVisibility = false;
+        importer.importBlendShapes = false;
+        importer.importAnimation = false;
+        importer.animationType = ModelImporterAnimationType.None;
+        importer.importNormals = ModelImporterNormals.Import; // the artist's smoothing, as in the old bake
+        importer.isReadable = true;                           // the bake reads the vertices
+        importer.meshCompression = ModelImporterMeshCompression.Off;
+        importer.optimizeMeshVertices = false;
+        importer.optimizeMeshPolygons = false;
+        importer.weldVertices = false;
+        importer.bakeAxisConversion = false;                  // vertices stay as in the file (only X mirrored)
+    }
 
     void OnPreprocessTexture()
     {

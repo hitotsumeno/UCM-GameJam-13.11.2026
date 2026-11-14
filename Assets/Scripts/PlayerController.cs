@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // The astronaut: cannot move on its own, only recoil from the gun pushes it.
-// Set up in Assets/Filip/Prefabs/Player.prefab.
+// Set up in Assets/Prefabs/Player.prefab.
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] Rigidbody2D rb;

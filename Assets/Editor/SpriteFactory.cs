@@ -4,11 +4,11 @@ using UnityEditor;
 using UnityEngine;
 
 // Editor only: simple shape sprites (circle, glow, ring, triangle, square) saved as PNG
-// files in Assets/Filip/Art/Shapes, so prefabs can reference them. Every sprite is
+// files in Assets/Art/Shapes, so prefabs can reference them. Every sprite is
 // 1x1 unit; size in the world is set with transform.localScale.
 public static class SpriteFactory
 {
-    public const string Folder = "Assets/Filip/Art/Shapes";
+    public const string Folder = "Assets/Art/Shapes";
 
     // Filled circle.
     public static Sprite Circle()

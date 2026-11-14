@@ -7,23 +7,23 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 
 // Makes the game's assets ONCE in the editor, so nothing is built at runtime:
-//   Assets/Filip/Prefabs/*.prefab           player, bullet, rocks, meteors, ship, tank, crystal, background
-//   Assets/Filip/Prefabs/Levels/LevelN.prefab  one per Assets/Resources/Levels/levelN.txt
-//   Assets/Filip/DraftScene.unity            camera, light, HUD and the DraftGame object
+//   Assets/Prefabs/*.prefab           player, bullet, rocks, meteors, ship, tank, crystal, background
+//   Assets/Prefabs/Levels/LevelN.prefab  one per Assets/Resources/Levels/levelN.txt
+//   Assets/DraftScene.unity            camera, light, HUD and the DraftGame object
 // After that, edit the prefabs and the scene by hand like any Unity project.
 // Running it again OVERWRITES those prefabs and the HUD/DraftGame objects in the scene.
 public static class DraftSetup
 {
-    const string ScenePath = "Assets/Filip/DraftScene.unity";
-    const string PrefabFolder = "Assets/Filip/Prefabs";
-    const string LevelFolder = "Assets/Filip/Prefabs/Levels";
-    const string PhysicsFolder = "Assets/Filip/Physics";
+    const string ScenePath = "Assets/DraftScene.unity";
+    const string PrefabFolder = "Assets/Prefabs";
+    const string LevelFolder = "Assets/Prefabs/Levels";
+    const string PhysicsFolder = "Assets/Physics";
 
     [MenuItem("Filip/Rebuild Prefabs And Scene")]
     static void RebuildMenu()
     {
         if (!EditorUtility.DisplayDialog("Rebuild prefabs and scene",
-            "This overwrites everything in Assets/Filip/Prefabs (including level prefabs you edited by hand) " +
+            "This overwrites everything in Assets/Prefabs (including level prefabs you edited by hand) " +
             "and the HUD and DraftGame objects in DraftScene.\n\nContinue?", "Rebuild", "Cancel"))
             return;
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
@@ -249,7 +249,7 @@ public static class DraftSetup
     }
 
     // A rock at its class size (scale 1). Pictures are rendered so that a circle of
-    // 0.45 x picture size has the same area as the rock (see Assets/Filip/Tools~).
+    // 0.45 x picture size has the same area as the rock (see Editor/ArtBake.cs).
     static GameObject BuildAsteroid(AsteroidSize size, Asteroid split, OxygenCrystal crystal,
         PhysicsMaterial2D material, bool confined)
     {

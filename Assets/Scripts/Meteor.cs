@@ -2,7 +2,7 @@ using UnityEngine;
 
 // A fast asteroid flying down at the player. It has a fiery tail, and while it is
 // still above the screen a red marker at the top edge shows where it will come from.
-// Prefabs: Assets/Filip/Prefabs/Meteor_Small / _Medium (an Asteroid with this component).
+// Prefabs: Assets/Prefabs/Meteor_Small / _Medium (an Asteroid with this component).
 [DefaultExecutionOrder(100)] // after CameraRig has moved the camera
 public class Meteor : MonoBehaviour
 {

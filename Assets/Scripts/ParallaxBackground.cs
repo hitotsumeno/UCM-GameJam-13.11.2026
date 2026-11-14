@@ -5,7 +5,7 @@ using UnityEngine;
 //  - Nebula layers (nebula_far, nebula_near: 3x3 tiles) repeat endlessly in all directions.
 //  - Artist picture "background", if present, replaces the nebula. It does not repeat,
 //    so its shift is limited and the picture edge never gets into view.
-// Part of Assets/Filip/Prefabs/Background.prefab.
+// Part of Assets/Prefabs/Background.prefab.
 [DefaultExecutionOrder(100)] // after CameraRig has moved the camera
 public class ParallaxBackground : MonoBehaviour
 {

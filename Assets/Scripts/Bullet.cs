@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Set up in Assets/Filip/Prefabs/Bullet.prefab.
+// Set up in Assets/Prefabs/Bullet.prefab.
 public class Bullet : MonoBehaviour
 {
     [SerializeField] Rigidbody2D rb;

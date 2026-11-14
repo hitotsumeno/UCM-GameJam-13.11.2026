@@ -3,7 +3,7 @@ using UnityEngine;
 // A small piece of frozen oxygen left by a destroyed rock. It drifts, fades out after
 // a few seconds and gives oxygen when the player reaches it. The shot pushed the player
 // away from the rock, so collecting the crystals means flying back into the debris.
-// Set up in Assets/Filip/Prefabs/OxygenCrystal.prefab.
+// Set up in Assets/Prefabs/OxygenCrystal.prefab.
 public class OxygenCrystal : MonoBehaviour
 {
     [SerializeField] SpriteRenderer core;
