@@ -27,6 +27,16 @@ public class Asteroid : MonoBehaviour
     [SerializeField] float[] variantScales;
     [Tooltip("Body position for each variant: puts the middle of the rock on the collider")]
     [SerializeField] Vector2[] variantOffsets;
+    [Tooltip("Collider following the rock's outline; empty = the round collider is used")]
+    [SerializeField] PolygonCollider2D outline;
+    [Tooltip("Outline of each variant, in the rock's own space")]
+    [SerializeField] Outline[] variantOutlines;
+
+    [System.Serializable]
+    public class Outline
+    {
+        public Vector2[] points;
+    }
     [Tooltip("Large rocks split into two of these when destroyed")]
     [SerializeField] Asteroid splitPrefab;
     [SerializeField] OxygenCrystal crystalPrefab;
@@ -123,6 +133,12 @@ public class Asteroid : MonoBehaviour
             body.transform.localScale = new Vector3(variantScales[i], variantScales[i], 1f);
         if (variantOffsets != null && i < variantOffsets.Length)
             body.transform.localPosition = variantOffsets[i];
+        if (outline != null && variantOutlines != null && i < variantOutlines.Length
+            && variantOutlines[i] != null && variantOutlines[i].points != null && variantOutlines[i].points.Length >= 3)
+        {
+            outline.pathCount = 1;
+            outline.SetPath(0, variantOutlines[i].points);
+        }
     }
 
     public void SetTint(Color tint)

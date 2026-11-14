@@ -41,8 +41,7 @@ public static class DraftSetup
     {
         var oldRandom = Random.state;
         Random.InitState(1311); // same layout every time
-        rockFits.Clear();
-        shapeFits.Clear();
+        alphaFits.Clear();
         reimported.Clear();
         try
         {
@@ -407,64 +406,81 @@ public static class DraftSetup
         return Vector3.Scale(basePoint, fire.transform.localScale);
     }
 
-    // The box around a star shape in its picture, measured from the PNG's alpha: x, y = middle of
-    // the box from the picture's centre, z = the box's larger side; all as shares of the picture side.
-    static readonly Dictionary<Sprite, Vector3> shapeFits = new Dictionary<Sprite, Vector3>();
-
-    static Vector3 ShapeFit(Sprite sprite)
+    // Measurements of the opaque pixels of a sprite, inside its own rectangle (a sprite may be the
+    // whole picture or a slice that Unity trimmed to the drawing), in the sprite's units from its
+    // pivot: the sprite's own space at scale 1.
+    struct AlphaFit
     {
-        Vector3 fit;
-        if (shapeFits.TryGetValue(sprite, out fit)) return fit;
-        fit = new Vector3(0f, 0f, StarShapeFraction);
-        string path = AssetDatabase.GetAssetPath(sprite);
-        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-        if (File.Exists(path) && tex.LoadImage(File.ReadAllBytes(path)))
-        {
-            var px = tex.GetPixels32();
-            int w = tex.width, h = tex.height, x0 = w, x1 = -1, y0 = h, y1 = -1;
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                    if (px[y * w + x].a > 128)
-                    {
-                        if (x < x0) x0 = x; if (x > x1) x1 = x;
-                        if (y < y0) y0 = y; if (y > y1) y1 = y;
-                    }
-            if (x1 >= x0)
-                fit = new Vector3((x0 + x1 + 1) * 0.5f / w - 0.5f, (y0 + y1 + 1) * 0.5f / h - 0.5f,
-                    Mathf.Max(x1 - x0 + 1, y1 - y0 + 1) / (float)w);
-        }
-        Object.DestroyImmediate(tex);
-        shapeFits[sprite] = fit;
-        return fit;
+        public float areaDiameter;  // diameter of a circle with the same area
+        public Vector2 centroid;    // middle of the opaque pixels
+        public Vector2 boxCenter;   // middle of the box around them
+        public float boxSize;       // the box's larger side
     }
 
-    // Where the rock sits in its picture, measured from the PNG's alpha: x, y = middle of the rock
-    // from the picture's centre, z = diameter of a circle with the rock's area; all as shares of
-    // the picture side. Measured once per rebuild.
-    static readonly Dictionary<Sprite, Vector3> rockFits = new Dictionary<Sprite, Vector3>();
+    static readonly Dictionary<Sprite, AlphaFit> alphaFits = new Dictionary<Sprite, AlphaFit>();
 
-    static Vector3 RockFit(Sprite sprite)
+    static bool Measure(Sprite sprite, out AlphaFit fit)
     {
-        Vector3 fit;
-        if (rockFits.TryGetValue(sprite, out fit)) return fit;
-        fit = new Vector3(0f, 0f, 0.9f);
+        if (alphaFits.TryGetValue(sprite, out fit)) return true;
+        fit = new AlphaFit();
         string path = AssetDatabase.GetAssetPath(sprite);
+        if (!File.Exists(path)) return false;
         var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-        if (File.Exists(path) && tex.LoadImage(File.ReadAllBytes(path)))
-        {
-            var px = tex.GetPixels32();
-            int w = tex.width, h = tex.height;
-            long n = 0; double sx = 0, sy = 0;
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                    if (px[y * w + x].a > 128) { n++; sx += x; sy += y; }
-            if (n > 0)
-                fit = new Vector3((float)(sx / n / w - 0.5), (float)(sy / n / h - 0.5),
-                    (float)(2.0 * System.Math.Sqrt(n / System.Math.PI) / w));
-        }
+        bool ok = tex.LoadImage(File.ReadAllBytes(path));   // full size, whatever the import settings
+        var px = ok ? tex.GetPixels32() : null;             // rows from the bottom, like sprite rects
+        int w = tex.width, h = tex.height;
         Object.DestroyImmediate(tex);
-        rockFits[sprite] = fit;
-        return fit;
+        if (!ok) return false;
+
+        // The imported texture may be smaller than the PNG: map the sprite's rectangle onto the PNG.
+        float kx = w / (float)sprite.texture.width, ky = h / (float)sprite.texture.height;
+        Rect r = sprite.rect;
+        int x0 = Mathf.Clamp(Mathf.FloorToInt(r.xMin * kx), 0, w), x1 = Mathf.Clamp(Mathf.CeilToInt(r.xMax * kx), 0, w);
+        int y0 = Mathf.Clamp(Mathf.FloorToInt(r.yMin * ky), 0, h), y1 = Mathf.Clamp(Mathf.CeilToInt(r.yMax * ky), 0, h);
+        long n = 0; double sx = 0, sy = 0;
+        int bx0 = int.MaxValue, bx1 = -1, by0 = int.MaxValue, by1 = -1;
+        for (int y = y0; y < y1; y++)
+            for (int x = x0; x < x1; x++)
+                if (px[y * w + x].a > 128)
+                {
+                    n++; sx += x; sy += y;
+                    if (x < bx0) bx0 = x; if (x > bx1) bx1 = x;
+                    if (y < by0) by0 = y; if (y > by1) by1 = y;
+                }
+        if (n == 0) return false;
+
+        float ux = 1f / (sprite.pixelsPerUnit * kx), uy = 1f / (sprite.pixelsPerUnit * ky); // units per PNG pixel
+        float pvx = (r.xMin + sprite.pivot.x) * kx, pvy = (r.yMin + sprite.pivot.y) * ky;    // pivot in PNG pixels
+        fit.areaDiameter = 2f * Mathf.Sqrt(n / Mathf.PI) * ux;
+        fit.centroid = new Vector2(((float)(sx / n) + 0.5f - pvx) * ux, ((float)(sy / n) + 0.5f - pvy) * uy);
+        fit.boxCenter = new Vector2(((bx0 + bx1 + 1) * 0.5f - pvx) * ux, ((by0 + by1 + 1) * 0.5f - pvy) * uy);
+        fit.boxSize = Mathf.Max((bx1 - bx0 + 1) * ux, (by1 - by0 + 1) * uy);
+        alphaFits[sprite] = fit;
+        return true;
+    }
+
+    // The largest path of a sprite's physics outline (made by Unity from its alpha), in the
+    // sprite's own space; inner holes and specks are left out. Null without an outline.
+    static Vector2[] LargestOutline(Sprite sprite)
+    {
+        Vector2[] best = null;
+        float bestArea = 0f;
+        var pts = new List<Vector2>();
+        for (int i = 0; i < sprite.GetPhysicsShapeCount(); i++)
+        {
+            pts.Clear();
+            sprite.GetPhysicsShape(i, pts);
+            if (pts.Count < 3) continue;
+            float area = 0f;
+            for (int k = 0; k < pts.Count; k++)
+            {
+                Vector2 a = pts[k], b = pts[(k + 1) % pts.Count];
+                area += a.x * b.y - b.x * a.y;
+            }
+            area = Mathf.Abs(area) * 0.5f;
+            if (area > bestArea) { bestArea = area; best = pts.ToArray(); }
+        }
+        return best;
     }
 
     // Re-imports a picture so ArtImportSettings (mipmaps, physics outline) applies to it.
@@ -562,8 +578,10 @@ public static class DraftSetup
         var go = new GameObject("Asteroid_" + size);
 
         // The artist's rock renders stone1..stone5 for every size; without them the older pictures
-        // baked from stone.fbx (asteroid_s / _m / _l). Each rock is scaled so that its
-        // equal-area circle is 0.9 of the class size: the collider circle (radius 0.45 d).
+        // baked from stone.fbx (asteroid_s / _m / _l). A render may show its rock at any size (and
+        // Unity may trim the sprite to it), so each rock is measured inside its own sprite and
+        // scaled until a circle with its area is 0.9 of the class size. Its collider follows the
+        // rock's outline; the older pictures keep the round collider (radius 0.45 d).
         foreach (var n in new[] { "stone1", "stone2", "stone3", "stone4", "stone5", "stone6", "stone7", "stone8", "stone9" })
             Reimport(n);
         var variants = Art.LoadAll("stone");
@@ -573,21 +591,38 @@ public static class DraftSetup
         SpriteRenderer body;
         var scales = new float[variants.Count];
         var offsets = new Vector2[variants.Count];
+        var outlines = new Vector2[variants.Count][];
+        bool allOutlines = renders;
         if (variants.Count > 0)
         {
             body = Art.Make("Body", variants[0], go.transform, d, 3);
             for (int i = 0; i < variants.Count; i++)
             {
-                Vector3 fit = renders ? RockFit(variants[i]) : new Vector3(0f, 0f, 0.9f);
-                float side = Mathf.Max(variants[i].bounds.size.x, variants[i].bounds.size.y);
-                scales[i] = 0.9f * d / (fit.z * side);
-                offsets[i] = -new Vector2(fit.x, fit.y) * side * scales[i];
+                AlphaFit fit;
+                if (renders && Measure(variants[i], out fit))
+                {
+                    scales[i] = 0.9f * d / fit.areaDiameter;
+                    offsets[i] = -fit.centroid * scales[i];
+                }
+                else
+                {
+                    scales[i] = d / Mathf.Max(variants[i].bounds.size.x, variants[i].bounds.size.y);
+                    offsets[i] = Vector2.zero;
+                }
+                var path = renders ? LargestOutline(variants[i]) : null;
+                if (path == null) allOutlines = false;
+                else
+                {
+                    outlines[i] = new Vector2[path.Length];
+                    for (int k = 0; k < path.Length; k++) outlines[i][k] = path[k] * scales[i] + offsets[i];
+                }
             }
             body.transform.localScale = new Vector3(scales[0], scales[0], 1f);
             body.transform.localPosition = offsets[0];
         }
         else
         {
+            allOutlines = false;
             radius = d * 0.5f;
             body = SpriteFactory.MakeSprite("Body", go.transform, SpriteFactory.Circle(),
                 new Color(0.5f, 0.475f, 0.45f), Vector2.one * d, 3);
@@ -606,9 +641,20 @@ public static class DraftSetup
         rb.angularDamping = 0f;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
 
-        var col = go.AddComponent<CircleCollider2D>();
-        col.radius = radius;
-        col.sharedMaterial = material;
+        PolygonCollider2D poly = null;
+        if (allOutlines)
+        {
+            poly = go.AddComponent<PolygonCollider2D>();
+            poly.pathCount = 1;
+            poly.SetPath(0, outlines[0]);
+            poly.sharedMaterial = material;
+        }
+        else
+        {
+            var col = go.AddComponent<CircleCollider2D>();
+            col.radius = radius;
+            col.sharedMaterial = material;
+        }
 
         var a = go.AddComponent<Asteroid>();
         var so = new SerializedObject(a);
@@ -627,6 +673,16 @@ public static class DraftSetup
         var ol = so.FindProperty("variantOffsets");
         ol.arraySize = offsets.Length;
         for (int i = 0; i < offsets.Length; i++) ol.GetArrayElementAtIndex(i).vector2Value = offsets[i];
+        so.FindProperty("outline").objectReferenceValue = poly;
+        var vo = so.FindProperty("variantOutlines");
+        vo.arraySize = poly != null ? outlines.Length : 0;
+        if (poly != null)
+            for (int i = 0; i < outlines.Length; i++)
+            {
+                var pts = vo.GetArrayElementAtIndex(i).FindPropertyRelative("points");
+                pts.arraySize = outlines[i].Length;
+                for (int k = 0; k < outlines[i].Length; k++) pts.GetArrayElementAtIndex(k).vector2Value = outlines[i][k];
+            }
         so.ApplyModifiedPropertiesWithoutUndo();
         return go;
     }
@@ -1012,11 +1068,15 @@ public static class DraftSetup
                 // is measured and the picture scaled until the shape itself is `size` across. Their
                 // golden colour stays; a soft halo in the palette colour sits behind.
                 var shape = renders[Random.Range(0, renders.Count)];
-                Vector3 fit = ShapeFit(shape);
-                float canvas = size / fit.z;
                 glow = Art.Make("Glow", SpriteFactory.Glow(), star, size * 2.6f, sortingOrder);
-                core = Art.Make("Core", shape, star, canvas, sortingOrder + 1);
-                core.transform.localPosition = -new Vector3(fit.x, fit.y, 0f) * canvas;
+                core = Art.Make("Core", shape, star, size, sortingOrder + 1);
+                AlphaFit fit;
+                if (Measure(shape, out fit))
+                {
+                    float k = size / fit.boxSize;
+                    core.transform.localScale = new Vector3(k, k, 1f);
+                    core.transform.localPosition = -fit.boxCenter * k;
+                }
             }
             else
             {
@@ -1144,6 +1204,8 @@ public static class DraftSetup
             PrefabUtility.RecordPrefabInstancePropertyModifications(sr);
             PrefabUtility.RecordPrefabInstancePropertyModifications(sr.transform); // variant scale and position
         }
+        foreach (var c in go.GetComponents<Collider2D>())
+            PrefabUtility.RecordPrefabInstancePropertyModifications(c);          // variant outline
         return go;
     }
 
