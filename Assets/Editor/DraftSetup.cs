@@ -308,12 +308,6 @@ public static class DraftSetup
 
         var visual = new GameObject("Visual").transform;
         visual.SetParent(go.transform, false);
-<<<<<<< HEAD
-        // player_ship.png: mesh "1" from Assets/Art/Source/spaceship.fbx seen from the side, nose to +X.
-        bool isShip = Art.TryMake("player_ship", visual, tune.PlayerDiameter * 1.3f, 10) != null;
-        if (isShip) visual.Find("player_ship").name = "Body";
-        else if (Art.TryMake("astronaut", visual, tune.PlayerDiameter, 10) == null)
-=======
         // Picture "player_ship": drawn nose up with the main turbine at the bottom. It is turned so
         // that the turbine points at +X (the cursor): shots come out of the turbine and the recoil
         // pushes the nose forward. The collider follows the picture's outline.
@@ -337,7 +331,6 @@ public static class DraftSetup
             }
         }
         else
->>>>>>> filip-code-to-prod
         {
             SpriteFactory.MakeSprite("Body", visual, SpriteFactory.Circle(),
                 new Color(0.9f, 0.9f, 0.95f), Vector2.one * tune.PlayerDiameter, 10);
@@ -348,11 +341,6 @@ public static class DraftSetup
                 new Color(0.5f, 0.5f, 0.55f), new Vector2(0.7f, 0.2f), 12);
             gun.transform.localPosition = new Vector3(0.55f, -0.25f, 0f);
         }
-<<<<<<< HEAD
-        var muzzle = new GameObject("Muzzle").transform;
-        muzzle.SetParent(visual, false);
-        muzzle.localPosition = isShip ? new Vector3(0.7f, 0f, 0f) : new Vector3(0.9f, -0.25f, 0f);
-=======
         if (col == null)
         {
             var circle = go.AddComponent<CircleCollider2D>();
@@ -366,7 +354,6 @@ public static class DraftSetup
             muzzle.SetParent(visual, false);
             muzzle.localPosition = new Vector3(0.9f, -0.25f, 0f);
         }
->>>>>>> filip-code-to-prod
 
         var p = go.AddComponent<PlayerController>();
         Set(p, "rb", rb);

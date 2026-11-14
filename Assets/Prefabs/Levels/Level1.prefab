@@ -572,14 +572,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e49fca109ae5b47419803e90e1420acf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-<<<<<<< HEAD
-  levelName: ADRIFT
-  radio: Tether lost. You have a rivet gun and one tank of air.
-  oxygen: 90
-  movers: 0
-  star3: 65
-  star2: 35
-=======
   levelName: rocks
   radio: 
   oxygen: 65
@@ -588,7 +580,6 @@ MonoBehaviour:
   star2: 20
   lightColor: {r: 1, g: 1, b: 1, a: 1}
   stormColor: {r: 1, g: 0.3, b: 0.25, a: 1}
->>>>>>> filip-code-to-prod
   bounds:
     serializedVersion: 2
     x: -20

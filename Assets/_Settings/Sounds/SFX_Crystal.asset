@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d95cbfdd3e1447faba276872275b38e, type: 3}
+  m_Name: SFX_Crystal
+  m_EditorClassIdentifier: 
+  clips:
+  - {fileID: 8300000, guid: ee881f0c026c3448a91d8ac7c7cc6c09, type: 3}
+  output: {fileID: -8530128297264278276, guid: abb841d91db2e41dd85a20686f6f7bf9, type: 2}
+  volume: 0.5
+  pitchMin: 0.95
+  pitchMax: 1.05
+  cooldown: 0.05
+  loop: 0

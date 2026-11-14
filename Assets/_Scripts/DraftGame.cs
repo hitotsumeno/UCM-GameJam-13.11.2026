@@ -148,6 +148,7 @@ public class DraftGame : MonoBehaviour
     public void BreachHull(Vector2 from)
     {
         if (State != GameState.Playing) return;
+        AudioManager.Play(AudioManager.Sfx.Breach);
         if (Breaches < T.BreachMax)
         {
             Breaches++;
@@ -207,6 +208,7 @@ public class DraftGame : MonoBehaviour
     {
         AddOxygen(amount);
         hud.FlashOxygen();
+        AudioManager.Play(AudioManager.Sfx.Crystal);
     }
 
     // --- Combo ---
@@ -251,12 +253,14 @@ public class DraftGame : MonoBehaviour
         SpendOxygen(T.DockPenalty);
         hud.Toast(Texts.TooFast);
         CameraRig.Shake();
+        AudioManager.Play(AudioManager.Sfx.Bump);
     }
 
     public void Win()
     {
         if (State != GameState.Playing) return;
         State = GameState.Won;
+        AudioManager.Play(AudioManager.Sfx.Win);
         if (level != null && level.player != null) level.player.Stop();
         hud.ShowMessage(Texts.Docked, new Color(0.45f, 1f, 0.55f), levelIndex + "/" + levels.Length,
             Mathf.RoundToInt(Oxygen), Texts.KeyNext);
@@ -267,6 +271,7 @@ public class DraftGame : MonoBehaviour
     {
         if (State != GameState.Playing) return;
         State = GameState.Lost;
+        AudioManager.Play(AudioManager.Sfx.Lose);
         hud.ShowMessage(title, new Color(1f, 0.35f, 0.3f), null, -1, Texts.KeyRetry);
     }
 

@@ -167,6 +167,7 @@ public class Asteroid : MonoBehaviour
         {
             // Gets redder with every hit, so damage is visible.
             body.color = Color.Lerp(DamagedColor, baseColor, (float)hp / maxHp);
+            AudioManager.Play(AudioManager.Sfx.AsteroidHit);
             return;
         }
 
@@ -177,6 +178,7 @@ public class Asteroid : MonoBehaviour
                      : size == AsteroidSize.Medium ? T.CrystalsFromMedium
                      : T.CrystalsFromLarge;
         float worth = T.CrystalOxygen * (1f + T.ComboBonusPerStep * (combo - 1));
+        AudioManager.Play(AudioManager.Sfx.AsteroidBreak);
         OxygenCrystal.Burst(crystalPrefab, transform.position, crystals, worth, transform.parent);
 
         if (splitPrefab != null)

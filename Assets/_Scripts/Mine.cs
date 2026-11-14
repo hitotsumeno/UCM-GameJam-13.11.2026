@@ -192,6 +192,7 @@ public class Mine : MonoBehaviour
     void Explode(bool touchedPlayer, bool shotByPlayer)
     {
         exploded = true;
+        AudioManager.Play(AudioManager.Sfx.MineBoom);
         Vector2 pos = rb.position;
         var game = DraftGame.Instance;
 

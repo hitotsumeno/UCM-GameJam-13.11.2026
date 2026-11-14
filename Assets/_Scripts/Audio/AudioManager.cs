@@ -30,6 +30,21 @@ public class AudioManager : MonoBehaviour
     [SerializeField] int sfxVoices = 12;
     [SerializeField] float musicFadeTime = 1f;
 
+    // Game sounds. Gameplay code calls AudioManager.Play(AudioManager.Sfx.Shoot) etc.
+    public enum Sfx { Shoot, AsteroidHit, AsteroidBreak, MineBoom, Breach, Bump, Pickup, Crystal, Win, Lose }
+
+    [Header("Game sounds")]
+    [SerializeField] SoundEvent shoot;
+    [SerializeField] SoundEvent asteroidHit;
+    [SerializeField] SoundEvent asteroidBreak;
+    [SerializeField] SoundEvent mineBoom;
+    [SerializeField] SoundEvent breach;
+    [SerializeField] SoundEvent bump;
+    [SerializeField] SoundEvent pickup;
+    [SerializeField] SoundEvent crystal;
+    [SerializeField] SoundEvent win;
+    [SerializeField] SoundEvent lose;
+
     readonly List<AudioSource> sfxSources = new List<AudioSource>();
     readonly Dictionary<SoundEvent, float> lastPlayed = new Dictionary<SoundEvent, float>();
     AudioSource[] musicSources;
@@ -88,6 +103,29 @@ public class AudioManager : MonoBehaviour
     public static void Play(SoundEvent e)
     {
         if (Instance != null) Instance.PlaySfx(e);
+    }
+
+    public static void Play(Sfx s)
+    {
+        if (Instance != null) Instance.PlaySfx(Instance.Get(s));
+    }
+
+    SoundEvent Get(Sfx s)
+    {
+        switch (s)
+        {
+            case Sfx.Shoot: return shoot;
+            case Sfx.AsteroidHit: return asteroidHit;
+            case Sfx.AsteroidBreak: return asteroidBreak;
+            case Sfx.MineBoom: return mineBoom;
+            case Sfx.Breach: return breach;
+            case Sfx.Bump: return bump;
+            case Sfx.Pickup: return pickup;
+            case Sfx.Crystal: return crystal;
+            case Sfx.Win: return win;
+            case Sfx.Lose: return lose;
+        }
+        return null;
     }
 
     void PlaySfx(SoundEvent e)

@@ -15,6 +15,7 @@ public class OxygenTank : MonoBehaviour
         if (game == null || game.State != GameState.Playing) return;
         game.AddOxygen(T.OxygenTankAmount);
         game.RepairBreach(); // a tank also seals one leak
+        AudioManager.Play(AudioManager.Sfx.Pickup);
         Destroy(gameObject);
     }
 }

@@ -28,13 +28,6 @@ public class Hud : MonoBehaviour
     [SerializeField] Tuning tuning;
     Tuning T { get { return tuning != null ? tuning : Tuning.Active; } }
 
-<<<<<<< HEAD
-    [Header("Compass")]
-    [SerializeField] RectTransform compassNeedle;
-    [SerializeField] Text compassText;
-    [SerializeField] TMP_Text speedText; // TextMeshPro - Text (UI) on the HUD canvas
-    [SerializeField] Image speedIcon;
-=======
     [Header("Air")]
     [Tooltip("Cells of the air bar, left to right")]
     [SerializeField] Image[] airCells;
@@ -51,7 +44,6 @@ public class Hud : MonoBehaviour
     [Header("Arrow to the ship")]
     [SerializeField] RectTransform shipArrow;
     [SerializeField] PixelLabel shipDistance;
->>>>>>> filip-code-to-prod
 
     [Header("Combo")]
     [SerializeField] GameObject comboRoot;
@@ -263,21 +255,7 @@ public class Hud : MonoBehaviour
         }
     }
 
-<<<<<<< HEAD
-    // slowEnough: the player may dock at this speed.
-    public void SetSpeed(float speed, bool slowEnough)
-    {
-        int rounded = Mathf.RoundToInt(speed);
-        if (rounded == shownSpeed && slowEnough == shownSpeedOk) return;
-        shownSpeed = rounded;
-        shownSpeedOk = slowEnough;
-        speedText.text = "SPEED " + rounded;
-        speedText.color = slowEnough ? GoodColor : BadColor;
-        speedIcon.color = slowEnough ? GoodColor : BadColor;   
-    }
-=======
     // --- Combo ---
->>>>>>> filip-code-to-prod
 
     // combo: kills in a row (shown from x2). timeLeft: 1 = just continued, 0 = about to end.
     public void SetCombo(int combo, float timeLeft)

@@ -87,6 +87,7 @@ public class PlayerController : MonoBehaviour
         Bullet.Spawn(bulletPrefab, from, aim, col, transform.parent);
         rb.AddForce(-aim * T.RecoilImpulse, ForceMode2D.Impulse);
         CameraRig.Shake();
+        AudioManager.Play(AudioManager.Sfx.Shoot);
     }
 
     // Hitting a rock or a meteor too hard breaches the hull.

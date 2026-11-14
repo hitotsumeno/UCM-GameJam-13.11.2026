@@ -34,11 +34,7 @@ MonoBehaviour:
   CameraHardShakeStrength: 2.5
   OxygenMax: 100
   OxygenDrainPerSecond: 0.5
-<<<<<<< HEAD
-  OxygenPerShot: 2
-=======
   OxygenPerShot: 1
->>>>>>> filip-code-to-prod
   OutOfBoundsDrainMultiplier: 4
   StormPush: 8
   StormPushDepth: 6
