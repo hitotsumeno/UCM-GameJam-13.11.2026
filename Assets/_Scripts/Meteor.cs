@@ -6,6 +6,10 @@ using UnityEngine;
 [DefaultExecutionOrder(100)] // after CameraRig has moved the camera
 public class Meteor : MonoBehaviour
 {
+    [Tooltip("Balance numbers: Assets/_Settings/Tuning.asset")]
+    [SerializeField] Tuning tuning;
+    Tuning T { get { return tuning != null ? tuning : Tuning.Active; } }
+
     [SerializeField] Asteroid asteroid;
     [SerializeField] Rigidbody2D rb;
     [SerializeField] Transform tail;
@@ -33,7 +37,7 @@ public class Meteor : MonoBehaviour
 
         if (cam == null) return;
         float bottom = cam.transform.position.y - cam.orthographicSize;
-        if (age > Tuning.MeteorLifetime || transform.position.y < bottom - 30f)
+        if (age > T.MeteorLifetime || transform.position.y < bottom - 30f)
             Destroy(gameObject);
     }
 
@@ -59,7 +63,7 @@ public class Meteor : MonoBehaviour
         if (warning.gameObject.activeSelf != above) warning.gameObject.SetActive(above);
         if (above)
         {
-            float margin = Tuning.MeteorWarningSize * 0.8f;
+            float margin = T.MeteorWarningSize * 0.8f;
             float halfW = cam.orthographicSize * cam.aspect - margin;
             float x = Mathf.Clamp(pos.x, cam.transform.position.x - halfW, cam.transform.position.x + halfW);
             warning.position = new Vector3(x, top - margin, 0f);

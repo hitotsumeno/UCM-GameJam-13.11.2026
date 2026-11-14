@@ -19,6 +19,10 @@ public static class DraftSetup
     const string LevelFolder = "Assets/Prefabs/Levels";
     const string PhysicsFolder = "Assets/Physics";
 
+    // Balance numbers used while building (Assets/_Settings/Tuning.asset); also connected
+    // to every component made here.
+    static Tuning tune;
+
     [MenuItem("Filip/Rebuild Prefabs And Scene")]
     static void RebuildMenu()
     {
@@ -37,6 +41,7 @@ public static class DraftSetup
         Random.InitState(1311); // same layout every time
         try
         {
+            tune = TuningConnector.GetOrCreate();
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             EnsureFolder(PrefabFolder);
             EnsureFolder(LevelFolder);
@@ -69,8 +74,9 @@ public static class DraftSetup
             int count = LevelData.Count();
             for (int i = 1; i <= count; i++)
             {
-                var data = LevelData.Load(i);
+                var data = LevelData.Load(i, tune);
                 var root = BuildLevel(data, player, ship, tank, rocks, background, meteorSmall, meteorMedium);
+                TuningConnector.Connect(root, tune);
                 var asset = PrefabUtility.SaveAsPrefabAsset(root, LevelFolder + "/Level" + i + ".prefab");
                 Object.DestroyImmediate(root);
                 levels.Add(asset.GetComponent<Level>());
@@ -95,19 +101,19 @@ public static class DraftSetup
     {
         var go = new GameObject("Bullet");
         SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
-            new Color(1f, 0.8f, 0.25f, Tuning.BulletGlowOpacity), Vector2.one * Tuning.BulletGlowSize, 19);
+            new Color(1f, 0.8f, 0.25f, tune.BulletGlowOpacity), Vector2.one * tune.BulletGlowSize, 19);
         SpriteFactory.MakeSprite("Visual", go.transform, SpriteFactory.Circle(),
-            new Color(1f, 0.95f, 0.6f), Vector2.one * Tuning.BulletDiameter, 20);
+            new Color(1f, 0.95f, 0.6f), Vector2.one * tune.BulletDiameter, 20);
 
         var rb = go.AddComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
-        rb.mass = Tuning.BulletMass;
+        rb.mass = tune.BulletMass;
         rb.linearDamping = 0f;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
 
         var col = go.AddComponent<CircleCollider2D>();
-        col.radius = Tuning.BulletDiameter * 0.5f;
+        col.radius = tune.BulletDiameter * 0.5f;
 
         var b = go.AddComponent<Bullet>();
         Set(b, "rb", rb);
@@ -120,14 +126,14 @@ public static class DraftSetup
         var go = new GameObject("OxygenCrystal");
         // Cyan glow, like the oxygen tanks: everything that gives air is cyan.
         var glow = SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
-            new Color(0.3f, 0.85f, 1f, 0.7f), Vector2.one * Tuning.CrystalSize * 3.5f, 6);
+            new Color(0.3f, 0.85f, 1f, 0.7f), Vector2.one * tune.CrystalSize * 3.5f, 6);
 
         // Picture "crystal" or a placeholder: a small diamond.
-        var core = Art.TryMake("crystal", go.transform, Tuning.CrystalSize, 7);
+        var core = Art.TryMake("crystal", go.transform, tune.CrystalSize, 7);
         if (core == null)
         {
             core = SpriteFactory.MakeSprite("Core", go.transform, SpriteFactory.Square(),
-                new Color(0.75f, 0.97f, 1f), Vector2.one * Tuning.CrystalSize * 0.7f, 7);
+                new Color(0.75f, 0.97f, 1f), Vector2.one * tune.CrystalSize * 0.7f, 7);
             core.transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
         }
         var c = go.AddComponent<OxygenCrystal>();
@@ -140,9 +146,9 @@ public static class DraftSetup
     {
         var go = new GameObject("OxygenTank");
         SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
-            new Color(0.3f, 0.85f, 1f, Tuning.OxygenTankGlowOpacity), Vector2.one * Tuning.OxygenTankGlowSize, 2);
+            new Color(0.3f, 0.85f, 1f, tune.OxygenTankGlowOpacity), Vector2.one * tune.OxygenTankGlowSize, 2);
 
-        float s = Tuning.OxygenTankSize;
+        float s = tune.OxygenTankSize;
         if (Art.TryMake("oxygen", go.transform, s, 4) == null)
         {
             var color = new Color(0.3f, 0.85f, 1f);
@@ -155,7 +161,7 @@ public static class DraftSetup
         }
 
         var col = go.AddComponent<CircleCollider2D>();
-        col.radius = Tuning.OxygenTankPickupRadius;
+        col.radius = tune.OxygenTankPickupRadius;
         col.isTrigger = true;
         go.AddComponent<OxygenTank>();
         return go;
@@ -164,7 +170,7 @@ public static class DraftSetup
     static GameObject BuildShip()
     {
         var go = new GameObject("Ship");
-        float len = Tuning.ShipLength, h = Tuning.ShipHeight;
+        float len = tune.ShipLength, h = tune.ShipHeight;
         Vector2 size = new Vector2(len, h);
 
         var art = Art.TryMake("ship", go.transform, len, 5);
@@ -195,7 +201,7 @@ public static class DraftSetup
     {
         var go = new GameObject("Player");
         var rb = go.AddComponent<Rigidbody2D>();
-        rb.mass = Tuning.PlayerMass;
+        rb.mass = tune.PlayerMass;
         rb.gravityScale = 0f;
         rb.linearDamping = 0f;
         rb.angularDamping = 0f;
@@ -204,20 +210,20 @@ public static class DraftSetup
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
         var col = go.AddComponent<CircleCollider2D>();
-        col.radius = Tuning.PlayerDiameter * 0.5f;
+        col.radius = tune.PlayerDiameter * 0.5f;
         col.sharedMaterial = material;
 
         // Soft white glow under the player: the player is always the easiest thing to find.
         SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
-            new Color(1f, 1f, 1f, Tuning.PlayerGlowOpacity),
-            Vector2.one * Tuning.PlayerDiameter * Tuning.PlayerGlowSize, 9);
+            new Color(1f, 1f, 1f, tune.PlayerGlowOpacity),
+            Vector2.one * tune.PlayerDiameter * tune.PlayerGlowSize, 9);
 
         var visual = new GameObject("Visual").transform;
         visual.SetParent(go.transform, false);
-        if (Art.TryMake("astronaut", visual, Tuning.PlayerDiameter, 10) == null)
+        if (Art.TryMake("astronaut", visual, tune.PlayerDiameter, 10) == null)
         {
             SpriteFactory.MakeSprite("Body", visual, SpriteFactory.Circle(),
-                new Color(0.9f, 0.9f, 0.95f), Vector2.one * Tuning.PlayerDiameter, 10);
+                new Color(0.9f, 0.9f, 0.95f), Vector2.one * tune.PlayerDiameter, 10);
             var visor = SpriteFactory.MakeSprite("Visor", visual, SpriteFactory.Circle(),
                 new Color(0.3f, 0.6f, 1f), new Vector2(0.35f, 0.5f), 11);
             visor.transform.localPosition = new Vector3(0.2f, 0f, 0f);
@@ -253,7 +259,7 @@ public static class DraftSetup
     static GameObject BuildAsteroid(AsteroidSize size, Asteroid split, OxygenCrystal crystal,
         PhysicsMaterial2D material, bool confined)
     {
-        float d = Asteroid.Diameter(size);
+        float d = Asteroid.Diameter(tune, size);
         var go = new GameObject("Asteroid_" + size);
 
         var variants = Art.LoadAll(ArtName(size));
@@ -278,7 +284,7 @@ public static class DraftSetup
 
         var rb = go.AddComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
-        rb.mass = Tuning.AsteroidDensity * d * d; // recalculated in Start from the actual scale
+        rb.mass = tune.AsteroidDensity * d * d; // recalculated in Start from the actual scale
         rb.linearDamping = 0f;
         rb.angularDamping = 0f;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
@@ -310,15 +316,15 @@ public static class DraftSetup
         var body = go.transform.Find("Body").GetComponent<SpriteRenderer>();
         body.color *= new Color(1f, 0.7f, 0.5f); // warmer than normal rocks
 
-        float d = Asteroid.Diameter(size);
+        float d = Asteroid.Diameter(tune, size);
         // Hot glow around the rock and a soft fiery streak behind it (both drawn under the rock).
         SpriteFactory.MakeSprite("Heat", go.transform, SpriteFactory.Glow(),
-            new Color(1f, 0.5f, 0.15f, Tuning.MeteorHeatOpacity), Vector2.one * d * Tuning.MeteorHeatSize, 1);
+            new Color(1f, 0.5f, 0.15f, tune.MeteorHeatOpacity), Vector2.one * d * tune.MeteorHeatSize, 1);
         var tail = SpriteFactory.MakeSprite("Tail", go.transform, SpriteFactory.Glow(),
             new Color(1f, 0.6f, 0.2f, 0.6f), new Vector2(d * 1.1f, d * 5f), 2).transform;
         tail.localPosition = new Vector3(0f, d * 2f, 0f);
         var warning = SpriteFactory.MakeSprite("Warning", go.transform, SpriteFactory.Triangle(),
-            new Color(1f, 0.3f, 0.25f), Vector2.one * Tuning.MeteorWarningSize, 30).transform;
+            new Color(1f, 0.3f, 0.25f), Vector2.one * tune.MeteorWarningSize, 30).transform;
         warning.gameObject.SetActive(false);
 
         var m = go.AddComponent<Meteor>();
@@ -336,26 +342,26 @@ public static class DraftSetup
         var root = new GameObject("Background");
         Vector2 center = Vector2.zero;
 
-        var art = Art.TryMake("background", root.transform, Tuning.BackgroundSize, -200);
+        var art = Art.TryMake("background", root.transform, tune.BackgroundSize, -200);
         if (art != null)
         {
             art.gameObject.AddComponent<ParallaxBackground>()
-                .Setup(center, Tuning.BackgroundParallax, Tuning.BackgroundSize, false);
+                .Setup(center, tune.BackgroundParallax, tune.BackgroundSize, false);
         }
         else
         {
-            float b = Tuning.NebulaFarBrightness;
-            Nebula("nebula_far", root.transform, center, Tuning.NebulaFarSize, Tuning.NebulaFarParallax, -200,
+            float b = tune.NebulaFarBrightness;
+            Nebula("nebula_far", root.transform, center, tune.NebulaFarSize, tune.NebulaFarParallax, -200,
                 1.002f, new Color(b, b, b, 1f));
-            Nebula("nebula_near", root.transform, center, Tuning.NebulaNearSize, Tuning.NebulaNearParallax, -145,
-                1f, new Color(1f, 1f, 1f, Tuning.NebulaNearOpacity));
+            Nebula("nebula_near", root.transform, center, tune.NebulaNearSize, tune.NebulaNearParallax, -145,
+                1f, new Color(1f, 1f, 1f, tune.NebulaNearOpacity));
         }
 
-        StarDust("StarDust", root.transform, center, Tuning.StarDustParallax, Tuning.StarDustCount, -160);
-        GlowingStars("StarsFar", root.transform, center, Tuning.StarsFarParallax, Tuning.StarsFarCount,
-            Tuning.StarFarSizeMin, Tuning.StarFarSizeMax, 0.45f, -150);
-        GlowingStars("StarsNear", root.transform, center, Tuning.StarsNearParallax, Tuning.StarsNearCount,
-            Tuning.StarNearSizeMin, Tuning.StarNearSizeMax, 0.75f, -140);
+        StarDust("StarDust", root.transform, center, tune.StarDustParallax, tune.StarDustCount, -160);
+        GlowingStars("StarsFar", root.transform, center, tune.StarsFarParallax, tune.StarsFarCount,
+            tune.StarFarSizeMin, tune.StarFarSizeMax, 0.45f, -150);
+        GlowingStars("StarsNear", root.transform, center, tune.StarsNearParallax, tune.StarsNearCount,
+            tune.StarNearSizeMin, tune.StarNearSizeMax, 0.75f, -140);
         return root;
     }
 
@@ -388,10 +394,10 @@ public static class DraftSetup
     // Colour of the level applied to the nebula tiles of a Background instance.
     static void TintBackground(GameObject background, Color tint)
     {
-        float b = Tuning.NebulaFarBrightness;
+        float b = tune.NebulaFarBrightness;
         TintLayer(background.transform.Find("nebula_far"), new Color(b * tint.r, b * tint.g, b * tint.b, 1f));
         TintLayer(background.transform.Find("nebula_near"),
-            new Color(tint.r, tint.g, tint.b, Tuning.NebulaNearOpacity));
+            new Color(tint.r, tint.g, tint.b, tune.NebulaNearOpacity));
     }
 
     static void TintLayer(Transform layer, Color color)
@@ -420,7 +426,7 @@ public static class DraftSetup
 
     static Vector2[] StarPositions(int count)
     {
-        float half = Tuning.StarTileSize * 0.5f;
+        float half = tune.StarTileSize * 0.5f;
         var local = new Vector2[count];
         for (int i = 0; i < count; i++) local[i] = new Vector2(Random.Range(-half, half), Random.Range(-half, half));
         return local;
@@ -440,7 +446,7 @@ public static class DraftSetup
             stars[i] = SpriteFactory.MakeSprite("Dust", go.transform, circle, color,
                 Vector2.one * Random.Range(0.03f, 0.07f), sortingOrder).transform;
         }
-        go.AddComponent<StarLayer>().Setup(anchor, factor, Tuning.StarTileSize, stars, local,
+        go.AddComponent<StarLayer>().Setup(anchor, factor, tune.StarTileSize, stars, local,
             new SpriteRenderer[0], new SpriteRenderer[0], new float[0], new float[0]);
     }
 
@@ -484,18 +490,18 @@ public static class DraftSetup
             }
 
             Color coreColor = Color.Lerp(Color.white, tint, 0.25f);
-            coreColor.a = brightness * Tuning.StarBrightness;
+            coreColor.a = brightness * tune.StarBrightness;
             Color glowColor = tint;
-            glowColor.a = brightness * Tuning.StarGlowOpacity;
+            glowColor.a = brightness * tune.StarGlowOpacity;
             core.color = coreColor;
             glow.color = glowColor;
 
             cores[i] = core;
             glows[i] = glow;
             phase[i] = Random.Range(0f, Mathf.PI * 2f);
-            speed[i] = Random.Range(Tuning.StarTwinkleSpeedMin, Tuning.StarTwinkleSpeedMax);
+            speed[i] = Random.Range(tune.StarTwinkleSpeedMin, tune.StarTwinkleSpeedMax);
         }
-        go.AddComponent<StarLayer>().Setup(anchor, factor, Tuning.StarTileSize, stars, local,
+        go.AddComponent<StarLayer>().Setup(anchor, factor, tune.StarTileSize, stars, local,
             cores, glows, phase, speed);
     }
 
@@ -508,7 +514,7 @@ public static class DraftSetup
         var level = root.AddComponent<Level>();
         level.levelName = data.name;
         level.radio = data.radio;
-        level.oxygen = Mathf.Clamp(data.oxygen, 1f, Tuning.OxygenMax);
+        level.oxygen = Mathf.Clamp(data.oxygen, 1f, tune.OxygenMax);
         level.movers = data.movers;
         level.star3 = data.star3;
         level.star2 = data.star2;
@@ -523,8 +529,8 @@ public static class DraftSetup
         var hintParent = Group("Hints", root.transform);
 
         // Used if the map has no P or S.
-        Vector2 start = new Vector2(level.bounds.center.x, level.bounds.yMin + Tuning.PlayerStartFromBottom);
-        Vector2 shipPos = new Vector2(level.bounds.center.x, level.bounds.yMax - Tuning.ShipFromTop);
+        Vector2 start = new Vector2(level.bounds.center.x, level.bounds.yMin + tune.PlayerStartFromBottom);
+        Vector2 shipPos = new Vector2(level.bounds.center.x, level.bounds.yMax - tune.ShipFromTop);
 
         for (int row = 0; row < data.rows.Count; row++)
         {
@@ -574,7 +580,7 @@ public static class DraftSetup
     {
         var go = Place(prefab.gameObject, position, parent);
         go.transform.rotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
-        float s = Random.Range(Tuning.AsteroidSizeVariationMin, Tuning.AsteroidSizeVariationMax);
+        float s = Random.Range(tune.AsteroidSizeVariationMin, tune.AsteroidSizeVariationMax);
         go.transform.localScale = new Vector3(s, s, 1f);
         go.GetComponent<Asteroid>().PickRandomLook();
         PrefabUtility.RecordPrefabInstancePropertyModifications(go.transform);
@@ -642,6 +648,8 @@ public static class DraftSetup
         for (int i = 0; i < levels.Length; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = levels[i];
         so.FindProperty("startLevel").intValue = 1;
         so.ApplyModifiedPropertiesWithoutUndo();
+        TuningConnector.Connect(go, tune);
+        TuningConnector.Connect(rig.gameObject, tune);
     }
 
     static void EnsureGlobalLight()
@@ -667,7 +675,7 @@ public static class DraftSetup
             camGo.transform.position = new Vector3(0f, 0f, -10f);
         }
         cam.orthographic = true;
-        cam.orthographicSize = Tuning.CameraSize;
+        cam.orthographicSize = tune.CameraSize;
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = Color.black;
 
@@ -867,6 +875,7 @@ public static class DraftSetup
 
     static GameObject SavePrefab(GameObject go, string name)
     {
+        TuningConnector.Connect(go, tune);
         var asset = PrefabUtility.SaveAsPrefabAsset(go, PrefabFolder + "/" + name + ".prefab");
         Object.DestroyImmediate(go);
         return asset;
@@ -882,7 +891,7 @@ public static class DraftSetup
             AssetDatabase.CreateAsset(m, path);
         }
         m.friction = 0f;
-        m.bounciness = Tuning.Bounciness;
+        m.bounciness = tune.Bounciness;
         EditorUtility.SetDirty(m);
         return m;
     }

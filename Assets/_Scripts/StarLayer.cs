@@ -8,9 +8,13 @@ using UnityEngine;
 [DefaultExecutionOrder(100)] // after CameraRig has moved the camera
 public class StarLayer : MonoBehaviour
 {
+    [Tooltip("Balance numbers: Assets/_Settings/Tuning.asset")]
+    [SerializeField] Tuning tuning;
+    Tuning T { get { return tuning != null ? tuning : Tuning.Active; } }
+
     [SerializeField] Vector2 anchor;
     [SerializeField] float factor = 0.3f;
-    [SerializeField] float tile = Tuning.StarTileSize;
+    [SerializeField] float tile = 56f;
     [SerializeField] Transform[] stars;
     [Tooltip("Star positions inside the tile")]
     [SerializeField] Vector2[] local;
@@ -74,7 +78,7 @@ public class StarLayer : MonoBehaviour
     void Twinkle()
     {
         float t = Time.time;
-        float strength = Tuning.StarTwinkleStrength;
+        float strength = T.StarTwinkleStrength;
         for (int i = 0; i < cores.Length; i++)
         {
             float k = 0.5f + 0.5f * Mathf.Sin(t * speed[i] + phase[i]); // 0..1

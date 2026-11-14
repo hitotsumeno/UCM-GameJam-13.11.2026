@@ -4,6 +4,10 @@ using UnityEngine;
 // Set up in Assets/Prefabs/Player.prefab.
 public class PlayerController : MonoBehaviour
 {
+    [Tooltip("Balance numbers: Assets/_Settings/Tuning.asset")]
+    [SerializeField] Tuning tuning;
+    Tuning T { get { return tuning != null ? tuning : Tuning.Active; } }
+
     [SerializeField] Rigidbody2D rb;
     [SerializeField] Collider2D col;
     [Tooltip("Rotates toward the cursor; the physics body does not rotate")]
@@ -37,7 +41,7 @@ public class PlayerController : MonoBehaviour
         bool playing = game != null && game.State == GameState.Playing;
         if (playing && Input.GetMouseButton(0) && Time.time >= nextFireTime)
         {
-            nextFireTime = Time.time + 1f / Tuning.FireRate;
+            nextFireTime = Time.time + 1f / T.FireRate;
             Fire(aim);
         }
     }
@@ -58,17 +62,17 @@ public class PlayerController : MonoBehaviour
     {
         Vector2 away = (Vector2)transform.position - point;
         if (away.sqrMagnitude < 0.0001f) away = Vector2.down;
-        float speed = Mathf.Max(Speed * Tuning.DockBounce, Tuning.DockBounceMinSpeed);
+        float speed = Mathf.Max(Speed * T.DockBounce, T.DockBounceMinSpeed);
         rb.linearVelocity = away.normalized * speed;
     }
 
     void Fire(Vector2 aim)
     {
-        DraftGame.Instance.SpendOxygen(Tuning.OxygenPerShot);
+        DraftGame.Instance.SpendOxygen(T.OxygenPerShot);
         Vector2 from = muzzle != null ? (Vector2)muzzle.position
                                       : (Vector2)visual.TransformPoint(new Vector3(0.9f, -0.25f, 0f));
         Bullet.Spawn(bulletPrefab, from, aim, col, transform.parent);
-        rb.AddForce(-aim * Tuning.RecoilImpulse, ForceMode2D.Impulse);
+        rb.AddForce(-aim * T.RecoilImpulse, ForceMode2D.Impulse);
         CameraRig.Shake();
     }
 
@@ -77,8 +81,8 @@ public class PlayerController : MonoBehaviour
     {
         if (collision.collider.GetComponent<Asteroid>() == null) return;
         float speed = collision.relativeVelocity.magnitude;
-        if (speed <= Tuning.ImpactSafeSpeed) return;
-        float loss = Mathf.Min((speed - Tuning.ImpactSafeSpeed) * Tuning.ImpactOxygenPerSpeed, Tuning.ImpactMaxOxygen);
+        if (speed <= T.ImpactSafeSpeed) return;
+        float loss = Mathf.Min((speed - T.ImpactSafeSpeed) * T.ImpactOxygenPerSpeed, T.ImpactMaxOxygen);
         if (DraftGame.Instance != null)
         {
             DraftGame.Instance.SpendOxygen(loss);
@@ -90,7 +94,7 @@ public class PlayerController : MonoBehaviour
     void FixedUpdate()
     {
         Vector2 v = rb.linearVelocity;
-        if (v.sqrMagnitude > Tuning.PlayerMaxSpeed * Tuning.PlayerMaxSpeed)
-            rb.linearVelocity = v.normalized * Tuning.PlayerMaxSpeed;
+        if (v.sqrMagnitude > T.PlayerMaxSpeed * T.PlayerMaxSpeed)
+            rb.linearVelocity = v.normalized * T.PlayerMaxSpeed;
     }
 }

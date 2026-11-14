@@ -4,6 +4,10 @@ using UnityEngine;
 // Invisible in the game; drawn as a gizmo in the Scene view.
 public class HintMarker : MonoBehaviour
 {
+    [Tooltip("Balance numbers: Assets/_Settings/Tuning.asset")]
+    [SerializeField] Tuning tuning;
+    Tuning T { get { return tuning != null ? tuning : Tuning.Active; } }
+
     [TextArea] public string text = "";
 
     void OnDrawGizmos()
@@ -15,6 +19,10 @@ public class HintMarker : MonoBehaviour
     void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(1f, 1f, 0.4f, 0.25f);
-        Gizmos.DrawWireSphere(transform.position, Tuning.HintRadius);
+        Tuning t = T;
+#if UNITY_EDITOR
+        if (t == null) t = Tuning.FindInEditor();
+#endif
+        if (t != null) Gizmos.DrawWireSphere(transform.position, t.HintRadius);
     }
 }

@@ -7,6 +7,10 @@ public enum GameState { Playing, Won, Lost }
 // a level is an ordinary prefab, instantiated on start and destroyed on restart.
 public class DraftGame : MonoBehaviour
 {
+    [Tooltip("Balance numbers: Assets/_Settings/Tuning.asset")]
+    [SerializeField] Tuning tuning;
+    Tuning T { get { return tuning != null ? tuning : Tuning.Active; } }
+
     public static DraftGame Instance;
 
     [SerializeField] Hud hud;
@@ -37,16 +41,25 @@ public class DraftGame : MonoBehaviour
     static void ResetStatics()
     {
         Instance = null;
+        Tuning.ResetStatics();
         CameraRig.ResetStatics();
     }
 
     void Awake()
     {
         Instance = this;
+        // Components with an empty Tuning field use this one.
+        if (tuning != null) Tuning.Active = tuning;
     }
 
     void Start()
     {
+        if (T == null)
+        {
+            Debug.LogError("DraftGame: no Tuning asset assigned. Run Filip > Connect Tuning To Prefabs And Scene.", this);
+            enabled = false;
+            return;
+        }
         if (levels == null || levels.Length == 0)
         {
             Debug.LogError("DraftGame: no level prefabs assigned.", this);
@@ -90,10 +103,10 @@ public class DraftGame : MonoBehaviour
             if (level.ship != null) hud.SetCompass((Vector2)level.ship.position - pos);
 
             float speed = level.player.Speed;
-            hud.SetSpeed(speed, speed <= Tuning.DockMaxSpeed);
+            hud.SetSpeed(speed, speed <= T.DockMaxSpeed);
 
             // The nearest hint place within reach decides which hint is shown.
-            float best = Tuning.HintRadius;
+            float best = T.HintRadius;
             foreach (var h in level.Hints)
             {
                 if (h == null) continue;
@@ -108,8 +121,8 @@ public class DraftGame : MonoBehaviour
 
         if (State == GameState.Playing)
         {
-            float drain = Tuning.OxygenDrainPerSecond * Time.deltaTime;
-            if (outside) drain *= Tuning.OutOfBoundsDrainMultiplier;
+            float drain = T.OxygenDrainPerSecond * Time.deltaTime;
+            if (outside) drain *= T.OutOfBoundsDrainMultiplier;
             SpendOxygen(drain);
         }
     }
@@ -120,15 +133,15 @@ public class DraftGame : MonoBehaviour
     {
         if (State != GameState.Playing) return;
         Oxygen = Mathf.Max(0f, Oxygen - amount);
-        hud.SetOxygen(Oxygen / Tuning.OxygenMax);
+        hud.SetOxygen(Oxygen / T.OxygenMax);
         if (Oxygen <= 0f) Lose();
     }
 
     public void AddOxygen(float amount)
     {
         if (State != GameState.Playing) return;
-        Oxygen = Mathf.Min(Tuning.OxygenMax, Oxygen + amount);
-        hud.SetOxygen(Oxygen / Tuning.OxygenMax);
+        Oxygen = Mathf.Min(T.OxygenMax, Oxygen + amount);
+        hud.SetOxygen(Oxygen / T.OxygenMax);
     }
 
     public void CollectCrystal(float amount)
@@ -142,8 +155,8 @@ public class DraftGame : MonoBehaviour
     // Called when something is destroyed. Returns the combo count including this kill.
     public int RegisterKill()
     {
-        Combo = comboTimer > 0f ? Mathf.Min(Combo + 1, Tuning.ComboMax) : 1;
-        comboTimer = Tuning.ComboWindow;
+        Combo = comboTimer > 0f ? Mathf.Min(Combo + 1, T.ComboMax) : 1;
+        comboTimer = T.ComboWindow;
         hud.SetCombo(Combo, 1f);
         return Combo;
     }
@@ -161,7 +174,7 @@ public class DraftGame : MonoBehaviour
         if (comboTimer <= 0f) return;
         comboTimer -= Time.deltaTime;
         if (comboTimer <= 0f) BreakCombo();
-        else hud.SetCombo(Combo, comboTimer / Tuning.ComboWindow);
+        else hud.SetCombo(Combo, comboTimer / T.ComboWindow);
     }
 
     // --- Docking, winning, losing ---
@@ -170,13 +183,13 @@ public class DraftGame : MonoBehaviour
     public void PlayerReachedShip(PlayerController player, Vector2 shipPosition)
     {
         if (State != GameState.Playing) return;
-        if (player.Speed <= Tuning.DockMaxSpeed)
+        if (player.Speed <= T.DockMaxSpeed)
         {
             Win();
             return;
         }
         player.BounceFrom(shipPosition);
-        SpendOxygen(Tuning.DockPenalty);
+        SpendOxygen(T.DockPenalty);
         hud.Toast("TOO FAST");
         CameraRig.Shake();
     }
@@ -223,8 +236,8 @@ public class DraftGame : MonoBehaviour
         Asteroid.Bounds = level.bounds;
 
         State = GameState.Playing;
-        Oxygen = Mathf.Clamp(level.oxygen, 1f, Tuning.OxygenMax);
-        hud.SetOxygen(Oxygen / Tuning.OxygenMax);
+        Oxygen = Mathf.Clamp(level.oxygen, 1f, T.OxygenMax);
+        hud.SetOxygen(Oxygen / T.OxygenMax);
         hud.HideMessage();
         hud.SetSignalLost(false);
         hud.SetHint(null);

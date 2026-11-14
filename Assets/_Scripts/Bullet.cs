@@ -3,6 +3,10 @@ using UnityEngine;
 // Set up in Assets/Prefabs/Bullet.prefab.
 public class Bullet : MonoBehaviour
 {
+    [Tooltip("Balance numbers: Assets/_Settings/Tuning.asset")]
+    [SerializeField] Tuning tuning;
+    Tuning T { get { return tuning != null ? tuning : Tuning.Active; } }
+
     [SerializeField] Rigidbody2D rb;
     [SerializeField] Collider2D col;
 
@@ -20,9 +24,9 @@ public class Bullet : MonoBehaviour
             return null;
         }
         var b = Instantiate(prefab, position, Quaternion.identity, parent);
-        b.rb.linearVelocity = direction.normalized * Tuning.BulletSpeed;
+        b.rb.linearVelocity = direction.normalized * b.T.BulletSpeed;
         if (ignore != null) Physics2D.IgnoreCollision(b.col, ignore);
-        Destroy(b.gameObject, Tuning.BulletLifetime);
+        Destroy(b.gameObject, b.T.BulletLifetime);
         return b;
     }
 

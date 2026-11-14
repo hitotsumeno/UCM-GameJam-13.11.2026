@@ -16,10 +16,11 @@ public class LevelData
     public string name = "";
     public string radio = "";         // one line of story shown before the level
     public Color tint = Color.white;  // colour of the nebula
-    public float oxygen = Tuning.OxygenMax; // oxygen at the start
+    public float oxygen = 100f;      // oxygen at the start (default: Tuning.OxygenMax)
     public bool meteors;
-    public float meteorMin = Tuning.MeteorIntervalMin;
-    public float meteorMax = Tuning.MeteorIntervalMax;
+    public float meteorMin = 3f;     // defaults: Tuning.MeteorIntervalMin / Max
+    public float meteorMax = 6f;
+    public float cellSize = 2f;      // Tuning.CellSize
     public float movers;              // share of rocks that fly noticeably (0..1)
     public float star3 = 50f, star2 = 25f; // % of oxygen left for 3 and 2 stars
     public Dictionary<char, string> hints = new Dictionary<char, string>();
@@ -30,7 +31,7 @@ public class LevelData
     {
         get
         {
-            float w = cols * Tuning.CellSize, h = rows.Count * Tuning.CellSize;
+            float w = cols * cellSize, h = rows.Count * cellSize;
             return new Rect(-w * 0.5f, -h * 0.5f, w, h);
         }
     }
@@ -38,7 +39,7 @@ public class LevelData
     public Vector2 CellCenter(int col, int row)
     {
         Rect b = Bounds;
-        return new Vector2(b.xMin + (col + 0.5f) * Tuning.CellSize, b.yMax - (row + 0.5f) * Tuning.CellSize);
+        return new Vector2(b.xMin + (col + 0.5f) * cellSize, b.yMax - (row + 0.5f) * cellSize);
     }
 
     // How many level files exist: level1, level2, ... without gaps.
@@ -50,18 +51,25 @@ public class LevelData
     }
 
     // Returns null if the file does not exist.
-    public static LevelData Load(int index)
+    public static LevelData Load(int index, Tuning tuning)
     {
         var asset = Resources.Load<TextAsset>("Levels/level" + index);
         if (asset == null) return null;
-        var level = Parse(asset.text);
+        var level = Parse(asset.text, tuning);
         level.index = index;
         return level;
     }
 
-    public static LevelData Parse(string text)
+    public static LevelData Parse(string text, Tuning tuning)
     {
         var d = new LevelData();
+        if (tuning != null)
+        {
+            d.oxygen = tuning.OxygenMax;
+            d.meteorMin = tuning.MeteorIntervalMin;
+            d.meteorMax = tuning.MeteorIntervalMax;
+            d.cellSize = tuning.CellSize;
+        }
         foreach (string raw in text.Split('\n'))
         {
             string line = raw.TrimStart('﻿').TrimEnd('\r', ' ', '\t');
