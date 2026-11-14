@@ -1,6 +1,7 @@
 using UnityEngine;
 
-// From time to time launches a meteor from above the screen down at the player.
+// From time to time launches a meteor (sometimes a whole shower) from above the screen
+// at the place the player is flying to.
 // Add it to a level root to turn meteors on for that level; disable or remove it to turn them off.
 public class MeteorSpawner : MonoBehaviour
 {
@@ -34,16 +35,31 @@ public class MeteorSpawner : MonoBehaviour
         var cam = Camera.main;
         if (cam == null) return;
         float top = cam.transform.position.y + cam.orthographicSize;
-        var pos = new Vector2(
-            player.position.x + Random.Range(-T.MeteorSpread, T.MeteorSpread),
-            top + T.MeteorSpawnAhead);
-        var velocity = new Vector2(
-            Random.Range(-T.MeteorSideSpeed, T.MeteorSideSpeed),
-            -Random.Range(T.MeteorSpeedMin, T.MeteorSpeedMax));
+        var body = player.GetComponent<Rigidbody2D>();
+        Vector2 playerVelocity = body != null ? body.linearVelocity : Vector2.zero;
 
-        var prefab = Random.value < T.MeteorMediumChance ? mediumMeteorPrefab : smallMeteorPrefab;
-        if (prefab == null) prefab = smallMeteorPrefab != null ? smallMeteorPrefab : mediumMeteorPrefab;
-        if (prefab == null) return;
-        Asteroid.Spawn(prefab, pos, velocity, transform, false);
+        // Sometimes a whole shower comes instead of one meteor.
+        int count = Random.value < T.MeteorShowerChance ? T.MeteorShowerCount : 1;
+        for (int i = 0; i < count; i++)
+        {
+            var prefab = Random.value < T.MeteorMediumChance ? mediumMeteorPrefab : smallMeteorPrefab;
+            if (prefab == null) prefab = smallMeteorPrefab != null ? smallMeteorPrefab : mediumMeteorPrefab;
+            if (prefab == null) return;
+
+            float speed = Random.Range(T.MeteorSpeedMin, T.MeteorSpeedMax);
+            var start = new Vector2(
+                player.position.x + Random.Range(-T.MeteorSpread, T.MeteorSpread),
+                top + T.MeteorSpawnAhead + i * 5f);
+
+            // Aim at where the player is going to be, not where they are now.
+            // The first meteor is aimed precisely, the rest of a shower fall around it.
+            float flight = Mathf.Min((start.y - player.position.y) / speed, T.MeteorLead);
+            Vector2 target = (Vector2)player.position + playerVelocity * flight;
+            if (i > 0) target += Random.insideUnitCircle * 5f;
+
+            Vector2 dir = target - start;
+            if (dir.sqrMagnitude < 0.01f) dir = Vector2.down;
+            Asteroid.Spawn(prefab, start, dir.normalized * speed, transform, false);
+        }
     }
 }

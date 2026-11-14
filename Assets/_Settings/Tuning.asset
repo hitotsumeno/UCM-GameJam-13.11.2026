@@ -29,12 +29,13 @@ MonoBehaviour:
   CameraFollowSharpness: 5
   CameraShakeTime: 0.08
   CameraShakeStrength: 0.19
+  CameraHardShakeTime: 0.3
+  CameraHardShakeStrength: 2.5
   OxygenMax: 100
   OxygenDrainPerSecond: 2
   OxygenPerShot: 1
   OutOfBoundsDrainMultiplier: 4
   CellSize: 2
-  HintRadius: 9
   DockMaxSpeed: 5
   DockBounce: 0.6
   DockBounceMinSpeed: 3
@@ -45,15 +46,19 @@ MonoBehaviour:
   ShipFromTop: 3
   ShipLength: 6
   ShipHeight: 2.5
+  DockRingMargin: 1.2
+  DockRingShowDistance: 22
   AsteroidSmallSize: 2
   AsteroidMediumSize: 4
   AsteroidLargeSize: 6
   AsteroidSizeVariationMin: 0.88
   AsteroidSizeVariationMax: 1.12
   OxygenTankSize: 0.8
-  PlanetSize: 8
+  PlanetSize: 12
+  PlanetBodyShare: 0.44
   BackgroundSize: 48
   BackgroundParallax: 0.1
+  BackdropParallax: 0.12
   NebulaFarParallax: 0.25
   NebulaNearParallax: 0.4
   NebulaFarSize: 64
@@ -91,8 +96,11 @@ MonoBehaviour:
   MeteorFirstDelay: 4
   MeteorIntervalMin: 3
   MeteorIntervalMax: 6
-  MeteorSpeedMin: 7
-  MeteorSpeedMax: 10
+  MeteorSpeedMin: 13
+  MeteorSpeedMax: 17
+  MeteorLead: 0.9
+  MeteorShowerChance: 0.3
+  MeteorShowerCount: 3
   MeteorSideSpeed: 1.5
   MeteorSpread: 8
   MeteorSpawnAhead: 22
@@ -101,14 +109,60 @@ MonoBehaviour:
   MeteorHeatSize: 3
   MeteorHeatOpacity: 0.75
   MeteorWarningSize: 0.9
-  ImpactSafeSpeed: 6
-  ImpactOxygenPerSpeed: 3
-  ImpactMaxOxygen: 25
   OxygenTankAmount: 30
   OxygenTankPickupRadius: 0.7
   OxygenTankGlowSize: 2
   OxygenTankGlowOpacity: 0.6
-  CrystalOxygen: 2
+  BreachMax: 5
+  BreachDrainPerSecond: 1
+  BreachImpactSpeed: 7
+  LeakPuffsPerSecond: 22
+  LeakJetSpeed: 5
+  LeakPuffLifetime: 0.5
+  GravityRadius: 22
+  GravityStrength: 288
+  GravityMaxAccel: 9
+  MineSize: 1.1
+  MineMass: 0.8
+  MineWakeRadius: 16
+  MineLoseRadius: 26
+  MineSpeed: 6.5
+  MineAccel: 14
+  MineBreachRadius: 2.2
+  MineBlastRadius: 4.5
+  MineBlastImpulse: 10
+  MineRockRadius: 2.5
+  MineTriggerSpeed: 5
+  MineChainDelay: 0.12
+  CrystalsFromMine: 4
+  CrystalsFromChainedMine: 2
+  MinePatrolRange: 6
+  MinePatrolSpeed: 3.5
+  MineRingCount: 5
+  MineRingRadius: 6
+  MineRingSpeed: 3
+  MineHeavySize: 2.4
+  MineHeavyHits: 3
+  MineHeavyBlastScale: 2
+  HoleBigRadius: 2.2
+  HoleBigField: 20
+  HoleBigStrength: 520
+  HoleSmallRadius: 1.1
+  HoleSmallField: 11
+  HoleSmallStrength: 200
+  HoleMaxAccel: 14
+  HoleCrystalPull: 0.7
+  HoleDriftRange: 8
+  HoleDriftSpeed: 3
+  HoleOrbitRocks: 6
+  HoleSmallOrbitRocks: 2
+  HoleBulletPull: 2.5
+  HoleOrbitSpeed: 3
+  HoleSpinSpeed: 25
+  WormholeExitSpeed: 10
+  WormholeOxygenCost: 10
+  WormholeImmunity: 2
+  CrystalOxygen: 2.8
   CrystalsFromSmall: 2
   CrystalsFromMedium: 3
   CrystalsFromLarge: 4

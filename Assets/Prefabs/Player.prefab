@@ -444,6 +444,7 @@ MonoBehaviour:
   visual: {fileID: 4646074866228025839}
   muzzle: {fileID: 5108262856521284403}
   bulletPrefab: {fileID: 524815675065381204, guid: 3121e0edc7d9348e3bd0c17e92759516, type: 3}
+  leakPrefab: {fileID: 6783790490326947824, guid: 261c142cbb55fb348a0ed99c47ad42ff, type: 3}
 --- !u!1 &6927085798206992727
 GameObject:
   m_ObjectHideFlags: 0

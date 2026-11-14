@@ -51,7 +51,7 @@ public class ArtImportSettings : AssetPostprocessor
         if (name == "background")
             importer.maxTextureSize = 4096;
 
-        if (name == "background" || name.StartsWith("nebula"))
+        if (name == "background" || name.StartsWith("nebula") || name.StartsWith("backdrop"))
         {
             // Smooth dark gradients look blocky with normal compression.
             importer.textureCompression = TextureImporterCompression.CompressedHQ;

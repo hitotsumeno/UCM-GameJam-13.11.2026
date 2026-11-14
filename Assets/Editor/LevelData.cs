@@ -5,18 +5,20 @@ using UnityEngine;
 
 // One level read from Assets/_Resources/Levels/levelN.txt (editor only).
 //
-// Lines starting with # are settings (# name=ADRIFT). The rest is the map:
+// Lines starting with # are settings (# name=rocks). The rest is the map:
 // every character is a cell of 2x2 units, the first map line is the top of the level.
 //   P player   S ship   . empty   o oxygen tank
 //   a small rock (1 cell)   A medium rock (2x2 cells)   B large rock (3x3 cells)
-//   1..9 place where a hint is shown (# hint1=TEXT)
+//   m hunter mine   h / v patrol mine (sideways / up and down)   s wall mine   M heavy mine
+//   R oxygen tank guarded by a ring of mines
+//   O big black hole   c small black hole   x / y small hole drifting sideways / up and down
+//   @ planet
 // Unknown characters are ignored, so files can already contain symbols for later steps.
 public class LevelData
 {
     public int index;                 // 1 for level1.txt
     public string name = "";
     public string radio = "";         // one line of story shown before the level
-    public Color tint = Color.white;  // colour of the nebula
     public float oxygen = 100f;      // oxygen at the start (default: Tuning.OxygenMax)
     public bool meteors;
     public float meteorMin = 3f;     // defaults: Tuning.MeteorIntervalMin / Max
@@ -24,9 +26,18 @@ public class LevelData
     public float cellSize = 2f;      // Tuning.CellSize
     public float movers;              // share of rocks that fly noticeably (0..1)
     public float star3 = 50f, star2 = 25f; // % of oxygen left for 3 and 2 stars
-    public Dictionary<char, string> hints = new Dictionary<char, string>();
     public List<string> rows = new List<string>();
     public int cols;
+
+    // --- The look of the level (its theme) ---
+    public string nebula = "";        // cloud pictures: "" = the default set, or calm, alert, planet
+    public Color tint = Color.white;  // extra colour over the clouds
+    public float clouds = 1f;         // how bright the clouds are: 1 = as usual, 0.6 = dimmer
+    public Color light = Color.white; // colour of the light on rocks, the player and the ship
+    public Color starColor = Color.white;
+    public float starDensity = 1f;    // 1 = the usual number of stars, 0.5 = half
+    public string backdrop = "";      // big far object: sun, wreck, planet ("" = none)
+    public Color frame = new Color(1f, 0.3f, 0.25f); // colour of the level border
 
     public Rect Bounds
     {
@@ -105,12 +116,14 @@ public class LevelData
             case "radio": radio = val; break;
             case "oxygen": oxygen = Number(val, oxygen); break;
             case "movers": movers = Mathf.Clamp01(Number(val, 0f)); break;
-            case "tint":
-            {
-                string[] p = val.Split(',');
-                if (p.Length >= 3) tint = new Color(Number(p[0], 1f), Number(p[1], 1f), Number(p[2], 1f), 1f);
-                break;
-            }
+            case "nebula": nebula = val.ToLowerInvariant(); break;
+            case "backdrop": backdrop = val.ToLowerInvariant(); break;
+            case "tint": tint = Colour(val, tint); break;
+            case "light": light = Colour(val, light); break;
+            case "starcolor": starColor = Colour(val, starColor); break;
+            case "frame": frame = Colour(val, frame); break;
+            case "stardensity": starDensity = Mathf.Clamp(Number(val, 1f), 0f, 3f); break;
+            case "clouds": clouds = Mathf.Clamp(Number(val, 1f), 0f, 2f); break;
             case "stars":
             {
                 string[] p = val.Split(',');
@@ -130,9 +143,7 @@ public class LevelData
                 }
                 break;
             }
-            default:
-                if (key.Length == 5 && key.StartsWith("hint")) hints[key[4]] = val;
-                break;
+            // hintN lines are ignored: hints were removed from the screen.
         }
     }
 
@@ -141,5 +152,13 @@ public class LevelData
     {
         float v;
         return float.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out v) ? v : fallback;
+    }
+
+    // "red,green,blue", each from 0 to 1.
+    static Color Colour(string s, Color fallback)
+    {
+        string[] p = s.Split(',');
+        if (p.Length < 3) return fallback;
+        return new Color(Number(p[0], fallback.r), Number(p[1], fallback.g), Number(p[2], fallback.b), 1f);
     }
 }

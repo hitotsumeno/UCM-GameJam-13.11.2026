@@ -68,6 +68,10 @@ public class Tuning : ScriptableObject
     public float CameraShakeTime = 0.08f;
     [Tooltip("units")]
     public float CameraShakeStrength = 0.19f;
+    [Tooltip("camera shake when the hull is breached, seconds")]
+    public float CameraHardShakeTime = 0.3f;
+    [Tooltip("times the usual shake")]
+    public float CameraHardShakeStrength = 2.5f;
 
     [Header("Oxygen")]
     public float OxygenMax = 100f;
@@ -80,8 +84,6 @@ public class Tuning : ScriptableObject
     [Header("Levels from text files (Assets/_Resources/Levels)")]
     [Tooltip("one map character is a square of this many units")]
     public float CellSize = 2f;
-    [Tooltip("a hint is shown while the player is this close to its place")]
-    public float HintRadius = 9f;
 
     [Header("Docking: reach the ship slowly")]
     [Tooltip("faster than this the player bounces off")]
@@ -104,6 +106,10 @@ public class Tuning : ScriptableObject
     public float ShipLength = 6f;
     [Tooltip("placeholder only; real art keeps its own proportions")]
     public float ShipHeight = 2.5f;
+    [Tooltip("gap between the goal ship and its docking ring")]
+    public float DockRingMargin = 1.2f;
+    [Tooltip("the docking ring starts to appear at this distance")]
+    public float DockRingShowDistance = 22f;
     [Tooltip("1 level cell")]
     public float AsteroidSmallSize = 2f;
     [Tooltip("2x2 level cells")]
@@ -114,13 +120,18 @@ public class Tuning : ScriptableObject
     public float AsteroidSizeVariationMin = 0.88f;
     public float AsteroidSizeVariationMax = 1.12f;
     public float OxygenTankSize = 0.8f;
-    public float PlanetSize = 8f;
+    [Tooltip("side of the planet picture")]
+    public float PlanetSize = 12f;
+    [Tooltip("the solid ball is this share of the picture (its radius)")]
+    public float PlanetBodyShare = 0.44f;
     public float BackgroundSize = 48f;
 
     [Header("Background: calm, so it does not compete with the rocks")]
     // Parallax: how fast a layer scrolls on screen compared to the world (1 = like the world).
     [Tooltip("artist picture 'background' (does not repeat)")]
     public float BackgroundParallax = 0.1f;
+    [Tooltip("big far object of a level (sun, wreck, planet)")]
+    public float BackdropParallax = 0.12f;
     [Tooltip("far clouds (repeat endlessly)")]
     public float NebulaFarParallax = 0.25f;
     [Tooltip("near clouds: faster, so the picture keeps changing")]
@@ -188,8 +199,13 @@ public class Tuning : ScriptableObject
     [Tooltip("seconds between meteors")]
     public float MeteorIntervalMin = 3f;
     public float MeteorIntervalMax = 6f;
-    public float MeteorSpeedMin = 7f;
-    public float MeteorSpeedMax = 10f;
+    public float MeteorSpeedMin = 13f;
+    public float MeteorSpeedMax = 17f;
+    [Tooltip("aims this many seconds ahead of where the player is flying")]
+    public float MeteorLead = 0.9f;
+    [Tooltip("chance that a whole shower comes instead of one meteor")]
+    public float MeteorShowerChance = 0.3f;
+    public int MeteorShowerCount = 3;
     [Tooltip("max sideways speed")]
     public float MeteorSideSpeed = 1.5f;
     [Tooltip("appears this far left/right of the player at most")]
@@ -206,13 +222,6 @@ public class Tuning : ScriptableObject
     [Tooltip("red marker at the top edge of the screen")]
     public float MeteorWarningSize = 0.9f;
 
-    [Header("Impact: hitting an asteroid faster than the safe speed costs oxygen")]
-    public float ImpactSafeSpeed = 6f;
-    [Tooltip("oxygen lost = (speed - safe speed) * this")]
-    public float ImpactOxygenPerSpeed = 3f;
-    [Tooltip("one hit never costs more than this")]
-    public float ImpactMaxOxygen = 25f;
-
     [Header("Oxygen tanks")]
     public float OxygenTankAmount = 30f;
     public float OxygenTankPickupRadius = 0.7f;
@@ -220,9 +229,107 @@ public class Tuning : ScriptableObject
     public float OxygenTankGlowSize = 2f;
     public float OxygenTankGlowOpacity = 0.6f;
 
+    [Header("Hull breaches: no lives. A hard hit opens a leak, every leak drains oxygen")]
+    [Tooltip("more hits than this do not add leaks")]
+    public int BreachMax = 5;
+    [Tooltip("extra oxygen lost per second for every leak")]
+    public float BreachDrainPerSecond = 1f;
+    [Tooltip("hitting a rock or a meteor faster than this breaches the hull")]
+    public float BreachImpactSpeed = 7f;
+    [Tooltip("how dense the jet of air looks")]
+    public float LeakPuffsPerSecond = 22f;
+    public float LeakJetSpeed = 5f;
+    [Tooltip("seconds")]
+    public float LeakPuffLifetime = 0.5f;
+
+    [Header("Gravity: a planet pulls the player and the bullets")]
+    [Tooltip("the field ends here (dotted circle)")]
+    public float GravityRadius = 22f;
+    [Tooltip("pull = this / distance squared")]
+    public float GravityStrength = 288f;
+    [Tooltip("the pull never gets stronger than this")]
+    public float GravityMaxAccel = 9f;
+
+    [Header("Mines")]
+    public float MineSize = 1.1f;
+    public float MineMass = 0.8f;
+    [Tooltip("a hunter wakes up when the player is this close")]
+    public float MineWakeRadius = 16f;
+    [Tooltip("and gives up when the player is this far")]
+    public float MineLoseRadius = 26f;
+    [Tooltip("the top speed of the player is 12, docking speed is 5")]
+    public float MineSpeed = 6.5f;
+    [Tooltip("how quickly it picks up speed")]
+    public float MineAccel = 14f;
+    [Tooltip("a blast this close to the player breaches the hull")]
+    public float MineBreachRadius = 2.2f;
+    [Tooltip("everything this close is pushed away")]
+    public float MineBlastRadius = 4.5f;
+    [Tooltip("how hard")]
+    public float MineBlastImpulse = 10f;
+    [Tooltip("rocks this close to the blast take one hit")]
+    public float MineRockRadius = 2.5f;
+    [Tooltip("a rock hitting a mine faster than this sets it off")]
+    public float MineTriggerSpeed = 5f;
+    [Tooltip("seconds before a neighbouring mine goes off too")]
+    public float MineChainDelay = 0.12f;
+    [Tooltip("a mine shot by the player leaves crystals")]
+    public int CrystalsFromMine = 4;
+    [Tooltip("a mine set off by a chain or a rock leaves fewer")]
+    public int CrystalsFromChainedMine = 2;
+
+    [Header("Mine behaviours")]
+    [Tooltip("a patrol mine glides this far to each side of its place")]
+    public float MinePatrolRange = 6f;
+    public float MinePatrolSpeed = 3.5f;
+    [Tooltip("mines circling a guarded tank; far enough apart not to set each other off")]
+    public int MineRingCount = 5;
+    public float MineRingRadius = 6f;
+    [Tooltip("units per second along the circle")]
+    public float MineRingSpeed = 3f;
+    [Tooltip("heavy mine: big, takes several hits, wipes out everything around")]
+    public float MineHeavySize = 2.4f;
+    public int MineHeavyHits = 3;
+    [Tooltip("its blast and breach radius are this many times bigger")]
+    public float MineHeavyBlastScale = 2f;
+
+    [Header("Black holes: they pull the player, bullets and crystals")]
+    [Tooltip("the dark middle of a big hole")]
+    public float HoleBigRadius = 2.2f;
+    [Tooltip("its pull reaches this far")]
+    public float HoleBigField = 20f;
+    [Tooltip("pull = this / distance squared")]
+    public float HoleBigStrength = 520f;
+    public float HoleSmallRadius = 1.1f;
+    public float HoleSmallField = 11f;
+    public float HoleSmallStrength = 200f;
+    [Tooltip("the pull never gets stronger than this")]
+    public float HoleMaxAccel = 14f;
+    [Tooltip("crystals feel this share of the pull")]
+    public float HoleCrystalPull = 0.7f;
+    [Tooltip("a drifting hole glides this far to each side")]
+    public float HoleDriftRange = 8f;
+    public float HoleDriftSpeed = 3f;
+    [Tooltip("rocks circling a big hole (they are the air supply of that level)")]
+    public int HoleOrbitRocks = 6;
+    [Tooltip("rocks circling a small still hole")]
+    public int HoleSmallOrbitRocks = 2;
+    [Tooltip("bullets feel the pull this many times stronger, so their arc is easy to see")]
+    public float HoleBulletPull = 2.5f;
+    [Tooltip("orbiting rocks: units per second along the circle")]
+    public float HoleOrbitSpeed = 3f;
+    [Tooltip("degrees per second: how fast the picture turns")]
+    public float HoleSpinSpeed = 25f;
+    [Tooltip("a hole does not kill: it throws the player out of another hole at this speed")]
+    public float WormholeExitSpeed = 10f;
+    [Tooltip("air lost on the way (plus one hull breach)")]
+    public float WormholeOxygenCost = 10f;
+    [Tooltip("seconds after coming out during which holes cannot swallow again")]
+    public float WormholeImmunity = 2f;
+
     [Header("Oxygen crystals: destroyed rocks leave air behind ('destroy to breathe')")]
     [Tooltip("oxygen per crystal (before the combo bonus)")]
-    public float CrystalOxygen = 2f;
+    public float CrystalOxygen = 2.8f;
     [Tooltip("crystals left by a destroyed rock")]
     public int CrystalsFromSmall = 2;
     public int CrystalsFromMedium = 3;

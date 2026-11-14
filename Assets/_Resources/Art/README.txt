@@ -3,13 +3,15 @@ Art for the draft game. Put PNG files here.
 The game finds pictures by file name. If a file is missing, a placeholder is drawn.
 Size in the game is set by code (the larger side of the picture), not by the picture:
 
-  astronaut.png      1 unit    drawn facing RIGHT
-  ship.png           6 units   drawn nose to the RIGHT
+  astronaut.png      1 unit    the PLAYER (in the story now a small ship), drawn facing RIGHT
+  ship.png           6 units   the GOAL to dock to, drawn nose to the RIGHT
   asteroid_s1.png    2 units   variants: asteroid_s2.png, asteroid_s3.png ...
   asteroid_m1.png    4 units   variants: asteroid_m2.png, asteroid_m3.png ...
   asteroid_l1.png    6 units   variants: asteroid_l2.png, asteroid_l3.png ...
   oxygen.png         0.8 unit
-  planet1.png        8 units
+  mine.png           1.1 unit  mine, round; a red or yellow lamp is drawn over its middle by the game
+  blackhole.png      square    black hole; the dark disc must be 32% of the picture across, centred
+  planet1.png        12 units  the ball must take the middle 88% of the picture (the rest is glow)
   background.png     square 4096x4096 px, shown as 48x48 units
   star1.png          small, about 0.1-0.5 unit; variants: star2.png, star3.png, star4.png ...
                      (each star on screen picks a random variant)
@@ -27,7 +29,12 @@ Already here (made for the draft, replace freely):
   asteroid_s1..4 .png               different sides (5 models -> 12 different-looking asteroids).
                                     The rock fills the picture so that a circle of 0.45 x picture size
                                     has the same area as the rock: that circle is used for collisions.
+  nebula_calm_*, nebula_alert_*,    cloud sets for level themes (level file: # nebula=calm). Blue and sparse,
+  nebula_planet_* (_far, _near)     crimson and dense, gold and green. nebula_far / nebula_near is the default set.
+  backdrop_sun, backdrop_wreck,     big far objects for a level (level file: # backdrop=sun): a distant sun,
+  backdrop_planet .png              the wreck of a station, a ringed planet. Generated: Assets/Editor/Tools~/backdrop.ps1.
 
 The 3D sources are in Assets/Art/Source (stone.fbx, stars.fbx; not part of the build).
 To re-make the asteroid and star pictures from them: menu Filip > Bake Rocks And Stars From FBX.
 Which model and view angle becomes which picture: the list at the top of Assets/Editor/ArtBake.cs.
+After adding or replacing a picture run Filip > Rebuild Prefabs And Scene: prefabs pick pictures up only then.

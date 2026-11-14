@@ -6,6 +6,7 @@ using UnityEngine;
 // Editor only: simple shape sprites (circle, glow, ring, triangle, square) saved as PNG
 // files in Assets/Art/Shapes, so prefabs can reference them. Every sprite is
 // 1x1 unit; size in the world is set with transform.localScale.
+// Also the small pixel icons of the interface (icon_tank, icon_drop, icon_arrow).
 public static class SpriteFactory
 {
     public const string Folder = "Assets/Art/Shapes";
@@ -59,6 +60,46 @@ public static class SpriteFactory
     public static Sprite Square()
     {
         return Build("square", 4, (x, y, size) => 1f);
+    }
+
+    // A pixel icon for the interface, drawn from rows of '#' (see PixelFont.Tank).
+    // Saved as icon_<key>.png with hard pixels; one icon pixel = one sprite pixel.
+    public static Sprite PixelIcon(string key, string[] rows)
+    {
+        string path = Folder + "/icon_" + key + ".png";
+        var existing = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (existing != null) return existing;
+
+        Directory.CreateDirectory(Folder);
+        int h = rows.Length, w = rows[0].Length;
+        var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        var pixels = new Color32[w * h];
+        for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+            pixels[(h - 1 - y) * w + x] = rows[y][x] == '#'
+                ? new Color32(255, 255, 255, 255) : new Color32(255, 255, 255, 0);
+        tex.SetPixels32(pixels);
+        tex.Apply();
+        File.WriteAllBytes(path, tex.EncodeToPNG());
+        UnityEngine.Object.DestroyImmediate(tex);
+
+        AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+        var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.spritePixelsPerUnit = 1f;
+        importer.mipmapEnabled = false;
+        importer.alphaIsTransparency = true;
+        importer.wrapMode = TextureWrapMode.Clamp;
+        importer.filterMode = FilterMode.Point;
+        importer.textureCompression = TextureImporterCompression.Uncompressed;
+        var settings = new TextureImporterSettings();
+        importer.ReadTextureSettings(settings);
+        settings.spriteMeshType = SpriteMeshType.FullRect;
+        importer.SetTextureSettings(settings);
+        importer.SaveAndReimport();
+
+        return AssetDatabase.LoadAssetAtPath<Sprite>(path);
     }
 
     // alpha(x, y, size) returns 0..1 for the pixel center (x, y).
