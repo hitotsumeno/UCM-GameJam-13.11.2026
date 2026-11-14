@@ -60,6 +60,7 @@ sa zástupný tvar. Veľkosť v hre určuje kód (dlhšia strana obrázka), nie 
 | `asteroid_s1.png` … | 2 | malé kamene; varianty `asteroid_s2`, `asteroid_s3` … |
 | `asteroid_m1.png` … | 4 | stredné kamene |
 | `asteroid_l1.png` … | 6 | veľké kamene |
+| `fire.png` | 3,6 priemeru kameňa | chvost meteoru: spodok plameňa dole, jazyky hore. Ak sa v Sprite Editore rozreže na snímky (Sprite Mode: Multiple), po Rebuild sa prehrávajú ako animácia |
 | `oxygen.png` | 0,8 | kyslíková fľaša |
 | `crystal.png` | 0,35 | kryštál kyslíka |
 | `mine.png` | 1,1 | mína, okrúhla; farebnú lampu v strede dokreslí hra |

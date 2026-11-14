@@ -106,7 +106,8 @@ Hra nemá životy ani okamžité tresty. Tvrdý úder prederaví trup:
   prvý meteor príde po 4 sekundách.
 - Rýchlosť **13 – 17**. Mieria s predstihom **0,9** sekundy tam, kam loď práve letí.
 - V **30 %** prípadov príde roj troch meteorov (prvý mieri presne, ďalšie okolo).
-- 75 % meteorov je malých, 25 % stredných. Majú ohnivý chvost a oranžovú žiaru.
+- 75 % meteorov je malých, 25 % stredných. Majú oranžovú žiaru a ohnivý chvost (obrázok
+  `fire.png` od výtvarníčky): spodok plameňa sedí na kameni, jazyky sa ťahajú dozadu.
 - Kým je meteor ešte mimo obrazovky, pri okraji obrazovky sa ukáže oranžová značka presne tam,
   kde meteor do obrazovky vletí (podľa jeho dráhy). Meteor, ktorý obrazovku minie, značku nemá.
   Čím je meteor bližšie, tým je značka väčšia a rýchlejšie bliká.

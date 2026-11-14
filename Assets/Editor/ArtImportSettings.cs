@@ -37,6 +37,14 @@ public class ArtImportSettings : AssetPostprocessor
         importer.bakeAxisConversion = false;                  // vertices stay as in the file (only X mirrored)
     }
 
+    static bool IsSlicedSheet(TextureImporter importer)
+    {
+#pragma warning disable 618 // the old spritesheet list is enough to see whether frames exist
+        return importer.spriteImportMode == SpriteImportMode.Multiple
+            && importer.spritesheet != null && importer.spritesheet.Length > 0;
+#pragma warning restore 618
+    }
+
     void OnPreprocessTexture()
     {
         string path = assetPath.Replace('\\', '/');
@@ -44,7 +52,9 @@ public class ArtImportSettings : AssetPostprocessor
 
         var importer = (TextureImporter)assetImporter;
         importer.textureType = TextureImporterType.Sprite;
-        importer.spriteImportMode = SpriteImportMode.Single;
+        // A sprite sheet already sliced in the Sprite Editor (Sprite Mode: Multiple, with frames)
+        // stays as it is; everything else is one picture.
+        if (!IsSlicedSheet(importer)) importer.spriteImportMode = SpriteImportMode.Single;
         importer.spritePixelsPerUnit = 100f;
 
         string name = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
@@ -87,6 +97,18 @@ public class ArtImportSettings : AssetPostprocessor
             // becomes the physics shape that DraftSetup turns into the collider.
             importer.mipmapEnabled = true;
             importer.maxTextureSize = name == "ship" ? 1024 : 512;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteGenerateFallbackPhysicsShape = true;
+            importer.SetTextureSettings(settings);
+        }
+
+        if (name.StartsWith("fire"))
+        {
+            // Meteor tail: drawn at about 7 units, its outline gives the base of the flame.
+            importer.mipmapEnabled = true;
+            importer.maxTextureSize = 512;
             importer.textureCompression = TextureImporterCompression.CompressedHQ;
             var settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);

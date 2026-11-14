@@ -229,6 +229,10 @@ public class Tuning : ScriptableObject
     [Tooltip("orange glow, in rock diameters")]
     public float MeteorHeatSize = 3f;
     public float MeteorHeatOpacity = 0.75f;
+    [Tooltip("fire tail (fire.png): side of the picture, in rock diameters")]
+    public float MeteorFireSize = 3.6f;
+    [Tooltip("frames per second when fire.png is a sliced sprite sheet")]
+    public float MeteorFireFps = 12f;
 
     [Header("Oxygen tanks")]
     public float OxygenTankAmount = 30f;

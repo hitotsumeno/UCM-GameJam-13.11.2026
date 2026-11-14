@@ -363,6 +363,47 @@ public static class DraftSetup
         return go;
     }
 
+    // All sprites of a picture: one, or the frames of a sheet sliced in the Sprite Editor
+    // (in name order, numbers counted as numbers: fire_2 before fire_10).
+    static Sprite[] SheetFrames(string name)
+    {
+        var list = new List<Sprite>();
+        foreach (var ext in new[] { ".png", ".jpg", ".psd", ".tga" })
+        {
+            string path = "Assets/_Resources/Art/" + name + ext;
+            if (!File.Exists(path)) continue;
+            foreach (var o in AssetDatabase.LoadAllAssetsAtPath(path))
+            {
+                var s = o as Sprite;
+                if (s != null) list.Add(s);
+            }
+            break;
+        }
+        list.Sort((a, b) => EditorUtility.NaturalCompare(a.name, b.name));
+        return list.ToArray();
+    }
+
+    // The base of a flame picture in its parent's space: in the middle, a fifth up from the bottom
+    // of its outline (the round bright part).
+    static Vector3 FlameBase(SpriteRenderer fire)
+    {
+        var sprite = fire.sprite;
+        Vector2 min = sprite.bounds.min, max = sprite.bounds.max;
+        if (sprite.GetPhysicsShapeCount() > 0)
+        {
+            min = new Vector2(float.MaxValue, float.MaxValue); max = -min;
+            var pts = new List<Vector2>();
+            for (int i = 0; i < sprite.GetPhysicsShapeCount(); i++)
+            {
+                pts.Clear();
+                sprite.GetPhysicsShape(i, pts);
+                foreach (var p in pts) { min = Vector2.Min(min, p); max = Vector2.Max(max, p); }
+            }
+        }
+        var basePoint = new Vector2((min.x + max.x) * 0.5f, min.y + (max.y - min.y) * 0.22f);
+        return Vector3.Scale(basePoint, fire.transform.localScale);
+    }
+
     // Re-imports a picture so ArtImportSettings (mipmaps, physics outline) applies to it.
     static void Reimport(string name)
     {
@@ -508,12 +549,30 @@ public static class DraftSetup
         body.color *= new Color(1f, 0.7f, 0.5f); // warmer than normal rocks
 
         float d = Asteroid.Diameter(tune, size);
-        // Hot glow around the rock and a soft fiery streak behind it (both drawn under the rock).
+        // Hot glow around the rock and the fire tail behind it (both drawn under the rock).
         SpriteFactory.MakeSprite("Heat", go.transform, SpriteFactory.Glow(),
             new Color(1f, 0.5f, 0.15f, tune.MeteorHeatOpacity), Vector2.one * d * tune.MeteorHeatSize, 1);
-        var tail = SpriteFactory.MakeSprite("Tail", go.transform, SpriteFactory.Glow(),
-            new Color(1f, 0.6f, 0.2f, 0.6f), new Vector2(d * 1.1f, d * 5f), 2).transform;
-        tail.localPosition = new Vector3(0f, d * 2f, 0f);
+
+        // Tail: Meteor turns it so its +Y points back along the flight. Picture "fire" is drawn with
+        // the base of the flame at the bottom and the tongues up: the base sits on the rock.
+        // If fire.png is a sliced sprite sheet, its frames play as an animation (SpriteFrames).
+        var tail = new GameObject("Tail").transform;
+        tail.SetParent(go.transform, false);
+        Reimport("fire");
+        var frames = SheetFrames("fire");
+        if (frames.Length > 0)
+        {
+            var fire = Art.Make("Fire", frames[0], tail, d * tune.MeteorFireSize, 2);
+            fire.transform.localPosition = -FlameBase(fire);
+            if (frames.Length > 1)
+                fire.gameObject.AddComponent<SpriteFrames>().Setup(fire, frames, tune.MeteorFireFps);
+        }
+        else
+        {
+            var streak = SpriteFactory.MakeSprite("Fire", tail, SpriteFactory.Glow(),
+                new Color(1f, 0.6f, 0.2f, 0.6f), new Vector2(d * 1.1f, d * 5f), 2);
+            streak.transform.localPosition = new Vector3(0f, d * 2f, 0f);
+        }
 
         var m = go.AddComponent<Meteor>();
         Set(m, "asteroid", a);

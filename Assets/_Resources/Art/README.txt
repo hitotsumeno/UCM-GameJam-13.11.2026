@@ -11,6 +11,10 @@ Size in the game is set by code (the larger side of the picture), not by the pic
   asteroid_s1.png    2 units   variants: asteroid_s2.png, asteroid_s3.png ...
   asteroid_m1.png    4 units   variants: asteroid_m2.png, asteroid_m3.png ...
   asteroid_l1.png    6 units   variants: asteroid_l2.png, asteroid_l3.png ...
+  fire.png           meteor tail: flame base at the bottom, tongues up; the picture side is 3.6 rock
+                     diameters. Slice it in the Sprite Editor (Sprite Mode: Multiple) to make it a
+                     sprite sheet: after Filip > Rebuild Prefabs And Scene the frames play in a loop
+                     (12 per second, Tuning.MeteorFireFps).
   oxygen.png         0.8 unit
   mine.png           1.1 unit  mine, round; a red or yellow lamp is drawn over its middle by the game
   blackhole.png      square    black hole; the dark disc must be 32% of the picture across, centred
