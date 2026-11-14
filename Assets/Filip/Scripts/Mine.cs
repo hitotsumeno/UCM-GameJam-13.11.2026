@@ -79,6 +79,13 @@ public class Mine : MonoBehaviour
             // Wakes up when the player is close; gives up only when they are far away.
             awake = dist < (awake ? Tuning.MineLoseRadius : Tuning.MineWakeRadius);
             if (awake && dist > 0.01f) wanted = to / dist * Tuning.MineSpeed;
+
+            // Close enough to touch: go off (does not rely on the physics contact alone).
+            if (!exploded && dist < Tuning.MineSize * 0.45f + Tuning.PlayerDiameter * 0.5f + 0.08f)
+            {
+                Explode(true, false);
+                return;
+            }
         }
         else awake = false;
 
@@ -117,11 +124,11 @@ public class Mine : MonoBehaviour
         Vector2 pos = rb.position;
         var game = DraftGame.Instance;
 
-        if (game != null && touchedPlayer)
-        {
-            game.SpendOxygen(Tuning.MineDamage);
-            game.BreakCombo();
-        }
+        // A blast right next to the player breaches the hull; farther away it only pushes.
+        Transform player = game != null ? game.PlayerTransform : null;
+        if (player != null && (touchedPlayer
+            || Vector2.Distance(player.position, pos) < Tuning.MineBreachRadius))
+            game.BreachHull(pos);
         if (game != null && shotByPlayer)
         {
             int combo = game.RegisterKill();

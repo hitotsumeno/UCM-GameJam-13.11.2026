@@ -15,6 +15,7 @@ public class DraftGame : MonoBehaviour
     public GameState State { get; private set; }
     public float Oxygen { get; private set; }
     public int Combo { get; private set; }
+    public int Breaches { get; private set; }   // holes in the hull; each one drains oxygen
 
     public Transform PlayerTransform
     {
@@ -106,10 +107,29 @@ public class DraftGame : MonoBehaviour
 
         if (State == GameState.Playing)
         {
-            float drain = Tuning.OxygenDrainPerSecond * Time.deltaTime;
-            if (outside) drain *= Tuning.OutOfBoundsDrainMultiplier;
-            SpendOxygen(drain);
+            float perSecond = Tuning.OxygenDrainPerSecond;
+            if (outside) perSecond *= Tuning.OutOfBoundsDrainMultiplier;
+            perSecond += Breaches * Tuning.BreachDrainPerSecond; // every breach leaks air
+            SpendOxygen(perSecond * Time.deltaTime);
         }
+    }
+
+    // --- Hull breaches: there are no lives, every hard hit opens a leak ---
+
+    // from: where the hit came from (the crack appears on that side of the ship).
+    public void BreachHull(Vector2 from)
+    {
+        if (State != GameState.Playing) return;
+        if (Breaches < Tuning.BreachMax)
+        {
+            Breaches++;
+            if (world != null && world.player != null) world.player.AddBreach(from);
+        }
+        BreakCombo();
+        hud.SetBreaches(Breaches);
+        hud.FlashDamage();
+        hud.Toast("HULL BREACH");
+        CameraRig.ShakeHard();
     }
 
     // --- Oxygen ---
@@ -255,6 +275,8 @@ public class DraftGame : MonoBehaviour
         if (globalLight != null) globalLight.color = level != null ? level.light : Color.white;
 
         State = GameState.Playing;
+        Breaches = 0;
+        hud.SetBreaches(0);
         Oxygen = level != null ? Mathf.Clamp(level.oxygen, 1f, Tuning.OxygenMax) : Tuning.OxygenMax;
         hud.SetOxygen(Oxygen / Tuning.OxygenMax);
         hud.HideMessage();

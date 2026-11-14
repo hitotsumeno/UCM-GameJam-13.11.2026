@@ -118,10 +118,6 @@ public static class Tuning
     public const float MeteorHeatOpacity = 0.75f;
     public const float MeteorWarningSize = 0.9f;  // red marker at the top edge of the screen
 
-    // --- Impact: hitting an asteroid faster than the safe speed costs oxygen ---
-    public const float ImpactSafeSpeed = 6f;
-    public const float ImpactOxygenPerSpeed = 3f; // oxygen lost = (speed - safe speed) * this
-    public const float ImpactMaxOxygen = 25f;     // one hit never costs more than this
 
     // --- Oxygen tanks ---
     public const float OxygenTankAmount = 30f;
@@ -129,14 +125,24 @@ public static class Tuning
     public const float OxygenTankGlowSize = 2f;   // cyan glow, units
     public const float OxygenTankGlowOpacity = 0.6f;
 
+    // --- Hull breaches: there are no lives. A hard hit opens a leak, and every leak drains oxygen ---
+    public const int BreachMax = 5;               // more hits than this do not add leaks
+    public const float BreachDrainPerSecond = 1f; // extra oxygen lost per second for every leak
+    public const float BreachImpactSpeed = 7f;    // hitting a rock or a meteor faster than this breaches the hull
+    public const float LeakPuffsPerSecond = 22f;  // how dense the jet of air looks
+    public const float LeakJetSpeed = 5f;
+    public const float LeakPuffLifetime = 0.5f;   // seconds
+    public const float CameraHardShakeTime = 0.3f;     // camera shake when the hull is breached
+    public const float CameraHardShakeStrength = 2.5f; // times the usual shake
+
     // --- Mines: they sleep until the player is close, then hunt ---
     public const float MineSize = 1.1f;
     public const float MineMass = 0.8f;
     public const float MineWakeRadius = 12f;      // wakes up when the player is this close
     public const float MineLoseRadius = 20f;      // gives up when the player is this far
-    public const float MineSpeed = 3.2f;          // the player's top speed is 12
-    public const float MineAccel = 5f;            // how quickly it picks up speed
-    public const float MineDamage = 15f;          // oxygen lost when a mine touches the player
+    public const float MineSpeed = 4.5f;          // the player's top speed is 12, docking speed is 5
+    public const float MineAccel = 8f;            // how quickly it picks up speed
+    public const float MineBreachRadius = 2.2f;   // a blast this close to the player breaches the hull
     public const float MineBlastRadius = 4.5f;    // everything this close is pushed away
     public const float MineBlastImpulse = 10f;    // how hard
     public const float MineRockRadius = 2.5f;     // rocks this close to the blast take one hit

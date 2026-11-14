@@ -9,9 +9,15 @@ public class Hud : MonoBehaviour
     static readonly Color GoodColor = new Color(0.4f, 1f, 0.5f);
     static readonly Color BadColor = new Color(1f, 0.35f, 0.3f);
 
+    static readonly Color LeakingColor = new Color(1f, 0.62f, 0.3f);
+
     RectTransform oxygenFill;
     Image oxygenFillImage;
+    Color oxygenBase = OxygenColor;   // cyan normally, orange while the hull leaks
     float oxygenFlash;
+    Text breachText;
+    Image damageFlash;
+    float damageTimer;
 
     Text message;
     Text messageSub;
@@ -55,6 +61,15 @@ public class Hud : MonoBehaviour
         var overlay = MakeImage("SignalOverlay", go.transform, new Color(1f, 0f, 0f, 0.22f));
         Stretch(overlay.rectTransform);
         hud.signalOverlay = overlay.gameObject;
+
+        // Red flash over the whole screen when the hull is breached.
+        hud.damageFlash = MakeImage("DamageFlash", go.transform, new Color(1f, 0.1f, 0.05f, 0f));
+        Stretch(hud.damageFlash.rectTransform);
+
+        // Number of leaks, next to the OXYGEN label. Hidden while the hull is whole.
+        hud.breachText = MakeText("Breaches", go.transform, font, 32, TextAnchor.UpperLeft, BadColor);
+        Place(hud.breachText.rectTransform, new Vector2(0f, 1f), new Vector2(215f, -33f), new Vector2(300f, 44f));
+        hud.breachText.gameObject.SetActive(false);
 
         var signal = MakeText("SignalText", go.transform, font, 72, TextAnchor.MiddleCenter, new Color(1f, 0.3f, 0.25f));
         signal.text = "SIGNAL LOST";
@@ -161,7 +176,12 @@ public class Hud : MonoBehaviour
         if (oxygenFlash > 0f)
         {
             oxygenFlash = Mathf.Max(0f, oxygenFlash - Time.deltaTime * 4f);
-            oxygenFillImage.color = Color.Lerp(OxygenColor, Color.white, oxygenFlash);
+            oxygenFillImage.color = Color.Lerp(oxygenBase, Color.white, oxygenFlash);
+        }
+        if (damageTimer > 0f)
+        {
+            damageTimer = Mathf.Max(0f, damageTimer - Time.deltaTime * 2.5f);
+            damageFlash.color = new Color(1f, 0.1f, 0.05f, 0.45f * damageTimer);
         }
         if (toastTimer > 0f)
         {
@@ -184,6 +204,22 @@ public class Hud : MonoBehaviour
     public void FlashOxygen()
     {
         oxygenFlash = 1f;
+    }
+
+    // count: holes in the hull. The oxygen bar turns orange while there is at least one.
+    public void SetBreaches(int count)
+    {
+        breachText.gameObject.SetActive(count > 0);
+        if (count > 0) breachText.text = count == 1 ? "1 LEAK" : count + " LEAKS";
+        oxygenBase = count > 0 ? LeakingColor : OxygenColor;
+        oxygenFillImage.color = oxygenBase;
+    }
+
+    // Red flash of the whole screen: the hull was just breached.
+    public void FlashDamage()
+    {
+        damageTimer = 1f;
+        damageFlash.color = new Color(1f, 0.1f, 0.05f, 0.45f);
     }
 
     // toShip: vector from the player to the ship, in world units.

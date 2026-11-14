@@ -107,19 +107,27 @@ public class PlayerController : MonoBehaviour
         CameraRig.Shake();
     }
 
-    // Hitting an asteroid too fast costs oxygen.
+    // Hitting a rock or a meteor too hard breaches the hull.
     void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.collider.GetComponent<Asteroid>() == null) return;
-        float speed = collision.relativeVelocity.magnitude;
-        if (speed <= Tuning.ImpactSafeSpeed) return;
-        float loss = Mathf.Min((speed - Tuning.ImpactSafeSpeed) * Tuning.ImpactOxygenPerSpeed, Tuning.ImpactMaxOxygen);
-        if (DraftGame.Instance != null)
-        {
-            DraftGame.Instance.SpendOxygen(loss);
-            DraftGame.Instance.BreakCombo(); // a hard hit ends the combo
-        }
-        CameraRig.Shake();
+        if (collision.relativeVelocity.magnitude <= Tuning.BreachImpactSpeed) return;
+        if (DraftGame.Instance == null) return;
+        Vector2 from = collision.contactCount > 0 ? collision.GetContact(0).point : (Vector2)collision.transform.position;
+        DraftGame.Instance.BreachHull(from);
+    }
+
+    // Opens a breach on the side the hit came from. Called by DraftGame.
+    public void AddBreach(Vector2 from)
+    {
+        Vector2 dir = from - (Vector2)transform.position;
+        if (dir.sqrMagnitude < 0.0001f) dir = Random.insideUnitCircle;
+        if (dir.sqrMagnitude < 0.0001f) dir = Vector2.up;
+        dir.Normalize();
+
+        // In the ship's own frame, so the crack and the jet turn with the ship.
+        Vector2 local = visual.InverseTransformDirection(dir);
+        Leak.Create(visual, local * (Tuning.PlayerDiameter * 0.42f), local, rb, transform.parent);
     }
 
     void FixedUpdate()
