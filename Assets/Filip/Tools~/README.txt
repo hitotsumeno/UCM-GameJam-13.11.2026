@@ -19,3 +19,6 @@ The look of the clouds (colours, density) is set by the numbers in NebulaGen.cs.
            Themes: debris (default clouds, writes nebula_far/near), calm, alert, planet.
            Colours and density of every theme are in NebulaGen.cs, method SetTheme.
   backdrop.ps1 -Out <output folder>                   -> backdrop_sun.png, backdrop_wreck.png, backdrop_planet.png
+  station.ps1 -Out <output folder>                    -> backdrop_wreck.png
+           The wreck of a ring station, built in 3D from simple solids (StationBake.cs)
+           and rendered with the rock renderer. Change the shape in the Build method.

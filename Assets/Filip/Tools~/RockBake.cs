@@ -12,7 +12,9 @@ using System.Runtime.InteropServices;
 // the rock: the game uses exactly that circle for collisions.
 public static class RockBake
 {
-    class Tri { public double[][] p = new double[3][], n = new double[3][], o = new double[3][]; }
+    // p: corners turned to the camera, n: their normals, o: corners in the model's own space, mat: material number.
+    public class Tri { public double[][] p = new double[3][], n = new double[3][], o = new double[3][]; public int mat; }
+    public static float[] MatBuf;   // if set, Raster also writes the material number of the nearest triangle per pixel
 
     static FNode LoadRoot(string path)
     {
@@ -47,12 +49,12 @@ public static class RockBake
         throw new Exception("Model not found: " + modelName);
     }
 
-    static double[] Rot(double[] m, double x, double y, double z)
+    public static double[] Rot(double[] m, double x, double y, double z)
     {
         return new double[] { m[0] * x + m[1] * y + m[2] * z, m[3] * x + m[4] * y + m[5] * z, m[6] * x + m[7] * y + m[8] * z };
     }
 
-    static double[] Euler(double rx, double ry, double rz)
+    public static double[] Euler(double rx, double ry, double rz)
     {
         double a = rx * Math.PI / 180, b = ry * Math.PI / 180, c = rz * Math.PI / 180;
         double ca = Math.Cos(a), sa = Math.Sin(a), cb = Math.Cos(b), sb = Math.Sin(b), cc = Math.Cos(c), sc = Math.Sin(c);
@@ -110,13 +112,13 @@ public static class RockBake
         return tris;
     }
 
-    static double[] Sub(double[] a, double[] b) { return new double[] { a[0] - b[0], a[1] - b[1], a[2] - b[2] }; }
-    static double[] Norm(double[] a)
+    public static double[] Sub(double[] a, double[] b) { return new double[] { a[0] - b[0], a[1] - b[1], a[2] - b[2] }; }
+    public static double[] Norm(double[] a)
     {
         double l = Math.Sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]); if (l < 1e-12) return new double[] { 0, 0, 1 };
         return new double[] { a[0] / l, a[1] / l, a[2] / l };
     }
-    static float C01(float t) { return t < 0f ? 0f : (t > 1f ? 1f : t); }
+    public static float C01(float t) { return t < 0f ? 0f : (t > 1f ? 1f : t); }
 
     // Cheap 3D value noise, 0..1.
     static float Hash(int x, int y, int z)
@@ -128,7 +130,7 @@ public static class RockBake
             return (h & 0xFFFFFF) / (float)0x1000000;
         }
     }
-    static float Noise3(double x, double y, double z)
+    public static float Noise3(double x, double y, double z)
     {
         int xi = (int)Math.Floor(x), yi = (int)Math.Floor(y), zi = (int)Math.Floor(z);
         float fx = (float)(x - xi), fy = (float)(y - yi), fz = (float)(z - zi);
@@ -249,7 +251,7 @@ public static class RockBake
     }
 
     // Draws one triangle. Picture y grows downward; model y grows upward.
-    static void Raster(Tri t, int W, double scale, double ox, double oy, float[] zb, float[] nb, float[] ob, bool[] cov, int pad)
+    public static void Raster(Tri t, int W, double scale, double ox, double oy, float[] zb, float[] nb, float[] ob, bool[] cov, int pad)
     {
         double[] X = new double[3], Y = new double[3];
         for (int c = 0; c < 3; c++) { X[c] = (t.p[c][0] - ox) * scale + pad; Y[c] = W - ((t.p[c][1] - oy) * scale + pad); }
@@ -269,6 +271,7 @@ public static class RockBake
             float z = (float)((a * t.p[0][2] + b * t.p[1][2] + c * t.p[2][2]) * scale);
             if (z <= zb[i]) continue;
             zb[i] = z;
+            if (MatBuf != null) MatBuf[i] = t.mat;
             for (int k = 0; k < 3; k++)
             {
                 nb[i * 3 + k] = (float)(a * t.n[0][k] + b * t.n[1][k] + c * t.n[2][k]);
