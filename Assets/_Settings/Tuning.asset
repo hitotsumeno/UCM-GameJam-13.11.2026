@@ -35,6 +35,9 @@ MonoBehaviour:
   OxygenDrainPerSecond: 2
   OxygenPerShot: 1
   OutOfBoundsDrainMultiplier: 4
+  StormPush: 8
+  StormPushDepth: 6
+  StormDarkDepth: 6
   CellSize: 2
   DockMaxSpeed: 5
   DockBounce: 0.6
