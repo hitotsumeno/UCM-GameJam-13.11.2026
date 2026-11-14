@@ -42,6 +42,7 @@ public static class DraftSetup
         var oldRandom = Random.state;
         Random.InitState(1311); // same layout every time
         rockFits.Clear();
+        shapeFits.Clear();
         reimported.Clear();
         try
         {
@@ -404,6 +405,37 @@ public static class DraftSetup
         }
         var basePoint = new Vector2((min.x + max.x) * 0.5f, min.y + (max.y - min.y) * 0.22f);
         return Vector3.Scale(basePoint, fire.transform.localScale);
+    }
+
+    // The box around a star shape in its picture, measured from the PNG's alpha: x, y = middle of
+    // the box from the picture's centre, z = the box's larger side; all as shares of the picture side.
+    static readonly Dictionary<Sprite, Vector3> shapeFits = new Dictionary<Sprite, Vector3>();
+
+    static Vector3 ShapeFit(Sprite sprite)
+    {
+        Vector3 fit;
+        if (shapeFits.TryGetValue(sprite, out fit)) return fit;
+        fit = new Vector3(0f, 0f, StarShapeFraction);
+        string path = AssetDatabase.GetAssetPath(sprite);
+        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (File.Exists(path) && tex.LoadImage(File.ReadAllBytes(path)))
+        {
+            var px = tex.GetPixels32();
+            int w = tex.width, h = tex.height, x0 = w, x1 = -1, y0 = h, y1 = -1;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    if (px[y * w + x].a > 128)
+                    {
+                        if (x < x0) x0 = x; if (x > x1) x1 = x;
+                        if (y < y0) y0 = y; if (y > y1) y1 = y;
+                    }
+            if (x1 >= x0)
+                fit = new Vector3((x0 + x1 + 1) * 0.5f / w - 0.5f, (y0 + y1 + 1) * 0.5f / h - 0.5f,
+                    Mathf.Max(x1 - x0 + 1, y1 - y0 + 1) / (float)w);
+        }
+        Object.DestroyImmediate(tex);
+        shapeFits[sprite] = fit;
+        return fit;
     }
 
     // Where the rock sits in its picture, measured from the PNG's alpha: x, y = middle of the rock
@@ -960,6 +992,9 @@ public static class DraftSetup
         var phase = new float[count];
         var speed = new float[count];
 
+        for (int n = 1; n <= 9; n++) Reimport("star_render" + n);
+        var renders = Art.LoadAll("star_render");   // the artist's star renders, if any
+
         for (int i = 0; i < count; i++)
         {
             var star = new GameObject("Star").transform;
@@ -971,19 +1006,34 @@ public static class DraftSetup
             Color tint = StarPalette[Random.Range(0, StarPalette.Length)] * levelColor;
 
             SpriteRenderer core, glow;
-            var shape = Art.Load("star");
-            if (shape != null)
+            if (renders.Count > 0)
             {
-                // Core and glow pictures share one canvas, so both get the same size.
-                float canvas = size / StarShapeFraction;
-                var glowSprite = Art.LoadExact(shape.name.Replace("star", "star_glow"));
-                glow = Art.Make("Glow", glowSprite != null ? glowSprite : SpriteFactory.Glow(), star, canvas, sortingOrder);
+                // The artist's star renders: each shape may be drawn at any size in its picture, so it
+                // is measured and the picture scaled until the shape itself is `size` across. Their
+                // golden colour stays; a soft halo in the palette colour sits behind.
+                var shape = renders[Random.Range(0, renders.Count)];
+                Vector3 fit = ShapeFit(shape);
+                float canvas = size / fit.z;
+                glow = Art.Make("Glow", SpriteFactory.Glow(), star, size * 2.6f, sortingOrder);
                 core = Art.Make("Core", shape, star, canvas, sortingOrder + 1);
+                core.transform.localPosition = -new Vector3(fit.x, fit.y, 0f) * canvas;
             }
             else
             {
-                glow = Art.Make("Glow", SpriteFactory.Glow(), star, size * 2.4f, sortingOrder);
-                core = Art.Make("Core", SpriteFactory.Circle(), star, size * 0.4f, sortingOrder + 1);
+                var shape = Art.Load("star");
+                if (shape != null)
+                {
+                    // Core and glow pictures share one canvas, so both get the same size.
+                    float canvas = size / StarShapeFraction;
+                    var glowSprite = Art.LoadExact(shape.name.Replace("star", "star_glow"));
+                    glow = Art.Make("Glow", glowSprite != null ? glowSprite : SpriteFactory.Glow(), star, canvas, sortingOrder);
+                    core = Art.Make("Core", shape, star, canvas, sortingOrder + 1);
+                }
+                else
+                {
+                    glow = Art.Make("Glow", SpriteFactory.Glow(), star, size * 2.4f, sortingOrder);
+                    core = Art.Make("Core", SpriteFactory.Circle(), star, size * 0.4f, sortingOrder + 1);
+                }
             }
 
             Color coreColor = Color.Lerp(Color.white, tint, 0.25f);

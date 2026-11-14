@@ -68,7 +68,8 @@ sa zástupný tvar. Veľkosť v hre určuje kód (dlhšia strana obrázka), nie 
 | `blackhole.png` | štvorec | tmavý disk má zaberať 32 % šírky obrázka, v strede |
 | `planet1.png` | 12 | guľa má zaberať stredných 88 % obrázka (zvyšok je žiara) |
 | `background.png` | 48 × 48 | štvorec 4096 × 4096 px; ak existuje, nahradí oblaky |
-| `star1.png` … | 0,1 – 0,5 | tvary hviezd, každá hviezda si vyberie náhodný variant |
+| `star_render1.png` … | 0,1 – 0,5 | hviezdy od výtvarníčky; tvar môže byť v obrázku ľubovoľne veľký, Rebuild ho zmeria |
+| `star1.png` … | 0,1 – 0,5 | staršie tvary hviezd (len keď `star_render` chýbajú) |
 
 Po pridaní alebo výmene obrázka treba spustiť **Filip > Rebuild Prefabs And Scene**:
 prefaby si obrázky berú iba vtedy.

@@ -24,7 +24,13 @@ Size in the game is set by code (the larger side of the picture), not by the pic
   blackhole.png      square    black hole; the dark disc must be 32% of the picture across, centred
   planet1.png        12 units  the ball must take the middle 88% of the picture (the rest is glow)
   background.png     square 4096x4096 px, shown as 48x48 units
-  star1.png          small, about 0.1-0.5 unit; variants: star2.png, star3.png, star4.png ...
+  star_render1.png   the artist's star renders (golden), used for all glowing stars when present.
+   ... star_render5  Each shape may be drawn at any size in its picture: the rebuild measures it and
+                     scales it to the star's size; a soft halo in the star palette sits behind.
+                     Named star_render so that Filip > Bake Rocks And Stars From FBX (which writes
+                     star1.png ...) never overwrites them. Add star_render6.png ... for more shapes.
+  star1.png          older stars, used only without star_render pictures: small, about 0.1-0.5 unit;
+                     variants: star2.png, star3.png, star4.png ...
                      (each star on screen picks a random variant)
 
 1 unit = 100 pixels. Transparent background (PNG with alpha), except background.png.

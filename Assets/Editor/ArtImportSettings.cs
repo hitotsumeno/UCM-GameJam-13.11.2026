@@ -135,5 +135,12 @@ public class ArtImportSettings : AssetPostprocessor
             settings.spriteMeshType = SpriteMeshType.FullRect;
             importer.SetTextureSettings(settings);
         }
+
+        if (name.StartsWith("star_render"))
+        {
+            // The artist's star renders (2028 px) are shown only a few pixels big.
+            importer.maxTextureSize = 256;
+            importer.mipmapEnabled = true;
+        }
     }
 }
