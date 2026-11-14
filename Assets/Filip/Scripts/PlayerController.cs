@@ -130,6 +130,13 @@ public class PlayerController : MonoBehaviour
         Leak.Create(visual, local * (Tuning.PlayerDiameter * 0.42f), local, rb, transform.parent);
     }
 
+    // Removes the newest breach (sealed with an oxygen tank). Called by DraftGame.
+    public void RemoveBreach()
+    {
+        var leaks = visual.GetComponentsInChildren<Leak>();
+        if (leaks.Length > 0) Destroy(leaks[leaks.Length - 1].gameObject);
+    }
+
     void FixedUpdate()
     {
         Vector2 v = rb.linearVelocity;

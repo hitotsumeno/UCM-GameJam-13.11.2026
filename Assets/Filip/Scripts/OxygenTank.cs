@@ -39,6 +39,7 @@ public class OxygenTank : MonoBehaviour
         var game = DraftGame.Instance;
         if (game == null || game.State != GameState.Playing) return;
         game.AddOxygen(Tuning.OxygenTankAmount);
+        game.RepairBreach(); // a tank also seals one leak
         Destroy(gameObject);
     }
 }

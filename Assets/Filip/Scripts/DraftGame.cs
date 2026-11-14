@@ -66,6 +66,9 @@ public class DraftGame : MonoBehaviour
 
     void Update()
     {
+        // Esc closes the game (only matters in the built game, not in the editor).
+        if (Input.GetKeyDown(KeyCode.Escape)) Application.Quit();
+
         // R restarts the current level at any moment.
         if (Input.GetKeyDown(KeyCode.R))
         {
@@ -130,6 +133,16 @@ public class DraftGame : MonoBehaviour
         hud.FlashDamage();
         hud.Toast("HULL BREACH");
         CameraRig.ShakeHard();
+    }
+
+    // Seals one breach. Called when an oxygen tank is picked up.
+    public void RepairBreach()
+    {
+        if (State != GameState.Playing || Breaches <= 0) return;
+        Breaches--;
+        if (world != null && world.player != null) world.player.RemoveBreach();
+        hud.SetBreaches(Breaches);
+        hud.Toast("LEAK SEALED");
     }
 
     // --- Oxygen ---
