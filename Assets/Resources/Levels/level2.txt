@@ -1,6 +1,8 @@
 # name=DEBRIS FIELD
 # radio=Debris from the blast is between us. Break through it.
-# tint=0.9,0.75,1.0
+# backdrop=wreck
+# light=0.92,0.95,1.0
+# stardensity=1.2
 # oxygen=100
 # meteors=6-10
 # movers=0.4

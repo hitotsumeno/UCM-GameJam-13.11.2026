@@ -66,20 +66,50 @@ public static class NebulaGen
         r = a[0] + (c[0] - a[0]) * k; g = a[1] + (c[1] - a[1]) * k; b = a[2] + (c[2] - a[2]) * k;
     }
 
-    static readonly float[][] FarStops = {
-        new float[] { 0.30f, 0.10f, 0.55f },   // violet
-        new float[] { 0.08f, 0.20f, 0.60f },   // blue
-        new float[] { 0.05f, 0.38f, 0.50f },   // teal
-        new float[] { 0.12f, 0.16f, 0.62f },   // indigo
-        new float[] { 0.50f, 0.10f, 0.45f },   // magenta
-    };
-    static readonly float[][] NearStops = {
-        new float[] { 0.62f, 0.22f, 0.95f },   // bright violet
-        new float[] { 0.95f, 0.30f, 0.70f },   // pink
-        new float[] { 0.25f, 0.50f, 1.00f },   // blue
-        new float[] { 0.20f, 0.85f, 0.90f },   // cyan
-        new float[] { 0.40f, 0.35f, 1.00f },   // indigo
-    };
+    // ---- Theme: colours and density of the clouds. Set with SetTheme before Far() / Near(). ----
+    static float[][] FarStops, NearStops;         // colour ramps of the far and near clouds
+    static float[] Sky;                           // colour of empty space
+    static float FarLo, FarHi, FarGain;           // far clouds: where they start, where they are full, how bright
+    static float NearLo, NearHi, NearAlpha;       // near clouds: the same, and how opaque
+    public static int Seed;                       // different seed = different cloud shapes
+
+    static float[] C(float r, float g, float b) { return new float[] { r, g, b }; }
+
+    // debris: violet and teal, the first set made (level 2).   calm: cold blue, sparse (level 1).
+    // alert: crimson and magenta, dense and ragged (level 3).  planet: gold and green (level 4).
+    public static void SetTheme(string name)
+    {
+        Sky = C(0.010f, 0.013f, 0.032f);
+        FarLo = -0.30f; FarHi = 0.22f; FarGain = 0.85f;
+        NearLo = -0.10f; NearHi = 0.36f; NearAlpha = 1f;
+        switch (name)
+        {
+            case "calm":
+                Seed = 21; Sky = C(0.006f, 0.012f, 0.035f);
+                FarStops = new[] { C(0.06f, 0.16f, 0.50f), C(0.05f, 0.25f, 0.55f), C(0.10f, 0.12f, 0.45f), C(0.04f, 0.30f, 0.48f) };
+                NearStops = new[] { C(0.30f, 0.55f, 1.00f), C(0.35f, 0.75f, 1.00f), C(0.45f, 0.50f, 0.95f), C(0.25f, 0.85f, 0.95f) };
+                FarLo = -0.18f; FarHi = 0.34f; FarGain = 0.75f;
+                NearLo = 0.02f; NearHi = 0.50f; NearAlpha = 0.85f;
+                break;
+            case "alert":
+                Seed = 33; Sky = C(0.030f, 0.008f, 0.016f);
+                FarStops = new[] { C(0.55f, 0.08f, 0.20f), C(0.45f, 0.06f, 0.35f), C(0.60f, 0.18f, 0.10f), C(0.35f, 0.05f, 0.30f), C(0.50f, 0.10f, 0.14f) };
+                NearStops = new[] { C(1.00f, 0.30f, 0.35f), C(1.00f, 0.45f, 0.20f), C(0.95f, 0.25f, 0.60f), C(0.85f, 0.20f, 0.25f) };
+                FarLo = -0.36f; FarHi = 0.16f; FarGain = 0.80f;
+                NearLo = -0.16f; NearHi = 0.30f;
+                break;
+            case "planet":
+                Seed = 45; Sky = C(0.014f, 0.020f, 0.012f);
+                FarStops = new[] { C(0.50f, 0.40f, 0.08f), C(0.20f, 0.45f, 0.20f), C(0.08f, 0.40f, 0.38f), C(0.45f, 0.30f, 0.06f), C(0.25f, 0.50f, 0.12f) };
+                NearStops = new[] { C(1.00f, 0.85f, 0.35f), C(0.60f, 0.95f, 0.45f), C(0.30f, 0.90f, 0.75f), C(0.95f, 0.70f, 0.25f) };
+                break;
+            default: // debris
+                Seed = 7;
+                FarStops = new[] { C(0.30f, 0.10f, 0.55f), C(0.08f, 0.20f, 0.60f), C(0.05f, 0.38f, 0.50f), C(0.12f, 0.16f, 0.62f), C(0.50f, 0.10f, 0.45f) };
+                NearStops = new[] { C(0.62f, 0.22f, 0.95f), C(0.95f, 0.30f, 0.70f), C(0.25f, 0.50f, 1.00f), C(0.20f, 0.85f, 0.90f), C(0.40f, 0.35f, 1.00f) };
+                break;
+        }
+    }
 
     // Far layer: opaque, dim, big soft clouds over a near-black sky.
     public static byte[] Far(int R, int seed)
@@ -92,15 +122,15 @@ public static class NebulaGen
             float u = (x + 0.5f) / R, v = (y + 0.5f) / R;
             float wx = W1.Fbm(u, v, 2, 3, 0.5f), wy = W2.Fbm(u, v, 2, 3, 0.5f);
             float d = D.Fbm(u + 0.22f * wx, v + 0.22f * wy, 2, 6, 0.52f);
-            float c = Smooth(-0.30f, 0.22f, d);
+            float c = Smooth(FarLo, FarHi, d);
             float dust = Smooth(-0.05f, 0.35f, K.Fbm(u + 0.1f * wy, v + 0.1f * wx, 3, 5, 0.55f));
             c *= 1f - 0.55f * dust;
             float h = H.Fbm(u + 0.1f * wx, v, 2, 3, 0.5f) * 1.6f + 0.5f;
             float pr, pg, pb; Palette(FarStops, h, out pr, out pg, out pb);
             float glow = c * c * (0.35f + 0.65f * c);
-            float r = 0.010f + pr * glow * 0.85f;
-            float g = 0.013f + pg * glow * 0.85f;
-            float b = 0.032f + pb * glow * 0.85f + 0.03f * c;
+            float r = Sky[0] + pr * glow * FarGain;
+            float g = Sky[1] + pg * glow * FarGain;
+            float b = Sky[2] + pb * glow * FarGain;
             int i = ((R - 1 - y) * R + x) * 4;
             px[i] = B(b); px[i + 1] = B(g); px[i + 2] = B(r); px[i + 3] = 255;
         }
@@ -121,7 +151,7 @@ public static class NebulaGen
             float d = D.Fbm(uu, vv, 3, 6, 0.55f);
             float ridge = 1f - Math.Abs(Rg.Fbm(uu, vv, 5, 5, 0.55f)) * 3.2f;
             ridge = Clamp01(ridge); ridge = ridge * ridge;
-            float c = Smooth(-0.10f, 0.36f, d + 0.16f * (ridge - 0.35f));
+            float c = Smooth(NearLo, NearHi, d + 0.16f * (ridge - 0.35f));
             float h = H.Fbm(u, v + 0.1f * wy, 2, 3, 0.5f) * 1.8f + 0.2f;
             float pr, pg, pb; Palette(NearStops, h, out pr, out pg, out pb);
             float core = c * c * c;
@@ -129,7 +159,7 @@ public static class NebulaGen
             float r = pr * lum + 0.55f * core;
             float g = pg * lum + 0.50f * core;
             float b = pb * lum + 0.60f * core;
-            float a = c * (0.30f + 0.38f * c);
+            float a = c * (0.30f + 0.38f * c) * NearAlpha;
             int i = ((R - 1 - y) * R + x) * 4;
             px[i] = B(b); px[i + 1] = B(g); px[i + 2] = B(r); px[i + 3] = B(a);
         }

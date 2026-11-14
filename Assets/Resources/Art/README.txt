@@ -27,3 +27,7 @@ Already here (made for the draft, replace freely):
   asteroid_s1..4 .png               different sides (5 models -> 12 different-looking asteroids).
                                     The rock fills the picture so that a circle of 0.45 x picture size
                                     has the same area as the rock: that circle is used for collisions.
+  nebula_calm_*, nebula_alert_*,    cloud sets for level themes (level file: # nebula=calm). Blue and sparse,
+  nebula_planet_* (_far, _near)     crimson and dense, gold and green. nebula_far / nebula_near is the default set.
+  backdrop_sun, backdrop_wreck,     big far objects for a level (level file: # backdrop=sun): a distant sun,
+  backdrop_planet .png              the wreck of a station, a ringed planet. Generated: Tools~/backdrop.ps1.

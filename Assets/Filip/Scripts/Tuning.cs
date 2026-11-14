@@ -64,6 +64,7 @@ public static class Tuning
     // --- Background: calm, so it does not compete with the rocks ---
     // Parallax: how fast a layer scrolls on screen compared to the world (1 = like the world).
     public const float BackgroundParallax = 0.1f; // artist picture "background" (does not repeat)
+    public const float BackdropParallax = 0.12f;  // big far object of a level (sun, wreck, planet)
     public const float NebulaFarParallax = 0.25f; // far clouds (repeat endlessly)
     public const float NebulaNearParallax = 0.4f; // near clouds: faster, so the picture keeps changing
     public const float NebulaFarSize = 64f;       // one copy of the far cloud picture, in units

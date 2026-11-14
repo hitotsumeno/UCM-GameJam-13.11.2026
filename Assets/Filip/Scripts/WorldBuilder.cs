@@ -34,8 +34,8 @@ public static class WorldBuilder
     {
         w.bounds = level.Bounds;
         Asteroid.Bounds = w.bounds;
-        BuildBackground(w.root, w.bounds.center, level.tint);
-        BuildBorder(w.root, w.bounds);
+        BuildBackground(w.root, w.bounds.center, level);
+        BuildBorder(w.root, w.bounds, level.frame);
 
         // Used if the map has no P or S.
         Vector2 start = new Vector2(w.bounds.center.x, w.bounds.yMin + Tuning.PlayerStartFromBottom);
@@ -95,8 +95,9 @@ public static class WorldBuilder
         Vector2 start = new Vector2(w.bounds.center.x, w.bounds.yMin + Tuning.PlayerStartFromBottom);
         Vector2 shipPos = new Vector2(w.bounds.center.x, w.bounds.yMax - Tuning.ShipFromTop);
 
-        BuildBackground(w.root, w.bounds.center, Color.white);
-        BuildBorder(w.root, w.bounds);
+        var theme = new LevelData(); // default look
+        BuildBackground(w.root, w.bounds.center, theme);
+        BuildBorder(w.root, w.bounds, theme.frame);
         w.player = PlayerController.Create(start, w.root);
         w.ship = Ship.Create(shipPos, w.root).transform;
         Scatter(w.root, start, shipPos);
@@ -152,13 +153,13 @@ public static class WorldBuilder
 
     // --- Shared pieces ---
 
-    // Thin red frame showing where the level ends.
-    static void BuildBorder(Transform parent, Rect bounds)
+    // Thin frame showing where the level ends (red unless the level sets its own colour).
+    static void BuildBorder(Transform parent, Rect bounds, Color frame)
     {
         var border = new GameObject("Border").transform;
         border.SetParent(parent, false);
         var square = SpriteFactory.Square();
-        var color = new Color(1f, 0.3f, 0.25f, 0.6f);
+        var color = new Color(frame.r, frame.g, frame.b, 0.6f);
         const float t = 0.16f;
         Vector2 c = bounds.center;
 
@@ -172,19 +173,25 @@ public static class WorldBuilder
         right.transform.position = new Vector2(bounds.xMax, c.y);
     }
 
-    // Nebula (or the artist's background picture) and three layers of stars.
-    // Far layers scroll slower than near ones.
-    static void BuildBackground(Transform parent, Vector2 center, Color tint)
+    // Clouds (or the artist's background picture), a far backdrop object and three layers
+    // of stars. Far layers scroll slower than near ones. theme: the look settings of the level.
+    static void BuildBackground(Transform parent, Vector2 center, LevelData theme)
     {
         var root = new GameObject("Background").transform;
         root.SetParent(parent, false);
 
-        // Draw order, back to front: far clouds, star dust, far stars, near clouds, near stars.
-        ParallaxBackground.CreateAll(root, center, tint);
-        StarLayer.CreateDust("StarDust", root, center, Tuning.StarDustParallax, Tuning.StarDustCount, -160);
-        StarLayer.CreateGlowing("StarsFar", root, center, Tuning.StarsFarParallax, Tuning.StarsFarCount,
-            Tuning.StarFarSizeMin, Tuning.StarFarSizeMax, 0.45f, -150);
-        StarLayer.CreateGlowing("StarsNear", root, center, Tuning.StarsNearParallax, Tuning.StarsNearCount,
-            Tuning.StarNearSizeMin, Tuning.StarNearSizeMax, 0.75f, -140);
+        // Draw order, back to front: far clouds, backdrop, star dust, far stars, near clouds, near stars.
+        ParallaxBackground.CreateAll(root, center, theme);
+
+        float density = theme.starDensity;
+        Color starColor = theme.starColor;
+        StarLayer.CreateDust("StarDust", root, center, Tuning.StarDustParallax,
+            Mathf.RoundToInt(Tuning.StarDustCount * density), -160, starColor);
+        StarLayer.CreateGlowing("StarsFar", root, center, Tuning.StarsFarParallax,
+            Mathf.RoundToInt(Tuning.StarsFarCount * density),
+            Tuning.StarFarSizeMin, Tuning.StarFarSizeMax, 0.45f, -150, starColor);
+        StarLayer.CreateGlowing("StarsNear", root, center, Tuning.StarsNearParallax,
+            Mathf.RoundToInt(Tuning.StarsNearCount * density),
+            Tuning.StarNearSizeMin, Tuning.StarNearSizeMax, 0.75f, -140, starColor);
     }
 }

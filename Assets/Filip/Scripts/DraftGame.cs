@@ -24,6 +24,7 @@ public class DraftGame : MonoBehaviour
     LevelWorld world;      // current level; null when cleared
     CameraRig cameraRig;
     Hud hud;
+    Light2D globalLight;   // lights every sprite; each level gives it its own colour
     float comboTimer;
     int levelIndex = 1;    // 1 = level1.txt
     int levelCount;        // 0 = no level files: the random test ground is used
@@ -49,7 +50,7 @@ public class DraftGame : MonoBehaviour
     void Awake()
     {
         Instance = this;
-        EnsureGlobalLight();
+        globalLight = EnsureGlobalLight();
         SetupCamera();
         hud = Hud.Create();
         levelCount = LevelData.Count();
@@ -199,16 +200,18 @@ public class DraftGame : MonoBehaviour
 
     // --- Scene setup ---
 
-    static void EnsureGlobalLight()
+    // Finds the scene's global light or creates one. Its colour is set per level.
+    static Light2D EnsureGlobalLight()
     {
         foreach (var l in FindObjectsByType<Light2D>(FindObjectsSortMode.None))
-            if (l.lightType == Light2D.LightType.Global) return;
+            if (l.lightType == Light2D.LightType.Global) return l;
 
         var go = new GameObject("Global Light 2D");
         var light = go.AddComponent<Light2D>();
         light.lightType = Light2D.LightType.Global;
         light.intensity = 1f;
         light.color = Color.white;
+        return light;
     }
 
     void SetupCamera()
@@ -249,6 +252,7 @@ public class DraftGame : MonoBehaviour
         ClearWorld();
         LevelData level = levelCount > 0 ? LevelData.Load(levelIndex) : null;
         world = WorldBuilder.Build(level);
+        if (globalLight != null) globalLight.color = level != null ? level.light : Color.white;
 
         State = GameState.Playing;
         Oxygen = level != null ? Mathf.Clamp(level.oxygen, 1f, Tuning.OxygenMax) : Tuning.OxygenMax;

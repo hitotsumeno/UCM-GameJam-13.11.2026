@@ -1,6 +1,10 @@
 # name=ADRIFT
 # radio=Tether lost. You have a rivet gun and one tank of air.
-# tint=0.75,0.85,1.0
+# nebula=calm
+# backdrop=sun
+# light=1.0,1.0,1.0
+# starcolor=0.8,0.9,1.0
+# stardensity=0.6
 # oxygen=70
 # meteors=off
 # movers=0

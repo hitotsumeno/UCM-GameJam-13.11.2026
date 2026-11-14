@@ -14,3 +14,8 @@ The look of the clouds (colours, density) is set by the numbers in NebulaGen.cs.
 
   ship.ps1 -Out <output folder>                       -> ship.png, ship_gun.png, station.png
            Placeholder rocket, its side gun and the station, drawn with simple shapes (ShipGen.cs).
+
+  gen.ps1 -Dir <output folder> -Theme calm -Final     -> nebula_calm_far.png, nebula_calm_near.png
+           Themes: debris (default clouds, writes nebula_far/near), calm, alert, planet.
+           Colours and density of every theme are in NebulaGen.cs, method SetTheme.
+  backdrop.ps1 -Out <output folder>                   -> backdrop_sun.png, backdrop_wreck.png, backdrop_planet.png

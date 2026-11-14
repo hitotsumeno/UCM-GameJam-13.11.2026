@@ -36,14 +36,15 @@ public class StarLayer : MonoBehaviour
     float[] phase, speed;
 
     // Tiny dim dots.
+    // levelColor: colour of the stars on this level (white = as usual).
     public static StarLayer CreateDust(string name, Transform parent, Vector2 anchor, float factor, int count,
-        int sortingOrder)
+        int sortingOrder, Color levelColor)
     {
         var layer = Begin(name, parent, anchor, factor, count);
         var circle = SpriteFactory.Circle();
         for (int i = 0; i < count; i++)
         {
-            var color = new Color(0.84f, 0.9f, 1f, Random.Range(0.18f, 0.5f));
+            var color = new Color(0.84f * levelColor.r, 0.9f * levelColor.g, levelColor.b, Random.Range(0.18f, 0.5f));
             var sr = SpriteFactory.MakeSprite("Dust", layer.transform, circle, color,
                 Vector2.one * Random.Range(0.03f, 0.07f), sortingOrder);
             layer.stars[i] = sr.transform;
@@ -54,7 +55,7 @@ public class StarLayer : MonoBehaviour
 
     // Glowing stars. minSize/maxSize: size of the star shape itself, in units.
     public static StarLayer CreateGlowing(string name, Transform parent, Vector2 anchor, float factor, int count,
-        float minSize, float maxSize, float minBrightness, int sortingOrder)
+        float minSize, float maxSize, float minBrightness, int sortingOrder, Color levelColor)
     {
         var layer = Begin(name, parent, anchor, factor, count);
         layer.cores = new SpriteRenderer[count];
@@ -72,7 +73,7 @@ public class StarLayer : MonoBehaviour
 
             float size = Random.Range(minSize, maxSize);
             float brightness = Random.Range(minBrightness, 1f);
-            Color tint = Palette[Random.Range(0, Palette.Length)];
+            Color tint = Palette[Random.Range(0, Palette.Length)] * levelColor;
 
             SpriteRenderer core, glow;
             var shape = Art.Load("star");

@@ -2,37 +2,49 @@ using UnityEngine;
 
 // One layer of the space background. It follows the camera and scrolls on screen
 // at a fraction of the world speed (parallax): the player flies THROUGH it.
-//  - Nebula layers (pictures nebula_far, nebula_near) repeat endlessly in all directions.
-//    The near layer scrolls faster than the far one, so the picture keeps changing.
-//  - Artist picture "background", if present, replaces the nebula. It does not repeat,
+//  - Cloud layers (nebula pictures) repeat endlessly in all directions. The near layer
+//    scrolls faster than the far one, so the picture keeps changing. Every level can
+//    have its own set of clouds (# nebula=calm in the level file).
+//  - A backdrop is one big far object (sun, wreck, planet) that drifts slowly across the screen.
+//  - Artist picture "background", if present, replaces the clouds. It does not repeat,
 //    so its shift is limited and the picture edge never gets into view.
 [DefaultExecutionOrder(100)] // after CameraRig has moved the camera
 public class ParallaxBackground : MonoBehaviour
 {
-    Vector2 anchor;   // world point where the picture is centered on the camera
+    enum Mode { Clamped, Repeating, Free }
+
+    Vector2 anchor;      // world point where the layer is centered on the camera (the level center)
+    Vector2 baseOffset;  // Free mode: where the object sits on screen when the camera is at the anchor
     float factor;
-    float size;       // picture side in units
-    bool repeats;
+    float size;          // picture side in units
+    Mode mode;
     Camera cam;
 
-    // Builds all background layers under parent.
-    // tint: colour of the level (white = the picture as drawn).
-    public static void CreateAll(Transform parent, Vector2 anchor, Color tint)
+    // Builds all background layers under parent. theme: the look settings of the level.
+    public static void CreateAll(Transform parent, Vector2 anchor, LevelData theme)
     {
         var art = Art.TryMake("background", parent, Tuning.BackgroundSize, -200);
         if (art != null)
         {
             var bg = art.gameObject.AddComponent<ParallaxBackground>();
-            bg.Setup(anchor, Tuning.BackgroundParallax, Tuning.BackgroundSize, false);
+            bg.Setup(anchor, Tuning.BackgroundParallax, Tuning.BackgroundSize, Mode.Clamped, Vector2.zero);
             return;
         }
+
+        // Cloud set of this level; an unknown name falls back to the default clouds.
+        string set = string.IsNullOrEmpty(theme.nebula) ? "nebula" : "nebula_" + theme.nebula;
+        if (Art.Load(set + "_far") == null) set = "nebula";
+
         // The far clouds are darkened and the near ones made more transparent,
         // so the background stays behind the rocks instead of competing with them.
         float b = Tuning.NebulaFarBrightness;
-        CreateRepeating("nebula_far", parent, anchor, Tuning.NebulaFarSize, Tuning.NebulaFarParallax, -200, 1.002f,
+        Color tint = theme.tint;
+        CreateRepeating(set + "_far", parent, anchor, Tuning.NebulaFarSize, Tuning.NebulaFarParallax, -200, 1.002f,
             new Color(b * tint.r, b * tint.g, b * tint.b, 1f));
-        CreateRepeating("nebula_near", parent, anchor, Tuning.NebulaNearSize, Tuning.NebulaNearParallax, -145, 1f,
+        CreateRepeating(set + "_near", parent, anchor, Tuning.NebulaNearSize, Tuning.NebulaNearParallax, -145, 1f,
             new Color(tint.r, tint.g, tint.b, Tuning.NebulaNearOpacity));
+
+        CreateBackdrop(theme.backdrop, parent, anchor);
     }
 
     // 3x3 copies of a seamless picture. If the picture is missing, nothing is created (black sky).
@@ -58,16 +70,40 @@ public class ParallaxBackground : MonoBehaviour
             sr.color = color;
             sr.sortingOrder = sortingOrder;
         }
-        go.AddComponent<ParallaxBackground>().Setup(anchor, factor, size, true);
+        go.AddComponent<ParallaxBackground>().Setup(anchor, factor, size, Mode.Repeating, Vector2.zero);
     }
 
-    void Setup(Vector2 anchor, float factor, float size, bool repeats)
+    // One big far object, picture backdrop_<name>. Drawn over the far clouds and under the near ones.
+    static void CreateBackdrop(string name, Transform parent, Vector2 anchor)
+    {
+        if (string.IsNullOrEmpty(name) || name == "none") return;
+
+        // Size in units, place on screen (units from the screen center, when the player
+        // is in the middle of the level) and opacity. Kept dim: it is only scenery.
+        float size = 20f, opacity = 0.7f;
+        Vector2 offset = new Vector2(8f, 4f);
+        switch (name)
+        {
+            case "sun": size = 14f; offset = new Vector2(11f, 6f); opacity = 0.8f; break;
+            case "wreck": size = 26f; offset = new Vector2(5f, 3f); opacity = 0.55f; break;
+            case "planet": size = 46f; offset = new Vector2(16f, -8f); opacity = 0.85f; break;
+        }
+
+        var sr = Art.TryMake("backdrop_" + name, parent, size, -190);
+        if (sr == null) return;
+        sr.color = new Color(1f, 1f, 1f, opacity);
+        sr.gameObject.AddComponent<ParallaxBackground>()
+            .Setup(anchor, Tuning.BackdropParallax, size, Mode.Free, offset);
+    }
+
+    void Setup(Vector2 anchor, float factor, float size, Mode mode, Vector2 baseOffset)
     {
         this.anchor = anchor;
         this.factor = factor;
         this.size = size;
-        this.repeats = repeats;
-        transform.position = anchor;
+        this.mode = mode;
+        this.baseOffset = baseOffset;
+        transform.position = anchor + baseOffset;
     }
 
     void LateUpdate()
@@ -76,15 +112,15 @@ public class ParallaxBackground : MonoBehaviour
         if (cam == null) return;
 
         Vector2 camPos = cam.transform.position;
-        Vector2 offset = (anchor - camPos) * factor;
+        Vector2 offset = baseOffset + (anchor - camPos) * factor;
 
-        if (repeats)
+        if (mode == Mode.Repeating)
         {
             float half = size * 0.5f;
             offset.x = Mathf.Repeat(offset.x + half, size) - half;
             offset.y = Mathf.Repeat(offset.y + half, size) - half;
         }
-        else
+        else if (mode == Mode.Clamped)
         {
             float halfH = cam.orthographicSize;
             float halfW = halfH * cam.aspect;
