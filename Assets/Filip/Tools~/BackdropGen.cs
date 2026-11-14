@@ -92,6 +92,45 @@ public static class BackdropGen
         Save(px, R, R, path);
     }
 
+    // The planet the player flies around in the game (not scenery): no ring, well lit,
+    // warm bands, a glowing atmosphere. The ball takes 0.44 of the picture; the game
+    // uses the same share for its solid body.
+    public static void GamePlanet(string path)
+    {
+        int R = 512; byte[] px = new byte[R * R * 4];
+        var bands = new PNoise(71); var swirl = new PNoise(72);
+        float pr = 0.44f;
+        float lx = -0.50f, ly = 0.58f, lz = 0.64f;
+        for (int y = 0; y < R; y++) for (int x = 0; x < R; x++)
+        {
+            float u = (x + 0.5f) / R - 0.5f, v = 0.5f - (y + 0.5f) / R;
+            float d = (float)Math.Sqrt(u * u + v * v);
+            float r = 0, g = 0, b = 0, a = 0;
+            if (d > pr)
+            {
+                // Atmosphere glow around the ball.
+                r = 1.0f; g = 0.75f; b = 0.45f;
+                a = (float)Math.Exp(-(d - pr) / 0.018f) * 0.7f;
+            }
+            else
+            {
+                float nx = u / pr, ny = v / pr, nz = (float)Math.Sqrt(Math.Max(0f, 1f - nx * nx - ny * ny));
+                float lit = C01(nx * lx + ny * ly + nz * lz);
+                float lat = ny * 2.4f + 0.10f * swirl.Fbm(nx * 0.4f + 0.5f, ny * 0.4f + 0.5f, 4, 4, 0.5f) * 6f;
+                float band = C01(bands.Fbm(0.41f, lat * 0.25f + 0.5f, 4, 5, 0.55f) * 2.4f + 0.5f);
+                // rust <-> sand bands
+                float cr = 0.86f - 0.20f * band, cg = 0.46f + 0.26f * band, cb = 0.24f + 0.22f * band;
+                float shade = 0.16f + 0.84f * lit;
+                float rim = (float)Math.Pow(1f - nz, 3) * 0.30f;
+                r = cr * shade + rim; g = cg * shade + rim * 0.75f; b = cb * shade + rim * 0.5f;
+                a = C01((pr - d) / 0.004f);
+            }
+            int i = (y * R + x) * 4;
+            px[i] = B(b); px[i + 1] = B(g); px[i + 2] = B(r); px[i + 3] = B(a);
+        }
+        Save(px, R, R, path);
+    }
+
     // The wreck of a station: dark silhouettes with a faint edge and a few dying lights.
     public static void Wreck(string path)
     {

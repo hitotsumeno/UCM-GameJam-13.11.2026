@@ -152,7 +152,7 @@ public class DraftGame : MonoBehaviour
         if (State != GameState.Playing) return;
         Oxygen = Mathf.Max(0f, Oxygen - amount);
         hud.SetOxygen(Oxygen / Tuning.OxygenMax);
-        if (Oxygen <= 0f) Lose();
+        if (Oxygen <= 0f) Lose("OUT OF OXYGEN");
     }
 
     public void AddOxygen(float amount)
@@ -224,11 +224,12 @@ public class DraftGame : MonoBehaviour
         hud.ShowMessage("DOCKED", new Color(0.4f, 1f, 0.5f), sub);
     }
 
-    public void Lose()
+    // title: what killed the player, shown in big letters.
+    public void Lose(string title)
     {
         if (State != GameState.Playing) return;
         State = GameState.Lost;
-        hud.ShowMessage("OUT OF OXYGEN", new Color(1f, 0.35f, 0.3f), "PRESS R TO RESTART");
+        hud.ShowMessage(title, new Color(1f, 0.35f, 0.3f), "PRESS R TO RESTART");
     }
 
     // --- Scene setup ---

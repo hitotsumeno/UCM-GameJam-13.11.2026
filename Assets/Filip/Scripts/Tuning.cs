@@ -58,7 +58,8 @@ public static class Tuning
     public const float AsteroidSizeVariationMin = 0.88f; // every rock gets a random size multiplier
     public const float AsteroidSizeVariationMax = 1.12f;
     public const float OxygenTankSize = 0.8f;
-    public const float PlanetSize = 8f;
+    public const float PlanetSize = 12f;          // side of the planet picture
+    public const float PlanetBodyShare = 0.44f;   // the solid ball is this share of the picture (its radius)
     public const float BackgroundSize = 48f;
 
     // --- Background: calm, so it does not compete with the rocks ---
@@ -134,6 +135,11 @@ public static class Tuning
     public const float LeakPuffLifetime = 0.5f;   // seconds
     public const float CameraHardShakeTime = 0.3f;     // camera shake when the hull is breached
     public const float CameraHardShakeStrength = 2.5f; // times the usual shake
+
+    // --- Gravity: a planet pulls the player and the bullets ---
+    public const float GravityRadius = 22f;       // the field ends here (dotted circle)
+    public const float GravityStrength = 288f;    // pull = this / distance squared: 8 at the surface, 0.6 at the edge
+    public const float GravityMaxAccel = 9f;      // the pull never gets stronger than this
 
     // --- Mines: they sleep until the player is close, then hunt ---
     public const float MineSize = 1.1f;
