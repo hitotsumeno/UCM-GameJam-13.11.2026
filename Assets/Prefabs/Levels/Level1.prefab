@@ -574,7 +574,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelName: rocks
   radio: 
-  oxygen: 65
+  oxygen: 95
   movers: 0.35
   star3: 45
   star2: 20
