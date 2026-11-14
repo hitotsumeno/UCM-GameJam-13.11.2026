@@ -6,7 +6,7 @@ using UnityEngine;
 //
 // Lines starting with # are settings (# name=ADRIFT). The rest is the map:
 // every character is a cell of 2x2 units, the first map line is the top of the level.
-//   P player   S ship   . empty   o oxygen tank
+//   P player (a ship)   S station (the goal)   . empty   o oxygen tank
 //   a small rock (1 cell)   A medium rock (2x2 cells)   B large rock (3x3 cells)
 //   1..9 place where a hint is shown (# hint1=TEXT)
 // Unknown characters are ignored, so files can already contain symbols for later steps.

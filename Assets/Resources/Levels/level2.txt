@@ -1,5 +1,5 @@
 # name=DEBRIS FIELD
-# radio=Debris from the blast is between us. Break through it.
+# radio=Debris is between us and the station. Break through it.
 # tint=0.9,0.75,1.0
 # oxygen=100
 # meteors=6-10

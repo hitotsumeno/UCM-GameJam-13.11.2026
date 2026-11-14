@@ -3,8 +3,9 @@ Art for the draft game (Assets/Filip). Put PNG files here.
 The game finds pictures by file name. If a file is missing, a placeholder is drawn.
 Size in the game is set by code (the larger side of the picture), not by the picture:
 
-  astronaut.png      1 unit    drawn facing RIGHT
-  ship.png           6 units   drawn nose to the RIGHT
+  ship.png           2.4 units the PLAYER: a rocket, drawn nose to the RIGHT
+  ship_gun.png       0.95 unit side gun of the rocket, barrel to the RIGHT; it swings around a point 16% from its back end
+  station.png        6 units   the goal of a level, round
   asteroid_s1.png    2 units   variants: asteroid_s2.png, asteroid_s3.png ...
   asteroid_m1.png    4 units   variants: asteroid_m2.png, asteroid_m3.png ...
   asteroid_l1.png    6 units   variants: asteroid_l2.png, asteroid_l3.png ...
@@ -27,3 +28,7 @@ Already here (made for the draft, replace freely):
   asteroid_s1..4 .png               different sides (5 models -> 12 different-looking asteroids).
                                     The rock fills the picture so that a circle of 0.45 x picture size
                                     has the same area as the rock: that circle is used for collisions.
+  ship.png, ship_gun.png,           placeholders drawn by code (Assets/Filip/Tools~/ship.ps1): a toy rocket
+  station.png                       out of fuel, its side gun and a round station. Replace with real art.
+                                    The rocket has two guns hanging on struts at its middle; in the game
+                                    they swing toward the cursor and at rest point back to the engine.

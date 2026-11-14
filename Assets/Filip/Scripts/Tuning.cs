@@ -16,8 +16,21 @@ public static class Tuning
 
     // --- Player ---
     public const float PlayerMaxSpeed = 12f;
-    public const float PlayerDiameter = 1f;
+    public const float PlayerDiameter = 1.2f;     // round body used for collisions
     public const float PlayerMass = 1f;
+
+    // --- Player's ship: two side guns that swing toward the cursor ---
+    public const float ShipGunLength = 0.95f;
+    // The guns hang on short struts at the middle of the ship, not on the hull itself; at rest they point back to the engine.
+    public const float ShipGunMountX = 0f;        // where a gun hangs: along the ship (0 = middle, negative = toward the tail)...
+    public const float ShipGunMountY = 0.68f;     // ...and out to each side
+    public const float ShipStrutRootX = 0f;       // where the strut leaves the hull
+    public const float ShipStrutRootY = 0.26f;
+    public const float ShipStrutThickness = 0.09f;
+    public const float ShipGunMountInset = 0.156f; // the point the gun swings around, as a share of its length from the back end
+    public const float ShipGunAxisTolerance = 15f; // degrees: aiming this close to the nose or the tail, both guns fire in turns
+    public const float ShipTurnSpeed = 200f;      // degrees per second: how fast the nose turns to the flight direction
+    public const float ShipTurnMinSpeed = 0.7f;   // slower than this the ship keeps its heading
     public const float PlayerGlowSize = 3f;       // white glow under the player, in player diameters
     public const float PlayerGlowOpacity = 0.35f;
 
@@ -37,21 +50,21 @@ public static class Tuning
     public const float CellSize = 2f;             // one map character is a square of this many units
     public const float HintRadius = 9f;           // a hint is shown while the player is this close to its place
 
-    // --- Docking: reach the ship slowly ---
+    // --- Docking: reach the station slowly ---
     public const float DockMaxSpeed = 5f;         // faster than this the player bounces off
     public const float DockBounce = 0.6f;         // share of speed kept after bouncing off
     public const float DockBounceMinSpeed = 3f;
-    public const float DockPenalty = 5f;          // oxygen lost for hitting the ship too fast
+    public const float DockPenalty = 5f;          // oxygen lost for hitting the station too fast
 
     // --- Test ground (only used when there are no level files) ---
     public const float LevelWidth = 60f;
     public const float LevelHeight = 120f;
     public const float PlayerStartFromBottom = 5f; // player starts this far above the bottom border
-    public const float ShipFromTop = 3f;           // ship center is this far below the top border
+    public const float GoalFromTop = 3f;           // station center is this far below the top border
 
     // --- Sizes in the world, in units (the larger side of the picture) ---
-    public const float ShipLength = 6f;
-    public const float ShipHeight = 2.5f;         // placeholder only; real art keeps its own proportions
+    public const float PlayerShipLength = 2.4f;   // the player's rocket, nose to tail
+    public const float StationSize = 6f;          // the goal of a level
     public const float AsteroidSmallSize = 2f;    // 1 level cell
     public const float AsteroidMediumSize = 4f;   // 2x2 level cells
     public const float AsteroidLargeSize = 6f;    // 3x3 level cells
@@ -152,7 +165,7 @@ public static class Tuning
     public const int ScatterAsteroids = 24;
     public const int ScatterTanks = 3;
     public const float ScatterHalfWidth = 11f;    // asteroids lie this far left/right of the straight path
-    public const float ScatterClearance = 10f;    // free space around the player start and the ship
+    public const float ScatterClearance = 10f;    // free space around the player start and the station
     public const float TankSideOffsetMin = 15f;   // tanks lie this far off the straight path
     public const float TankSideOffsetMax = 20f;
 }

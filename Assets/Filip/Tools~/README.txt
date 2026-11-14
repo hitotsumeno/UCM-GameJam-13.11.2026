@@ -11,3 +11,6 @@ The look of the clouds (colours, density) is set by the numbers in NebulaGen.cs.
            Renders the artist's 3D rocks into shaded 2D pictures. The list at the top of rocks.ps1
            says which model and which view angle becomes which picture; edit it to add variants.
            Light, rim colour and rock relief are set by the numbers in RockBake.cs.
+
+  ship.ps1 -Out <output folder>                       -> ship.png, ship_gun.png, station.png
+           Placeholder rocket, its side gun and the station, drawn with simple shapes (ShipGen.cs).

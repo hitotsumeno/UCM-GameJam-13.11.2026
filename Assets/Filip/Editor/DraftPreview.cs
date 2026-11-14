@@ -94,7 +94,7 @@ public static class DraftPreview
 
             var hud = Hud.Create();
             hud.SetOxygen(level != null ? level.oxygen / Tuning.OxygenMax : 1f);
-            hud.SetCompass(world.ship.position - world.player.transform.position);
+            hud.SetCompass(world.station.position - world.player.transform.position);
             Mark(hud.gameObject);
         }
         catch (Exception e)

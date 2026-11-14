@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-// On-screen interface, built from code: oxygen bar, ship compass with speed,
+// On-screen interface, built from code: oxygen bar, station compass with speed,
 // combo counter, hints, short notices and the big end-of-level message.
 public class Hud : MonoBehaviour
 {
@@ -104,7 +104,7 @@ public class Hud : MonoBehaviour
     }
 
     // Round compass on the left side, under the oxygen bar: the arrow on the rim points
-    // to the ship, the distance is in the middle, the player's speed is under it.
+    // to the station, the distance is in the middle, the player's speed is under it.
     void BuildCompass(Transform parent, Font font)
     {
         const float size = 180f;
@@ -128,7 +128,7 @@ public class Hud : MonoBehaviour
         arrow.sprite = SpriteFactory.Triangle();
         Place(arrow.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, size * 0.5f - 26f), new Vector2(34f, 34f));
 
-        compassText = MakeText("Distance", root, font, 28, TextAnchor.MiddleCenter, Color.white);
+        compassText = MakeText("Distance", root, font, 24, TextAnchor.MiddleCenter, Color.white);
         Place(compassText.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size, 80f));
 
         // Green while slow enough to dock, red when too fast.
@@ -186,17 +186,17 @@ public class Hud : MonoBehaviour
         oxygenFlash = 1f;
     }
 
-    // toShip: vector from the player to the ship, in world units.
-    public void SetCompass(Vector2 toShip)
+    // toStation: vector from the player to the station, in world units.
+    public void SetCompass(Vector2 toStation)
     {
-        float angle = Mathf.Atan2(toShip.y, toShip.x) * Mathf.Rad2Deg - 90f;
+        float angle = Mathf.Atan2(toStation.y, toStation.x) * Mathf.Rad2Deg - 90f;
         compassNeedle.localRotation = Quaternion.Euler(0f, 0f, angle);
 
-        int distance = Mathf.RoundToInt(toShip.magnitude);
+        int distance = Mathf.RoundToInt(toStation.magnitude);
         if (distance != shownDistance)
         {
             shownDistance = distance;
-            compassText.text = "SHIP\n" + distance + " m";
+            compassText.text = "STATION\n" + distance + " m";
         }
     }
 
