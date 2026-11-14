@@ -81,7 +81,7 @@
 | `PlayerController.cs` | loď hráča: mierenie myšou, streľba, spätný ráz, najvyššia rýchlosť, trhliny pri tvrdom náraze |
 | `Bullet.cs` | strela: rýchlosť, životnosť, zásah kameňa alebo míny |
 | `Asteroid.cs` | kameň: veľkosť, zásahy, rozpad veľkého kameňa, kryštály, pohyb a otáčanie vnútri hraníc |
-| `Meteor.cs` | rýchly kameň zhora: ohnivý chvost a výstražný trojuholník |
+| `Meteor.cs` | rýchly kameň zhora s ohnivým chvostom |
 | `MeteorSpawner.cs` | posiela meteory a roje s predstihom (zapína sa na koreni úrovne) |
 | `OxygenCrystal.cs` | kryštál kyslíka: rozlet, priťahovanie k lodi, blikanie, ťah čiernych dier |
 | `OxygenTank.cs` | kyslíková fľaša: +30 kyslíka a zaplátanie trhliny |
@@ -95,6 +95,7 @@
 | `Ship.cs` | cieľová loď: dotyk a krúžok pri pristávaní |
 | `CameraRig.cs` | sledovanie lode a trasenie kamery |
 | `Hud.cs` | rozhranie: vzduch, značky trhlín, séria, šípka, nápisy, koniec úrovne |
+| `ThreatMarkers.cs` | značky nebezpečenstva pri okraji obrazovky (meteory, prenasledujúce míny) |
 | `PixelFont.cs` | pixelové písmo 5 × 7 a pixelové ikony |
 | `PixelLabel.cs` | jeden riadok textu pixelovým písmom (funguje aj v editore) |
 | `ParallaxBackground.cs` | jedna vrstva pozadia s paralaxou (opakujúca sa, obmedzená alebo voľná) |

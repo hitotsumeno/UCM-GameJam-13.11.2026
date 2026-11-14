@@ -219,8 +219,6 @@ public class Tuning : ScriptableObject
     [Tooltip("orange glow, in rock diameters")]
     public float MeteorHeatSize = 3f;
     public float MeteorHeatOpacity = 0.75f;
-    [Tooltip("red marker at the top edge of the screen")]
-    public float MeteorWarningSize = 0.9f;
 
     [Header("Oxygen tanks")]
     public float OxygenTankAmount = 30f;

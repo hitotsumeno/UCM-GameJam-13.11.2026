@@ -108,7 +108,6 @@ MonoBehaviour:
   MeteorMediumChance: 0.25
   MeteorHeatSize: 3
   MeteorHeatOpacity: 0.75
-  MeteorWarningSize: 0.9
   OxygenTankAmount: 30
   OxygenTankPickupRadius: 0.7
   OxygenTankGlowSize: 2

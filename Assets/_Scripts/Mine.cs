@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public enum MineMode { Hunter, Wall, Patrol, Orbit, Heavy }
@@ -14,6 +15,20 @@ public enum MineMode { Hunter, Wall, Patrol, Orbit, Heavy }
 // Prefabs: Assets/Prefabs/Mine_Hunter / _Wall / _Patrol / _Orbit / _Heavy.
 public class Mine : MonoBehaviour
 {
+    // All mines of the current level (for the danger markers).
+    public static readonly List<Mine> All = new List<Mine>();
+
+    public static void ResetStatics()
+    {
+        All.Clear();
+    }
+
+    // A hunter that is awake and chasing the player.
+    public bool Hunting { get { return mode == MineMode.Hunter && awake && !exploded; } }
+
+    void OnEnable() { All.Add(this); }
+    void OnDisable() { All.Remove(this); }
+
     [Tooltip("Balance numbers: Assets/_Settings/Tuning.asset")]
     [SerializeField] Tuning tuning;
     Tuning T { get { return tuning != null ? tuning : Tuning.Active; } }

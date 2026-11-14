@@ -33,7 +33,11 @@ Názvy úrovní sú v súboroch úrovní (riadok `# name=`).
 
 - Okolo cieľovej lode sa pri priblížení objaví krúžok: zelený = dosť pomalé pristátie,
   červený = príliš rýchle.
-- Meteor, ktorý je ešte nad obrazovkou, ohlási červený trojuholník pri hornom okraji.
+- **Značky nebezpečenstva pri okraji obrazovky** ukazujú hrozby, ktoré ešte nie je vidieť:
+  meteor (oranžová, presne tam, kde vletí do obrazovky) a mínu lovca, ktorá loď prenasleduje
+  (červená). Značka je malá pixelová ikona hrozby s mäkkou žiarou a šípkou, ktorá mieri
+  **dnu, na hráča** (zelená šípka k cieľovej lodi mieri von, preto sa nepletú). Čím je hrozba
+  bližšie, tým je značka väčšia, jasnejšia a rýchlejšie bliká.
 - Pole čiernej diery je vidieť ako mäkkú teplú žiaru.
 - Hranicu úrovne ukazuje tenký rám.
 

@@ -401,15 +401,11 @@ public static class DraftSetup
         var tail = SpriteFactory.MakeSprite("Tail", go.transform, SpriteFactory.Glow(),
             new Color(1f, 0.6f, 0.2f, 0.6f), new Vector2(d * 1.1f, d * 5f), 2).transform;
         tail.localPosition = new Vector3(0f, d * 2f, 0f);
-        var warning = SpriteFactory.MakeSprite("Warning", go.transform, SpriteFactory.Triangle(),
-            new Color(1f, 0.3f, 0.25f), Vector2.one * tune.MeteorWarningSize, 30).transform;
-        warning.gameObject.SetActive(false);
 
         var m = go.AddComponent<Meteor>();
         Set(m, "asteroid", a);
         Set(m, "rb", go.GetComponent<Rigidbody2D>());
         Set(m, "tail", tail);
-        Set(m, "warning", warning);
         return go;
     }
 
@@ -1096,10 +1092,56 @@ public static class DraftSetup
         toast.gameObject.SetActive(false);
         Ref(so, "toast", toast);
 
+        BuildThreatMarkers(go, arrowIcon);
         BuildEndScreen(so, root, o2Icon);
 
         so.ApplyModifiedPropertiesWithoutUndo();
         return hud;
+    }
+
+    // Danger markers at the screen edge (ThreatMarkers): a pool of six. Each one is a soft glow,
+    // a pixel icon of the threat (set while playing) and an arrow pointing into the screen.
+    static void BuildThreatMarkers(GameObject hud, Sprite arrowIcon)
+    {
+        const int count = 6;
+        var threats = hud.AddComponent<ThreatMarkers>();
+        var meteorIcon = SpriteFactory.PixelIcon("meteor", PixelFont.MeteorSign);
+        var mineIcon = SpriteFactory.PixelIcon("mine", PixelFont.MineSign);
+
+        var group = new GameObject("DangerMarkers", typeof(RectTransform)).GetComponent<RectTransform>();
+        group.SetParent(hud.transform, false);
+        Stretch(group);
+
+        var roots = new Object[count];
+        var glows = new Object[count];
+        var icons = new Object[count];
+        var arrows = new Object[count];
+        for (int i = 0; i < count; i++)
+        {
+            var m = new GameObject("Danger", typeof(RectTransform)).GetComponent<RectTransform>();
+            m.SetParent(group, false);
+            Place(m, Middle, Vector2.zero, Vector2.zero);
+
+            var glow = MakeImage("Glow", m, new Color(1f, 0.3f, 0.25f, 0.3f));
+            glow.sprite = SpriteFactory.Glow();
+            Place(glow.rectTransform, Middle, Vector2.zero, new Vector2(130f, 130f));
+            var icon = MakeIcon("Icon", m, mineIcon, 4, Color.white, true);
+            Place(icon.rectTransform, Middle, Vector2.zero);
+            var arrow = MakeIcon("Arrow", m, arrowIcon, 4, Color.white, true);
+            Place(arrow.rectTransform, Middle, Vector2.zero);
+
+            m.gameObject.SetActive(false);
+            roots[i] = m; glows[i] = glow; icons[i] = icon; arrows[i] = arrow;
+        }
+
+        var so = new SerializedObject(threats);
+        RefArray(so, "markers", roots);
+        RefArray(so, "glows", glows);
+        RefArray(so, "icons", icons);
+        RefArray(so, "arrows", arrows);
+        Ref(so, "meteorIcon", meteorIcon);
+        Ref(so, "mineIcon", mineIcon);
+        so.ApplyModifiedPropertiesWithoutUndo();
     }
 
     // End of a level: dark veil, big word, air left (after docking) and the key to press.

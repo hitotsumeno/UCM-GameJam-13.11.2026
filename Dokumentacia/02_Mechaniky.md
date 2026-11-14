@@ -107,8 +107,9 @@ Hra nemá životy ani okamžité tresty. Tvrdý úder prederaví trup:
 - Rýchlosť **13 – 17**. Mieria s predstihom **0,9** sekundy tam, kam loď práve letí.
 - V **30 %** prípadov príde roj troch meteorov (prvý mieri presne, ďalšie okolo).
 - 75 % meteorov je malých, 25 % stredných. Majú ohnivý chvost a oranžovú žiaru.
-- Kým je meteor ešte nad obrazovkou, pri hornom okraji ukazuje červený trojuholník,
-  odkiaľ priletí.
+- Kým je meteor ešte mimo obrazovky, pri okraji obrazovky sa ukáže oranžová značka presne tam,
+  kde meteor do obrazovky vletí (podľa jeho dráhy). Meteor, ktorý obrazovku minie, značku nemá.
+  Čím je meteor bližšie, tým je značka väčšia a rýchlejšie bliká.
 - Meteor je kameň: dá sa zostreliť a zanechá kryštály. Náraz doň prederaví trup.
   Rýchly meteor odpáli mínu, do ktorej narazí.
 
@@ -130,6 +131,9 @@ Spoločné pravidlá:
   susedné míny (reťaz) a kamene v okruhu 2,5 dostanú jeden zásah.
 - Mínu odpáli aj kameň alebo meteor, ktorý do nej narazí rýchlosťou vyššou ako 5.
 - Mína zničená strelou zvýši sériu a nechá 4 kryštály.
+
+Lovec, ktorý prenasleduje loď mimo obrazovky, má pri okraji obrazovky červenú značku
+(malá mína a šípka smerom dnu). Čím je bližšie, tým je značka väčšia a rýchlejšie bliká.
 
 Taktiky: lovca sa dá zlákať do kameňov alebo do čiernej diery, stenu odpáliť z diaľky
 jediným výstrelom, ťažkú mínu zostreliť skôr, ako sa hniezdo okolo nej zobudí.

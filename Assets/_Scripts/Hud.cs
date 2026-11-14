@@ -79,8 +79,8 @@ public class Hud : MonoBehaviour
     void Awake()
     {
         canvasRect = (RectTransform)transform;
-        if (airIcon == null || leakMarks == null || leakMarks.Length == 0)
-            Debug.LogWarning("HUD is out of date (no O2 sign or leak marks): run Filip > Rebuild Prefabs And Scene.", this);
+        if (airIcon == null || leakMarks == null || leakMarks.Length == 0 || GetComponent<ThreatMarkers>() == null)
+            Debug.LogWarning("HUD is out of date (no O2 sign, leak marks or danger markers): run Filip > Rebuild Prefabs And Scene.", this);
         outLabel.Set(Texts.OutOfBounds);
         HideMessage();
         SetSignalLost(false);

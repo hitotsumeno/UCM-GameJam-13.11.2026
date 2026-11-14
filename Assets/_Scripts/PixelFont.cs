@@ -41,6 +41,9 @@ public static class PixelFont
     };
     // A crack in the hull: one per leak.
     public static readonly string[] Crack = { "...#.", "..#..", ".##..", "...#.", "..##.", ".#...", "#...." };
+    // Danger markers: a meteor with its trail, and a spiked mine.
+    public static readonly string[] MeteorSign = { "......#", "....##.", "..###..", ".####..", "#####..", "#####..", ".###..." };
+    public static readonly string[] MineSign = { "...#...", ".#.#.#.", "..###..", "#######", "..###..", ".#.#.#.", "...#..." };
     public static readonly string[] Arrow = { "...#...", "..###..", ".#####.", "#######", "..###..", "..###..", "..###.." };
 
     static Dictionary<string, Texture2D> cache = new Dictionary<string, Texture2D>();

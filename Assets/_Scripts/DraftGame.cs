@@ -55,6 +55,8 @@ public class DraftGame : MonoBehaviour
         Tuning.ResetStatics();
         CameraRig.ResetStatics();
         BlackHole.ResetStatics();
+        Meteor.ResetStatics();
+        Mine.ResetStatics();
         PixelFont.ResetStatics();
     }
 
