@@ -68,7 +68,7 @@ public static class WorldBuilder
             }
         }
 
-        w.player = PlayerController.Create(start, w.root, HeadingTo(start, goalPos));
+        w.player = PlayerController.Create(start, w.root);
         w.station = Station.Create(goalPos, w.root).transform;
         if (level.meteors)
             MeteorSpawner.Create(w.root, w.player.transform, level.meteorMin, level.meteorMax);
@@ -97,7 +97,7 @@ public static class WorldBuilder
 
         BuildBackground(w.root, w.bounds.center, Color.white);
         BuildBorder(w.root, w.bounds);
-        w.player = PlayerController.Create(start, w.root, HeadingTo(start, goalPos));
+        w.player = PlayerController.Create(start, w.root);
         w.station = Station.Create(goalPos, w.root).transform;
         Scatter(w.root, start, goalPos);
         MeteorSpawner.Create(w.root, w.player.transform, Tuning.MeteorIntervalMin, Tuning.MeteorIntervalMax);
@@ -151,14 +151,6 @@ public static class WorldBuilder
     }
 
     // --- Shared pieces ---
-
-    // Direction from one point to another, in degrees (0 = right, 90 = up).
-    // The ship starts with its nose turned to the station.
-    static float HeadingTo(Vector2 from, Vector2 to)
-    {
-        Vector2 d = to - from;
-        return d.sqrMagnitude > 0.0001f ? Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg : 90f;
-    }
 
     // Thin red frame showing where the level ends.
     static void BuildBorder(Transform parent, Rect bounds)

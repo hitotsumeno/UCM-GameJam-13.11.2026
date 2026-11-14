@@ -16,21 +16,8 @@ public static class Tuning
 
     // --- Player ---
     public const float PlayerMaxSpeed = 12f;
-    public const float PlayerDiameter = 1.2f;     // round body used for collisions
+    public const float PlayerDiameter = 1f;
     public const float PlayerMass = 1f;
-
-    // --- Player's ship: two side guns that swing toward the cursor ---
-    public const float ShipGunLength = 0.95f;
-    // The guns hang on short struts at the middle of the ship, not on the hull itself; at rest they point back to the engine.
-    public const float ShipGunMountX = 0f;        // where a gun hangs: along the ship (0 = middle, negative = toward the tail)...
-    public const float ShipGunMountY = 0.68f;     // ...and out to each side
-    public const float ShipStrutRootX = 0f;       // where the strut leaves the hull
-    public const float ShipStrutRootY = 0.26f;
-    public const float ShipStrutThickness = 0.09f;
-    public const float ShipGunMountInset = 0.156f; // the point the gun swings around, as a share of its length from the back end
-    public const float ShipGunAxisTolerance = 15f; // degrees: aiming this close to the nose or the tail, both guns fire in turns
-    public const float ShipTurnSpeed = 200f;      // degrees per second: how fast the nose turns to the flight direction
-    public const float ShipTurnMinSpeed = 0.7f;   // slower than this the ship keeps its heading
     public const float PlayerGlowSize = 3f;       // white glow under the player, in player diameters
     public const float PlayerGlowOpacity = 0.35f;
 
@@ -63,7 +50,6 @@ public static class Tuning
     public const float GoalFromTop = 3f;           // station center is this far below the top border
 
     // --- Sizes in the world, in units (the larger side of the picture) ---
-    public const float PlayerShipLength = 2.4f;   // the player's rocket, nose to tail
     public const float StationSize = 6f;          // the goal of a level
     public const float AsteroidSmallSize = 2f;    // 1 level cell
     public const float AsteroidMediumSize = 4f;   // 2x2 level cells
