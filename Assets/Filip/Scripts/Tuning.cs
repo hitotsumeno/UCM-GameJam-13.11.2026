@@ -157,7 +157,8 @@ public static class Tuning
     public const float MineRockRadius = 2.5f;     // rocks this close to the blast take one hit
     public const float MineTriggerSpeed = 5f;     // a rock hitting a mine faster than this sets it off
     public const float MineChainDelay = 0.12f;    // seconds before a neighbouring mine goes off too
-    public const int CrystalsFromMine = 2;        // a mine shot by the player leaves crystals
+    public const int CrystalsFromMine = 4;        // a mine shot by the player leaves crystals
+    public const int CrystalsFromChainedMine = 2; // a mine set off by a chain or a rock leaves fewer
 
     // --- Mine behaviours ---
     public const float MinePatrolRange = 6f;      // a patrol mine glides this far to each side of its place
@@ -188,7 +189,7 @@ public static class Tuning
 
 
     // --- Oxygen crystals: destroyed rocks leave air behind ("destroy to breathe") ---
-    public const float CrystalOxygen = 3.5f;       // oxygen per crystal (before the combo bonus)
+    public const float CrystalOxygen = 2.8f;       // oxygen per crystal (before the combo bonus)
     public const int CrystalsFromSmall = 2;       // crystals left by a destroyed rock
     public const int CrystalsFromMedium = 3;
     public const int CrystalsFromLarge = 4;

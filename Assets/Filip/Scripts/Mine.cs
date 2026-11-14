@@ -243,13 +243,13 @@ public class Mine : MonoBehaviour
         {
             int combo = game.RegisterKill();
             float worth = Tuning.CrystalOxygen * (1f + Tuning.ComboBonusPerStep * (combo - 1));
-            int crystals = Mathf.RoundToInt(Tuning.CrystalsFromMine * blastScale * blastScale);
+            int crystals = Mathf.RoundToInt(Tuning.CrystalsFromMine * blastScale);
             OxygenCrystal.Burst(pos, crystals, worth, transform.parent);
         }
         else if (game != null && !touchedPlayer)
         {
             // Set off by a chain or a rock: still leaves a crystal, so a big chain pays off.
-            OxygenCrystal.Burst(pos, 1, Tuning.CrystalOxygen, transform.parent);
+            OxygenCrystal.Burst(pos, Tuning.CrystalsFromChainedMine, Tuning.CrystalOxygen, transform.parent);
         }
 
         Blast.Create(pos, blastRadius, transform.parent);
