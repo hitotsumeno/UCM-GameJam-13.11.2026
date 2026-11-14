@@ -22,6 +22,7 @@ MonoBehaviour:
   BulletGlowOpacity: 0.8
   PlayerMaxSpeed: 12
   PlayerDiameter: 1
+  PlayerShipSize: 2.2
   PlayerMass: 1
   PlayerGlowSize: 3
   PlayerGlowOpacity: 0.35
