@@ -37,12 +37,13 @@ public class ParallaxBackground : MonoBehaviour
 
         // The far clouds are darkened and the near ones made more transparent,
         // so the background stays behind the rocks instead of competing with them.
-        float b = Tuning.NebulaFarBrightness;
+        // The level can make its clouds dimmer or brighter (# clouds=0.6) and tint them (# tint=...).
+        float b = Tuning.NebulaFarBrightness * theme.clouds;
         Color tint = theme.tint;
         CreateRepeating(set + "_far", parent, anchor, Tuning.NebulaFarSize, Tuning.NebulaFarParallax, -200, 1.002f,
             new Color(b * tint.r, b * tint.g, b * tint.b, 1f));
         CreateRepeating(set + "_near", parent, anchor, Tuning.NebulaNearSize, Tuning.NebulaNearParallax, -145, 1f,
-            new Color(tint.r, tint.g, tint.b, Tuning.NebulaNearOpacity));
+            new Color(tint.r, tint.g, tint.b, Mathf.Clamp01(Tuning.NebulaNearOpacity * theme.clouds)));
 
         CreateBackdrop(theme.backdrop, parent, anchor);
     }

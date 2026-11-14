@@ -28,6 +28,7 @@ public class LevelData
     // --- The look of the level (its theme) ---
     public string nebula = "";        // cloud pictures: "" = the default set, or calm, alert, planet
     public Color tint = Color.white;  // extra colour over the clouds
+    public float clouds = 1f;         // how bright the clouds are: 1 = as usual, 0.6 = dimmer
     public Color light = Color.white; // colour of the light on rocks, the player and the ship
     public Color starColor = Color.white;
     public float starDensity = 1f;    // 1 = the usual number of stars, 0.5 = half
@@ -104,6 +105,7 @@ public class LevelData
             case "starcolor": starColor = Colour(val, starColor); break;
             case "frame": frame = Colour(val, frame); break;
             case "stardensity": starDensity = Mathf.Clamp(Number(val, 1f), 0f, 3f); break;
+            case "clouds": clouds = Mathf.Clamp(Number(val, 1f), 0f, 2f); break;
             case "stars":
             {
                 string[] p = val.Split(',');
