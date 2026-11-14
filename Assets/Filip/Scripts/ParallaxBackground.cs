@@ -2,66 +2,24 @@ using UnityEngine;
 
 // One layer of the space background. It follows the camera and scrolls on screen
 // at a fraction of the world speed (parallax): the player flies THROUGH it.
-//  - Nebula layers (pictures nebula_far, nebula_near) repeat endlessly in all directions.
-//    The near layer scrolls faster than the far one, so the picture keeps changing.
+//  - Nebula layers (nebula_far, nebula_near: 3x3 tiles) repeat endlessly in all directions.
 //  - Artist picture "background", if present, replaces the nebula. It does not repeat,
 //    so its shift is limited and the picture edge never gets into view.
+// Part of Assets/Filip/Prefabs/Background.prefab.
 [DefaultExecutionOrder(100)] // after CameraRig has moved the camera
 public class ParallaxBackground : MonoBehaviour
 {
-    Vector2 anchor;   // world point where the picture is centered on the camera
-    float factor;
-    float size;       // picture side in units
-    bool repeats;
+    [Tooltip("World point where the picture is centered on the camera")]
+    [SerializeField] Vector2 anchor;
+    [Tooltip("How fast the layer scrolls on screen compared to the world (1 = like the world)")]
+    [SerializeField] float factor = 0.25f;
+    [Tooltip("Picture side in units")]
+    [SerializeField] float size = 64f;
+    [SerializeField] bool repeats = true;
+
     Camera cam;
 
-    // Builds all background layers under parent.
-    // tint: colour of the level (white = the picture as drawn).
-    public static void CreateAll(Transform parent, Vector2 anchor, Color tint)
-    {
-        var art = Art.TryMake("background", parent, Tuning.BackgroundSize, -200);
-        if (art != null)
-        {
-            var bg = art.gameObject.AddComponent<ParallaxBackground>();
-            bg.Setup(anchor, Tuning.BackgroundParallax, Tuning.BackgroundSize, false);
-            return;
-        }
-        // The far clouds are darkened and the near ones made more transparent,
-        // so the background stays behind the rocks instead of competing with them.
-        float b = Tuning.NebulaFarBrightness;
-        CreateRepeating("nebula_far", parent, anchor, Tuning.NebulaFarSize, Tuning.NebulaFarParallax, -200, 1.002f,
-            new Color(b * tint.r, b * tint.g, b * tint.b, 1f));
-        CreateRepeating("nebula_near", parent, anchor, Tuning.NebulaNearSize, Tuning.NebulaNearParallax, -145, 1f,
-            new Color(tint.r, tint.g, tint.b, Tuning.NebulaNearOpacity));
-    }
-
-    // 3x3 copies of a seamless picture. If the picture is missing, nothing is created (black sky).
-    static void CreateRepeating(string artName, Transform parent, Vector2 anchor, float size, float factor,
-        int sortingOrder, float tileScale, Color color)
-    {
-        var sprite = Art.Load(artName);
-        if (sprite == null) return;
-
-        var go = new GameObject(artName);
-        go.transform.SetParent(parent, false);
-        Vector2 b = sprite.bounds.size;
-        float scale = size / Mathf.Max(b.x, b.y) * tileScale;
-        for (int ix = -1; ix <= 1; ix++)
-        for (int iy = -1; iy <= 1; iy++)
-        {
-            var tile = new GameObject("Tile");
-            tile.transform.SetParent(go.transform, false);
-            tile.transform.localPosition = new Vector3(ix * size, iy * size, 0f);
-            tile.transform.localScale = new Vector3(scale, scale, 1f);
-            var sr = tile.AddComponent<SpriteRenderer>();
-            sr.sprite = sprite;
-            sr.color = color;
-            sr.sortingOrder = sortingOrder;
-        }
-        go.AddComponent<ParallaxBackground>().Setup(anchor, factor, size, true);
-    }
-
-    void Setup(Vector2 anchor, float factor, float size, bool repeats)
+    public void Setup(Vector2 anchor, float factor, float size, bool repeats)
     {
         this.anchor = anchor;
         this.factor = factor;

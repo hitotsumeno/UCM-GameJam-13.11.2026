@@ -1,43 +1,47 @@
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
-// Loads pictures from Assets/Resources/Art/<name>. If the file is missing the caller
+// Editor only: finds the artist's pictures in Assets/Resources/Art/<name> while the
+// prefabs are made (Filip > Rebuild Prefabs And Scene). If a file is missing the caller
 // draws a placeholder instead. Size in the game is set by code, not by the picture.
-// Variants: a number at the end of the name (asteroid_m1, asteroid_m2, ...);
-// a random one of the found files is used.
+// Variants: a number at the end of the name (asteroid_m1, asteroid_m2, ...).
 public static class Art
 {
-    static Dictionary<string, List<Sprite>> cache = new Dictionary<string, List<Sprite>>();
+    const string Folder = "Assets/Resources/Art/";
+    static readonly string[] Extensions = { ".png", ".jpg", ".jpeg", ".psd", ".tga" };
 
-    public static void ResetStatics()
+    // The picture called <name> and all of <name>1 .. <name>9 that exist.
+    public static List<Sprite> LoadAll(string name)
     {
-        cache = new Dictionary<string, List<Sprite>>();
+        var list = new List<Sprite>();
+        AddIfExists(list, name);
+        for (int i = 1; i <= 9; i++) AddIfExists(list, name + i);
+        return list;
     }
 
-    // Returns the picture called <name> or a random one of <name>1 .. <name>9. Null if there is none.
+    // A random one of LoadAll(name). Null if there is none.
     public static Sprite Load(string name)
     {
-        if (!cache.TryGetValue(name, out var list))
-        {
-            list = new List<Sprite>();
-            AddIfExists(list, name);
-            for (int i = 1; i <= 9; i++) AddIfExists(list, name + i);
-            cache[name] = list;
-        }
-        list.RemoveAll(s => s == null);
+        var list = LoadAll(name);
         if (list.Count == 0) return null;
         return list[Random.Range(0, list.Count)];
     }
 
-    // Returns the picture with exactly this name (no variants). Null if there is none.
+    // The picture with exactly this name (no variants). Null if there is none.
     public static Sprite LoadExact(string name)
     {
-        return Resources.Load<Sprite>("Art/" + name);
+        foreach (var ext in Extensions)
+        {
+            var s = AssetDatabase.LoadAssetAtPath<Sprite>(Folder + name + ext);
+            if (s != null) return s;
+        }
+        return null;
     }
 
     static void AddIfExists(List<Sprite> list, string name)
     {
-        var s = Resources.Load<Sprite>("Art/" + name);
+        var s = LoadExact(name);
         if (s != null) list.Add(s);
     }
 
@@ -47,8 +51,12 @@ public static class Art
     {
         var sprite = Load(name);
         if (sprite == null) return null;
+        return Make(name, sprite, parent, size, sortingOrder);
+    }
 
-        var go = new GameObject(name);
+    public static SpriteRenderer Make(string objectName, Sprite sprite, Transform parent, float size, int sortingOrder)
+    {
+        var go = new GameObject(objectName);
         go.transform.SetParent(parent, false);
         Vector2 b = sprite.bounds.size;
         float larger = Mathf.Max(b.x, b.y);

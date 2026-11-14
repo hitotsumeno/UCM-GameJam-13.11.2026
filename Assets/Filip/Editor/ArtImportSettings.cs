@@ -9,7 +9,6 @@ using UnityEngine;
 public class ArtImportSettings : AssetPostprocessor
 {
     const string ArtFolder = "Assets/Resources/Art/";
-    const string LevelsFolder = "Assets/Resources/Levels/";
 
     void OnPreprocessTexture()
     {
@@ -51,23 +50,5 @@ public class ArtImportSettings : AssetPostprocessor
             settings.spriteMeshType = SpriteMeshType.FullRect;
             importer.SetTextureSettings(settings);
         }
-    }
-
-    // When pictures are added, changed or removed, refresh the level preview.
-    static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
-    {
-        if (Touches(imported) || Touches(deleted) || Touches(moved) || Touches(movedFrom))
-            DraftPreview.Schedule();
-    }
-
-    // Pictures or level files changed?
-    static bool Touches(string[] paths)
-    {
-        foreach (var p in paths)
-        {
-            string path = p.Replace('\\', '/');
-            if (path.StartsWith(ArtFolder) || path.StartsWith(LevelsFolder)) return true;
-        }
-        return false;
     }
 }

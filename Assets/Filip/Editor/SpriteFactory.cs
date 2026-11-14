@@ -1,17 +1,14 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
 using UnityEngine;
 
-// Generates placeholder sprites in code. Every sprite is 1x1 unit;
-// size in the world is set with transform.localScale.
+// Editor only: simple shape sprites (circle, glow, ring, triangle, square) saved as PNG
+// files in Assets/Filip/Art/Shapes, so prefabs can reference them. Every sprite is
+// 1x1 unit; size in the world is set with transform.localScale.
 public static class SpriteFactory
 {
-    static Dictionary<string, Sprite> cache = new Dictionary<string, Sprite>();
-
-    public static void ResetStatics()
-    {
-        cache = new Dictionary<string, Sprite>();
-    }
+    public const string Folder = "Assets/Filip/Art/Shapes";
 
     // Filled circle.
     public static Sprite Circle()
@@ -65,12 +62,15 @@ public static class SpriteFactory
     }
 
     // alpha(x, y, size) returns 0..1 for the pixel center (x, y).
+    // The PNG is written once; later calls load the existing asset.
     static Sprite Build(string key, int size, Func<float, float, float, float> alpha)
     {
-        if (cache.TryGetValue(key, out var s) && s != null) return s;
+        string path = Folder + "/" + key + ".png";
+        var existing = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        if (existing != null) return existing;
+
+        Directory.CreateDirectory(Folder);
         var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-        tex.wrapMode = TextureWrapMode.Clamp;
-        tex.filterMode = size <= 4 ? FilterMode.Point : FilterMode.Bilinear;
         var pixels = new Color32[size * size];
         for (int y = 0; y < size; y++)
         for (int x = 0; x < size; x++)
@@ -80,10 +80,26 @@ public static class SpriteFactory
         }
         tex.SetPixels32(pixels);
         tex.Apply();
-        s = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
-        s.name = key;
-        cache[key] = s;
-        return s;
+        File.WriteAllBytes(path, tex.EncodeToPNG());
+        UnityEngine.Object.DestroyImmediate(tex);
+
+        AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+        var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.spritePixelsPerUnit = size;
+        importer.mipmapEnabled = false;
+        importer.alphaIsTransparency = true;
+        importer.wrapMode = TextureWrapMode.Clamp;
+        importer.filterMode = size <= 4 ? FilterMode.Point : FilterMode.Bilinear;
+        importer.textureCompression = TextureImporterCompression.Uncompressed;
+        var settings = new TextureImporterSettings();
+        importer.ReadTextureSettings(settings);
+        settings.spriteMeshType = SpriteMeshType.FullRect;
+        importer.SetTextureSettings(settings);
+        importer.SaveAndReimport();
+
+        return AssetDatabase.LoadAssetAtPath<Sprite>(path);
     }
 
     // Helper: child object with a sprite, color, size and draw order.

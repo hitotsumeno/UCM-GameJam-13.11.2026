@@ -1,32 +1,36 @@
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
-using UnityEngine.SceneManagement;
 
 public enum GameState { Playing, Won, Lost }
 
-// Runs the game. Everything is built from code, but only in the scene named DraftScene.
-// Levels come from text files (LevelData); the level objects are created by WorldBuilder.
+// Runs the game. Lives on the "DraftGame" object in DraftScene; the camera, the HUD
+// and the level prefabs are assigned in the Inspector. Nothing is built from code:
+// a level is an ordinary prefab, instantiated on start and destroyed on restart.
 public class DraftGame : MonoBehaviour
 {
-    public const string SceneName = "DraftScene";
-
     public static DraftGame Instance;
+
+    [SerializeField] Hud hud;
+    [SerializeField] CameraRig cameraRig;
+    [Tooltip("Level prefabs in play order")]
+    [SerializeField] Level[] levels;
+    [Tooltip("Level started when pressing Play (1 = first)")]
+    [SerializeField] int startLevel = 1;
+    [Tooltip("Prefab used by Bullet.Spawn when the caller has none")]
+    [SerializeField] Bullet bulletPrefab;
 
     public GameState State { get; private set; }
     public float Oxygen { get; private set; }
     public int Combo { get; private set; }
+    public Bullet BulletPrefab { get { return bulletPrefab; } }
 
     public Transform PlayerTransform
     {
-        get { return world != null && world.player != null ? world.player.transform : null; }
+        get { return level != null && level.player != null ? level.player.transform : null; }
     }
 
-    LevelWorld world;      // current level; null when cleared
-    CameraRig cameraRig;
-    Hud hud;
+    Level level;           // current level instance; null when cleared
     float comboTimer;
-    int levelIndex = 1;    // 1 = level1.txt
-    int levelCount;        // 0 = no level files: the random test ground is used
+    int levelIndex = 1;    // 1 = levels[0]
 
     // Reset static fields (works even when domain reload is disabled).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -34,26 +38,22 @@ public class DraftGame : MonoBehaviour
     {
         Instance = null;
         CameraRig.ResetStatics();
-        SpriteFactory.ResetStatics();
-        Art.ResetStatics();
-    }
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void Boot()
-    {
-        if (SceneManager.GetActiveScene().name != SceneName) return;
-        var go = new GameObject("DraftGame");
-        go.AddComponent<DraftGame>();
     }
 
     void Awake()
     {
         Instance = this;
-        EnsureGlobalLight();
-        SetupCamera();
-        hud = Hud.Create();
-        levelCount = LevelData.Count();
-        levelIndex = 1;
+    }
+
+    void Start()
+    {
+        if (levels == null || levels.Length == 0)
+        {
+            Debug.LogError("DraftGame: no level prefabs assigned.", this);
+            enabled = false;
+            return;
+        }
+        levelIndex = Mathf.Clamp(startLevel, 1, levels.Length);
         BuildWorld();
     }
 
@@ -64,6 +64,8 @@ public class DraftGame : MonoBehaviour
 
     void Update()
     {
+        if (level == null) return;
+
         // R restarts the current level at any moment.
         if (Input.GetKeyDown(KeyCode.R))
         {
@@ -74,28 +76,29 @@ public class DraftGame : MonoBehaviour
         // After docking, Enter goes to the next level (after the last one, back to the first).
         if (State == GameState.Won && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
         {
-            levelIndex = levelIndex < levelCount ? levelIndex + 1 : 1;
+            levelIndex = levelIndex < levels.Length ? levelIndex + 1 : 1;
             BuildWorld();
             return;
         }
 
         bool outside = false;
         string hint = null;
-        if (world != null && world.player != null)
+        if (level.player != null)
         {
-            Vector2 pos = world.player.transform.position;
-            outside = !world.bounds.Contains(pos);
-            if (world.ship != null) hud.SetCompass((Vector2)world.ship.position - pos);
+            Vector2 pos = level.player.transform.position;
+            outside = !level.bounds.Contains(pos);
+            if (level.ship != null) hud.SetCompass((Vector2)level.ship.position - pos);
 
-            float speed = world.player.Speed;
+            float speed = level.player.Speed;
             hud.SetSpeed(speed, speed <= Tuning.DockMaxSpeed);
 
             // The nearest hint place within reach decides which hint is shown.
             float best = Tuning.HintRadius;
-            for (int i = 0; i < world.hintPositions.Count; i++)
+            foreach (var h in level.Hints)
             {
-                float d = Vector2.Distance(pos, world.hintPositions[i]);
-                if (d < best) { best = d; hint = world.hintTexts[i]; }
+                if (h == null) continue;
+                float d = Vector2.Distance(pos, h.transform.position);
+                if (d < best) { best = d; hint = h.text; }
             }
         }
         hud.SetSignalLost(outside && State == GameState.Playing);
@@ -182,9 +185,9 @@ public class DraftGame : MonoBehaviour
     {
         if (State != GameState.Playing) return;
         State = GameState.Won;
-        if (world != null && world.player != null) world.player.Stop();
+        if (level != null && level.player != null) level.player.Stop();
 
-        bool last = levelIndex >= levelCount;
+        bool last = levelIndex >= levels.Length;
         string sub = "OXYGEN LEFT " + Mathf.RoundToInt(Oxygen) + "     "
             + (last ? "ALL LEVELS COMPLETE. PRESS ENTER TO PLAY AGAIN" : "PRESS ENTER FOR THE NEXT LEVEL");
         hud.ShowMessage("DOCKED", new Color(0.4f, 1f, 0.5f), sub);
@@ -197,70 +200,43 @@ public class DraftGame : MonoBehaviour
         hud.ShowMessage("OUT OF OXYGEN", new Color(1f, 0.35f, 0.3f), "PRESS R TO RESTART");
     }
 
-    // --- Scene setup ---
-
-    static void EnsureGlobalLight()
-    {
-        foreach (var l in FindObjectsByType<Light2D>(FindObjectsSortMode.None))
-            if (l.lightType == Light2D.LightType.Global) return;
-
-        var go = new GameObject("Global Light 2D");
-        var light = go.AddComponent<Light2D>();
-        light.lightType = Light2D.LightType.Global;
-        light.intensity = 1f;
-        light.color = Color.white;
-    }
-
-    void SetupCamera()
-    {
-        var cam = Camera.main;
-        if (cam == null)
-        {
-            var camGo = new GameObject("Main Camera");
-            camGo.tag = "MainCamera";
-            cam = camGo.AddComponent<Camera>();
-            camGo.transform.position = new Vector3(0f, 0f, -10f);
-        }
-        cam.orthographic = true;
-        cam.orthographicSize = Tuning.CameraSize;
-        cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = Color.black;
-
-        cameraRig = cam.GetComponent<CameraRig>();
-        if (cameraRig == null) cameraRig = cam.gameObject.AddComponent<CameraRig>();
-    }
-
-    // --- World ---
+    // --- Level ---
 
     public void ClearWorld()
     {
-        if (world != null && world.root != null)
+        if (level != null)
         {
             // Deactivate first: Destroy only happens at the end of the frame.
-            world.root.gameObject.SetActive(false);
-            Destroy(world.root.gameObject);
+            level.gameObject.SetActive(false);
+            Destroy(level.gameObject);
         }
-        world = null;
+        level = null;
     }
 
-    // Builds the current level. Also used for restart: clears everything and builds it again.
+    // Instantiates the current level prefab. Also used for restart: the old copy is destroyed.
     public void BuildWorld()
     {
         ClearWorld();
-        LevelData level = levelCount > 0 ? LevelData.Load(levelIndex) : null;
-        world = WorldBuilder.Build(level);
+        var prefab = levels[levelIndex - 1];
+        level = Instantiate(prefab);
+        level.name = prefab.name;
+        Asteroid.Bounds = level.bounds;
 
         State = GameState.Playing;
-        Oxygen = level != null ? Mathf.Clamp(level.oxygen, 1f, Tuning.OxygenMax) : Tuning.OxygenMax;
+        Oxygen = Mathf.Clamp(level.oxygen, 1f, Tuning.OxygenMax);
         hud.SetOxygen(Oxygen / Tuning.OxygenMax);
         hud.HideMessage();
         hud.SetSignalLost(false);
         hud.SetHint(null);
-        hud.ShowTitle(level != null ? "LEVEL " + level.index + ": " + level.name : null);
-        hud.SetCompass(world.ship.position - world.player.transform.position);
+        hud.ShowTitle("LEVEL " + levelIndex + ": " + level.levelName);
+        if (level.ship != null && level.player != null)
+            hud.SetCompass(level.ship.position - level.player.transform.position);
         BreakCombo();
 
-        cameraRig.target = world.player.transform;
-        cameraRig.SnapToTarget();
+        if (cameraRig != null && level.player != null)
+        {
+            cameraRig.target = level.player.transform;
+            cameraRig.SnapToTarget();
+        }
     }
 }

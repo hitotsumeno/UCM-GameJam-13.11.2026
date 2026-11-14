@@ -28,15 +28,20 @@
   в batchmode с -quit и -logFile.
 
 ## Архитектура
-- Всё создаётся из кода. Скрипт с [RuntimeInitializeOnLoadMethod] собирает
-  игру при запуске, но ТОЛЬКО если активная сцена называется DraftScene.
-  В других сценах он ничего не делает.
-- Объекты уровня строит WorldBuilder. Его же вызывает превью в редакторе
-  (Assets/Filip/Editor/DraftPreview.cs), которое показывает уровень без Play
-  (попросил программист). Поэтому код постройки уровня и Hud.Create должны
-  работать и в режиме редактирования: без Destroy(), без корутин, без Awake/Start.
-- Наша сцена: Assets/Filip/DraftScene.unity. Получи её копированием
-  Assets/Settings/Scenes/URP2DSceneTemplate.unity (без .meta).
+- Ветка filip/editor-objects: игра НЕ строится из кода при запуске. Всё лежит
+  в сцене и префабах, ссылки назначены в Inspector ([SerializeField]).
+  - Assets/Filip/DraftScene.unity: камера (CameraRig), Global Light 2D, HUD,
+    объект DraftGame (список префабов уровней, стартовый уровень).
+  - Assets/Filip/Prefabs/: Player, Bullet, Asteroid_*, Meteor_*, Ship,
+    OxygenTank, OxygenCrystal, Background. Уровни: Prefabs/Levels/LevelN.prefab
+    (корень с компонентом Level: имя, кислород, границы; HintMarker для подсказок;
+    MeteorSpawner на корне включает метеоры).
+  - Во время игры создаются только Instantiate префабов (уровень, пули,
+    кристаллы, осколки, метеоры). Рестарт: Destroy уровня и новый Instantiate.
+  - Меню Filip > Rebuild Prefabs And Scene (Editor/DraftSetup.cs) один раз
+    делает все префабы из кода и levelN.txt. Повторный запуск ПЕРЕЗАПИСЫВАЕТ
+    префабы и HUD/DraftGame в сцене. Art, SpriteFactory, LevelData теперь только
+    для редактора. Простые формы лежат в Assets/Filip/Art/Shapes.
 - Скрипты: Assets/Filip/Scripts/. Скрипты редактора: Assets/Filip/Editor/.
 - Картинки: Assets/Resources/Art/. Уровни: Assets/Resources/Levels/.
   Звук: Assets/Resources/Audio/.

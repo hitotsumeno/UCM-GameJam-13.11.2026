@@ -3,6 +3,8 @@ using UnityEngine;
 public enum AsteroidSize { Small, Medium, Large }
 
 // Drifts slowly, bounces off other asteroids and the player. Bullets break it.
+// Prefabs: Assets/Filip/Prefabs/Asteroid_Small / _Medium / _Large.
+// Scale the object to make one rock bigger or smaller: collider and mass follow.
 public class Asteroid : MonoBehaviour
 {
     static readonly Color DamagedColor = new Color(1f, 0.45f, 0.35f);
@@ -10,15 +12,26 @@ public class Asteroid : MonoBehaviour
     // Level area. Confined asteroids turn back at its edges, so they never fly away.
     public static Rect Bounds;
 
-    // Actual diameter of this rock in units (the class size times a random variation).
-    public float Size { get; private set; }
+    [SerializeField] AsteroidSize size;
+    [SerializeField] SpriteRenderer body;
+    [SerializeField] Rigidbody2D rb;
+    [Tooltip("Turns back at the level edges")]
+    [SerializeField] bool confined = true;
+    [Tooltip("A random one is used when this rock is spawned during play (splits, meteors)")]
+    [SerializeField] Sprite[] variants;
+    [Tooltip("Large rocks split into two of these when destroyed")]
+    [SerializeField] Asteroid splitPrefab;
+    [SerializeField] OxygenCrystal crystalPrefab;
 
-    AsteroidSize size;
     int hp, maxHp;
-    SpriteRenderer body;
     Color baseColor;
-    Rigidbody2D rb;
-    bool confined;
+    bool launched;
+
+    // Actual diameter of this rock in units (the class size times the object scale).
+    public float Size
+    {
+        get { return Diameter(size) * Mathf.Abs(transform.lossyScale.x); }
+    }
 
     public static float Diameter(AsteroidSize size)
     {
@@ -40,68 +53,64 @@ public class Asteroid : MonoBehaviour
         }
     }
 
-    static string ArtName(AsteroidSize size)
-    {
-        switch (size)
-        {
-            case AsteroidSize.Small: return "asteroid_s";
-            case AsteroidSize.Medium: return "asteroid_m";
-            default: return "asteroid_l";
-        }
-    }
-
-    public static Asteroid Create(AsteroidSize size, Vector2 position, Vector2 velocity, Transform parent,
+    // Spawns a rock during play with a random size variation, look and rotation.
+    public static Asteroid Spawn(Asteroid prefab, Vector2 position, Vector2 velocity, Transform parent,
         bool confined = true)
     {
-        // Every rock is a little bigger or smaller than its class size.
-        float d = Diameter(size) * Random.Range(Tuning.AsteroidSizeVariationMin, Tuning.AsteroidSizeVariationMax);
-        var go = new GameObject("Asteroid_" + size);
-        go.transform.SetParent(parent, false);
-        go.transform.position = position;
-        go.transform.rotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
-
-        // Picture (asteroid_s1, asteroid_m2, ...) or a placeholder: grey circle with two craters.
-        // The pictures are rendered so that a circle of 0.45 x picture size has the same area
-        // as the rock (see Assets/Filip/Tools~), so this collider fits every one of them.
-        float radius = d * 0.45f;
-        var body = Art.TryMake(ArtName(size), go.transform, d, 3);
-        if (body == null)
-        {
-            radius = d * 0.5f;
-            float shade = Random.Range(0.42f, 0.55f);
-            body = SpriteFactory.MakeSprite("Body", go.transform, SpriteFactory.Circle(),
-                new Color(shade, shade * 0.95f, shade * 0.9f), Vector2.one * d, 3);
-            var crater1 = SpriteFactory.MakeSprite("Crater", go.transform, SpriteFactory.Circle(),
-                new Color(0f, 0f, 0f, 0.25f), Vector2.one * d * 0.3f, 4);
-            crater1.transform.localPosition = new Vector3(d * 0.18f, d * 0.12f, 0f);
-            var crater2 = SpriteFactory.MakeSprite("Crater", go.transform, SpriteFactory.Circle(),
-                new Color(0f, 0f, 0f, 0.25f), Vector2.one * d * 0.2f, 4);
-            crater2.transform.localPosition = new Vector3(-d * 0.2f, -d * 0.15f, 0f);
-        }
-
-        var rb = go.AddComponent<Rigidbody2D>();
-        rb.gravityScale = 0f;
-        rb.mass = Tuning.AsteroidDensity * d * d;
-        rb.linearDamping = 0f;
-        rb.angularDamping = 0f;
-        rb.interpolation = RigidbodyInterpolation2D.Interpolate;
-        rb.linearVelocity = velocity;
-        rb.angularVelocity = Random.Range(-Tuning.AsteroidSpin, Tuning.AsteroidSpin);
-
-        var col = go.AddComponent<CircleCollider2D>();
-        col.radius = radius;
-        col.sharedMaterial = new PhysicsMaterial2D("Asteroid") { friction = 0f, bounciness = Tuning.Bounciness };
-
-        var a = go.AddComponent<Asteroid>();
-        a.size = size;
-        a.Size = d;
-        a.maxHp = HitPoints(size);
-        a.hp = a.maxHp;
-        a.body = body;
-        a.baseColor = body.color;
-        a.rb = rb;
+        var a = Instantiate(prefab, position, Quaternion.Euler(0f, 0f, Random.Range(0f, 360f)), parent);
+        float s = Random.Range(Tuning.AsteroidSizeVariationMin, Tuning.AsteroidSizeVariationMax);
+        a.transform.localScale = new Vector3(s, s, 1f);
         a.confined = confined;
+        a.PickRandomLook();
+        a.Launch(velocity);
         return a;
+    }
+
+    void Reset()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        body = GetComponentInChildren<SpriteRenderer>();
+    }
+
+    void Awake()
+    {
+        maxHp = HitPoints(size);
+        hp = maxHp;
+        baseColor = body.color;
+    }
+
+    void Start()
+    {
+        float d = Size;
+        rb.mass = Tuning.AsteroidDensity * d * d;
+
+        // Rocks placed in the level get a random drift: some barely move, others fly noticeably.
+        if (!launched)
+        {
+            var level = GetComponentInParent<Level>();
+            float moverChance = level != null ? level.movers : 0f;
+            bool mover = Random.value < moverChance;
+            float speed = mover
+                ? Random.Range(Tuning.AsteroidMoveSpeedMin, Tuning.AsteroidMoveSpeedMax)
+                : Random.Range(Tuning.AsteroidDriftMin, Tuning.AsteroidDriftMax);
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            rb.linearVelocity = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed;
+        }
+        rb.angularVelocity = Random.Range(-Tuning.AsteroidSpin, Tuning.AsteroidSpin);
+    }
+
+    // Sets the starting velocity (otherwise a random drift is chosen in Start).
+    public void Launch(Vector2 velocity)
+    {
+        launched = true;
+        rb.linearVelocity = velocity;
+    }
+
+    public void PickRandomLook()
+    {
+        if (variants == null || variants.Length == 0) return;
+        var s = variants[Random.Range(0, variants.Length)];
+        if (s != null) body.sprite = s;
     }
 
     public void SetTint(Color tint)
@@ -140,17 +149,17 @@ public class Asteroid : MonoBehaviour
                      : size == AsteroidSize.Medium ? Tuning.CrystalsFromMedium
                      : Tuning.CrystalsFromLarge;
         float worth = Tuning.CrystalOxygen * (1f + Tuning.ComboBonusPerStep * (combo - 1));
-        OxygenCrystal.Burst(transform.position, crystals, worth, transform.parent);
+        OxygenCrystal.Burst(crystalPrefab, transform.position, crystals, worth, transform.parent);
 
-        if (size == AsteroidSize.Large)
+        if (splitPrefab != null)
         {
             Vector2 dir = Random.insideUnitCircle.normalized;
             if (dir == Vector2.zero) dir = Vector2.right;
             Vector2 pos = transform.position;
-            float offset = Diameter(AsteroidSize.Medium) * 0.5f;
+            float offset = splitPrefab.Size * 0.5f;
             Vector2 push = dir * Tuning.AsteroidSplitSpeed;
-            Create(AsteroidSize.Medium, pos + dir * offset, rb.linearVelocity + push, transform.parent, confined);
-            Create(AsteroidSize.Medium, pos - dir * offset, rb.linearVelocity - push, transform.parent, confined);
+            Spawn(splitPrefab, pos + dir * offset, rb.linearVelocity + push, transform.parent, confined);
+            Spawn(splitPrefab, pos - dir * offset, rb.linearVelocity - push, transform.parent, confined);
         }
         Destroy(gameObject);
     }

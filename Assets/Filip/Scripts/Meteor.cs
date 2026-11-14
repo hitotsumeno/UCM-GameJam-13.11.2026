@@ -2,39 +2,28 @@ using UnityEngine;
 
 // A fast asteroid flying down at the player. It has a fiery tail, and while it is
 // still above the screen a red marker at the top edge shows where it will come from.
+// Prefabs: Assets/Filip/Prefabs/Meteor_Small / _Medium (an Asteroid with this component).
 [DefaultExecutionOrder(100)] // after CameraRig has moved the camera
 public class Meteor : MonoBehaviour
 {
-    Rigidbody2D rb;
-    Transform tail;
-    Transform warning;
-    float diameter;
+    [SerializeField] Asteroid asteroid;
+    [SerializeField] Rigidbody2D rb;
+    [SerializeField] Transform tail;
+    [SerializeField] Transform warning;
+
     float age;
     Camera cam;
 
-    public static Meteor Create(Vector2 position, Vector2 velocity, Transform parent)
+    void Reset()
     {
-        var size = Random.value < Tuning.MeteorMediumChance ? AsteroidSize.Medium : AsteroidSize.Small;
-        var asteroid = Asteroid.Create(size, position, velocity, parent, false);
-        asteroid.SetTint(new Color(1f, 0.7f, 0.5f));
-        asteroid.gameObject.name = "Meteor";
+        asteroid = GetComponent<Asteroid>();
+        rb = GetComponent<Rigidbody2D>();
+    }
 
-        var m = asteroid.gameObject.AddComponent<Meteor>();
-        m.rb = asteroid.GetComponent<Rigidbody2D>();
-        m.diameter = asteroid.Size;
-
-        // Hot glow around the rock and a soft fiery streak behind it (both drawn under the rock).
-        SpriteFactory.MakeSprite("Heat", m.transform, SpriteFactory.Glow(),
-            new Color(1f, 0.5f, 0.15f, Tuning.MeteorHeatOpacity), Vector2.one * m.diameter * Tuning.MeteorHeatSize, 1);
-        m.tail = SpriteFactory.MakeSprite("Tail", m.transform, SpriteFactory.Glow(),
-            new Color(1f, 0.6f, 0.2f, 0.6f), new Vector2(m.diameter * 1.1f, m.diameter * 5f), 2).transform;
-
-        m.warning = SpriteFactory.MakeSprite("Warning", m.transform, SpriteFactory.Triangle(),
-            new Color(1f, 0.3f, 0.25f), Vector2.one * Tuning.MeteorWarningSize, 30).transform;
-        m.warning.gameObject.SetActive(false);
-
-        m.Place();
-        return m;
+    void Start()
+    {
+        warning.gameObject.SetActive(false);
+        Place();
     }
 
     void LateUpdate()
@@ -51,6 +40,7 @@ public class Meteor : MonoBehaviour
     // The asteroid spins, so the tail and the marker are placed in world space every frame.
     void Place()
     {
+        float diameter = asteroid.Size;
         Vector2 pos = transform.position;
         Vector2 v = rb.linearVelocity;
         Vector2 dir = v.sqrMagnitude > 0.01f ? v.normalized : Vector2.down;

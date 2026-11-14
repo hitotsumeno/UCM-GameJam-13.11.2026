@@ -1,33 +1,31 @@
 using UnityEngine;
 
 // From time to time launches a meteor from above the screen down at the player.
+// Add it to a level root to turn meteors on for that level; disable or remove it to turn them off.
 public class MeteorSpawner : MonoBehaviour
 {
-    Transform player;
-    float timer;
-    float intervalMin, intervalMax;
+    [SerializeField] Asteroid smallMeteorPrefab;
+    [SerializeField] Asteroid mediumMeteorPrefab;
+    [Tooltip("Seconds between meteors")]
+    public float intervalMin = Tuning.MeteorIntervalMin;
+    public float intervalMax = Tuning.MeteorIntervalMax;
 
-    // intervalMin..intervalMax: seconds between meteors (set per level).
-    public static MeteorSpawner Create(Transform parent, Transform player, float intervalMin, float intervalMax)
+    float timer;
+
+    void Start()
     {
-        var go = new GameObject("MeteorSpawner");
-        go.transform.SetParent(parent, false);
-        var s = go.AddComponent<MeteorSpawner>();
-        s.player = player;
-        s.intervalMin = intervalMin;
-        s.intervalMax = intervalMax;
-        s.timer = Tuning.MeteorFirstDelay;
-        return s;
+        timer = Tuning.MeteorFirstDelay;
     }
 
     void Update()
     {
         var game = DraftGame.Instance;
+        Transform player = game != null ? game.PlayerTransform : null;
         if (game == null || game.State != GameState.Playing || player == null) return;
 
         timer -= Time.deltaTime;
         if (timer > 0f) return;
-        timer = Random.Range(intervalMin, intervalMax);
+        timer = Random.Range(intervalMin, Mathf.Max(intervalMin, intervalMax));
 
         var cam = Camera.main;
         if (cam == null) return;
@@ -38,6 +36,10 @@ public class MeteorSpawner : MonoBehaviour
         var velocity = new Vector2(
             Random.Range(-Tuning.MeteorSideSpeed, Tuning.MeteorSideSpeed),
             -Random.Range(Tuning.MeteorSpeedMin, Tuning.MeteorSpeedMax));
-        Meteor.Create(pos, velocity, transform.parent);
+
+        var prefab = Random.value < Tuning.MeteorMediumChance ? mediumMeteorPrefab : smallMeteorPrefab;
+        if (prefab == null) prefab = smallMeteorPrefab != null ? smallMeteorPrefab : mediumMeteorPrefab;
+        if (prefab == null) return;
+        Asteroid.Spawn(prefab, pos, velocity, transform, false);
     }
 }
