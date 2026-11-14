@@ -285,7 +285,7 @@ public class DraftGame : MonoBehaviour
         Breaches = 0;
         hud.SetBreaches(0);
         Oxygen = Mathf.Clamp(level.oxygen, 1f, T.OxygenMax);
-        hud.SetOxygen(Oxygen / T.OxygenMax);
+        hud.ResetOxygen(Oxygen / T.OxygenMax);
         hud.HideMessage();
         hud.SetSignalLost(false);
         hud.ShowTitle(levelIndex + "/" + levels.Length + "  " + level.levelName);

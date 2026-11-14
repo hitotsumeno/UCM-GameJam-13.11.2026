@@ -1013,8 +1013,8 @@ public static class DraftSetup
         var so = new SerializedObject(hud);
         Transform root = go.transform;
 
-        var tankIcon = SpriteFactory.PixelIcon("tank", PixelFont.Tank);
-        var dropIcon = SpriteFactory.PixelIcon("drop", PixelFont.Drop);
+        var o2Icon = SpriteFactory.PixelIcon("o2", PixelFont.O2);
+        var crackIcon = SpriteFactory.PixelIcon("crack", PixelFont.Crack);
         var arrowIcon = SpriteFactory.PixelIcon("arrow", PixelFont.Arrow);
 
         // Red tint over the whole screen while outside the level (created first = drawn behind the rest).
@@ -1028,29 +1028,32 @@ public static class DraftSetup
         Stretch(flash.rectTransform);
         Ref(so, "damageFlash", flash);
 
-        // Air, top-left: tank icon, a bar cut into cells and a row of red drops (one per leak).
-        var tank = MakeIcon("AirIcon", root, tankIcon, 5, Color.white, true);
-        Place(tank.rectTransform, TopLeft, new Vector2(40f, -32f));
+        // Air, top-left: "O2", a bar cut into cells and a row of red cracks (one per leak).
+        // The first quarter of the bar has reddish empty cells: below that line air is low.
+        var o2 = MakeIcon("AirIcon", root, o2Icon, 5, Color.white, true);
+        Place(o2.rectTransform, TopLeft, new Vector2(40f, -30f));
+        Ref(so, "airIcon", o2);
 
-        const float cellW = 12f, cellH = 26f, gap = 3f;
+        const float barX = 100f, cellW = 12f, cellH = 26f, gap = 3f;
         var cells = new Object[AirCells];
         for (int i = 0; i < AirCells; i++)
         {
             var cell = MakeImage("AirCell", root, AirColor);
-            Place(cell.rectTransform, TopLeft, new Vector2(92f + i * (cellW + gap), -40f), new Vector2(cellW, cellH));
+            Place(cell.rectTransform, TopLeft, new Vector2(barX + i * (cellW + gap), -38f), new Vector2(cellW, cellH));
+            AddShadow(cell.gameObject, 4);
             cells[i] = cell;
         }
         RefArray(so, "airCells", cells);
 
-        var drops = new Object[tune.BreachMax];
-        for (int i = 0; i < drops.Length; i++)
+        var marks = new Object[tune.BreachMax];
+        for (int i = 0; i < marks.Length; i++)
         {
-            var drop = MakeIcon("Leak", root, dropIcon, 4, BadColor, true);
-            Place(drop.rectTransform, TopLeft, new Vector2(92f + i * 30f, -76f));
-            drop.gameObject.SetActive(false);
-            drops[i] = drop.gameObject;
+            var mark = MakeIcon("Leak", root, crackIcon, 4, BadColor, true);
+            Place(mark.rectTransform, TopLeft, new Vector2(barX + i * 28f, -74f));
+            mark.gameObject.SetActive(false);
+            marks[i] = mark.gameObject;
         }
-        RefArray(so, "leakDrops", drops);
+        RefArray(so, "leakMarks", marks);
 
         // Combo, top-right, with a thin bar: the time left to continue it.
         var combo = new GameObject("Combo", typeof(RectTransform)).GetComponent<RectTransform>();
@@ -1093,14 +1096,14 @@ public static class DraftSetup
         toast.gameObject.SetActive(false);
         Ref(so, "toast", toast);
 
-        BuildEndScreen(so, root, tankIcon);
+        BuildEndScreen(so, root, o2Icon);
 
         so.ApplyModifiedPropertiesWithoutUndo();
         return hud;
     }
 
     // End of a level: dark veil, big word, air left (after docking) and the key to press.
-    static void BuildEndScreen(SerializedObject so, Transform root, Sprite tankIcon)
+    static void BuildEndScreen(SerializedObject so, Transform root, Sprite o2Icon)
     {
         var veil = MakeImage("EndScreen", root, new Color(0f, 0f, 0.03f, 0.55f));
         Stretch(veil.rectTransform);
@@ -1119,7 +1122,7 @@ public static class DraftSetup
         row.SetParent(t, false);
         Place(row, Middle, new Vector2(0f, -50f), Vector2.zero);
         Ref(so, "endAirRow", row.gameObject);
-        var icon = MakeIcon("Icon", row, tankIcon, 5, AirColor, true);
+        var icon = MakeIcon("Icon", row, o2Icon, 5, AirColor, true);
         Place(icon.rectTransform, Middle, new Vector2(-50f, 0f));
         Ref(so, "endAirIcon", icon.rectTransform);
         var air = MakeLabel("Number", row, "43", 6, Color.white, true);

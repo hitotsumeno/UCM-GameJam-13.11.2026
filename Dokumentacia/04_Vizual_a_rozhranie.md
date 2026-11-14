@@ -8,12 +8,12 @@ odstránené: tím chcel rozhranie, ktoré nepôsobí strojovo a neruší.
 **Písmo.** Hra má vlastné pixelové písmo 5 × 7 bodov, nakreslené priamo v kóde
 (`Assets/_Scripts/PixelFont.cs`). Pozná iba veľké latinské písmená, číslice
 a znaky `- . : / + !`. Systémové písmo ani TextMesh Pro sa v hre nepoužívajú.
-Ikony (fľaša, kvapka, šípka) sú nakreslené rovnakým spôsobom.
+Ikony (nápis O₂, trhlina, šípka) sú nakreslené rovnakým spôsobom.
 
 | Miesto | Čo ukazuje |
 |---|---|
-| Vľavo hore | ikona fľaše a ukazovateľ vzduchu z 20 dielikov. Normálne je azúrový, pri úniku vzduchu oranžový, pod 25 % červený a bliká. Pri zbere kryštálu krátko zabliká nabielo. |
-| Pod ukazovateľom | červené kvapky: jedna za každú trhlinu v trupe |
+| Vľavo hore | nápis O₂ a ukazovateľ vzduchu z 20 dielikov (1 dielik = 5 kyslíka). Normálne je azúrový ako všetko, čo dáva vzduch, pri úniku vzduchu oranžový, pod 25 % červený a bliká (aj nápis O₂). Prázdne dieliky v prvej štvrtine sú jemne červenkasté: tam začína nebezpečenstvo. Keď loď stratí veľa vzduchu naraz (náraz, čierna diera, rýchle pristátie), stratená časť chvíľu zostane bledá a potom zmizne, takže je vidieť, koľko to stálo. Novo získaný vzduch (kryštály, fľaša) chvíľu svieti nabielo. |
+| Pod ukazovateľom | červené trhliny: jedna za každú trhlinu v trupe |
 | Vpravo hore | séria „X2“ až „X5“ a pod ňou tenký pásik so zostávajúcim časom série |
 | Okraj obrazovky | zelená šípka smerom k cieľovej lodi a vzdialenosť k nej; zmizne, keď je loď v zábere |
 | Hore v strede | na začiatku úrovne „1/3 ROCKS“ (tri sekundy, potom pomaly zmizne) |
@@ -22,7 +22,7 @@ Ikony (fľaša, kvapka, šípka) sú nakreslené rovnakým spôsobom.
 
 **Koniec úrovne.** Obrazovka stmavne a v strede sa ukáže:
 
-- pri úspechu: malé počítadlo „2/3“, veľké zelené „DOCKED“, ikona fľaše so zostávajúcim
+- pri úspechu: malé počítadlo „2/3“, veľké zelené „DOCKED“, nápis O₂ so zostávajúcim
   vzduchom a kláves „ENTER“ v rámčeku (ako klávesa na klávesnici);
 - pri prehre: veľké červené „OUT OF AIR“ alebo „CRASHED“ a kláves „R“ v rámčeku.
 

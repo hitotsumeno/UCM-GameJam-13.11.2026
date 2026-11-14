@@ -34,11 +34,13 @@ public static class PixelFont
     };
 
     // Icons, row by row from the top. '#' is a lit pixel.
-    public static readonly string[] Tank =
+    // "O2" with a small, lowered 2: the air.
+    public static readonly string[] O2 =
     {
-        "..###..", "..#.#..", ".#####.", "#######", "#.#####", "#.#####", "#.#####", "#######", ".#####.",
+        ".###.....", "#...#....", "#...#....", "#...#....", "#...#.###", "#...#...#", ".###..###", "......#..", "......###",
     };
-    public static readonly string[] Drop = { "..#..", "..#..", ".###.", "#####", "#####", ".###." };
+    // A crack in the hull: one per leak.
+    public static readonly string[] Crack = { "...#.", "..#..", ".##..", "...#.", "..##.", ".#...", "#...." };
     public static readonly string[] Arrow = { "...#...", "..###..", ".#####.", "#######", "..###..", "..###..", "..###.." };
 
     static Dictionary<string, Texture2D> cache = new Dictionary<string, Texture2D>();

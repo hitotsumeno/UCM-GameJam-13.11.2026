@@ -94,7 +94,7 @@
 | `Blast.cs` | záblesk výbuchu |
 | `Ship.cs` | cieľová loď: dotyk a krúžok pri pristávaní |
 | `CameraRig.cs` | sledovanie lode a trasenie kamery |
-| `Hud.cs` | rozhranie: vzduch, kvapky trhlín, séria, šípka, nápisy, koniec úrovne |
+| `Hud.cs` | rozhranie: vzduch, značky trhlín, séria, šípka, nápisy, koniec úrovne |
 | `PixelFont.cs` | pixelové písmo 5 × 7 a pixelové ikony |
 | `PixelLabel.cs` | jeden riadok textu pixelovým písmom (funguje aj v editore) |
 | `ParallaxBackground.cs` | jedna vrstva pozadia s paralaxou (opakujúca sa, obmedzená alebo voľná) |

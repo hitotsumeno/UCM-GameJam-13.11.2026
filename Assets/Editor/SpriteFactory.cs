@@ -62,7 +62,7 @@ public static class SpriteFactory
         return Build("square", 4, (x, y, size) => 1f);
     }
 
-    // A pixel icon for the interface, drawn from rows of '#' (see PixelFont.Tank).
+    // A pixel icon for the interface, drawn from rows of '#' (see PixelFont.O2).
     // Saved as icon_<key>.png with hard pixels; one icon pixel = one sprite pixel.
     public static Sprite PixelIcon(string key, string[] rows)
     {

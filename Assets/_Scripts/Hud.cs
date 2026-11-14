@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // On-screen interface. Icons and numbers instead of sentences:
-//   top-left     tank icon + air bar cut into cells, red drops = leaks in the hull
+//   top-left     "O2" + air bar cut into cells, red cracks = leaks in the hull
 //   top-right    combo
 //   screen edge  arrow to the ship with the distance (hidden while the ship is in view)
 // All lettering is the game's own pixel font (PixelLabel / PixelFont).
@@ -14,8 +14,14 @@ public class Hud : MonoBehaviour
     static readonly Color LeakingColor = new Color(1f, 0.62f, 0.3f);
     static readonly Color BadColor = new Color(1f, 0.35f, 0.3f);
     static readonly Color EmptyCell = new Color(1f, 1f, 1f, 0.16f);
+    static readonly Color EmptyDanger = new Color(1f, 0.32f, 0.25f, 0.27f); // empty cells below LowAir
+    static readonly Color LostColor = new Color(1f, 0.75f, 0.7f);           // air just lost in one go
 
-    const float LowAir = 0.25f;   // below this share the bar turns red and blinks
+    const float LowAir = 0.25f;     // below this share the bar turns red and blinks
+    const float ChunkLoss = 0.015f; // a drop bigger than this at once leaves a pale tail (a shot costs 0.01)
+    const float TrailHold = 0.35f;  // seconds the tail stays before it runs out
+    const float TrailSpeed = 0.6f;  // how fast the tail runs out (bar shares per second)
+    const float GainTime = 0.6f;    // seconds newly gained air stays bright
 
     [Tooltip("Balance numbers: Assets/_Settings/Tuning.asset")]
     [SerializeField] Tuning tuning;
@@ -24,8 +30,10 @@ public class Hud : MonoBehaviour
     [Header("Air")]
     [Tooltip("Cells of the air bar, left to right")]
     [SerializeField] Image[] airCells;
-    [Tooltip("Red drops under the bar, one per hull breach")]
-    [SerializeField] GameObject[] leakDrops;
+    [Tooltip("The O2 sign in front of the bar; turns red and blinks when air is low")]
+    [SerializeField] Image airIcon;
+    [Tooltip("Red cracks under the bar, one per hull breach")]
+    [SerializeField] GameObject[] leakMarks;
 
     [Header("Whole screen")]
     [SerializeField] Image damageFlash;
@@ -57,7 +65,10 @@ public class Hud : MonoBehaviour
 
     RectTransform canvasRect;
     float airFraction = 1f;
-    float airFlash;
+    float trail = 1f;       // where the pale tail of lost air ends
+    float trailHold;
+    float gainFrom = -1f;   // newly gained air starts here (-1 = none)
+    float gainTimer;
     bool leaking;
     float damageTimer;
     int shownDistance = -1;
@@ -82,7 +93,13 @@ public class Hud : MonoBehaviour
 
     void Update()
     {
-        if (airFlash > 0f) airFlash = Mathf.Max(0f, airFlash - Time.deltaTime * 4f);
+        if (trailHold > 0f) trailHold -= Time.deltaTime;
+        else if (trail > airFraction) trail = Mathf.Max(airFraction, trail - TrailSpeed * Time.deltaTime);
+        if (gainTimer > 0f)
+        {
+            gainTimer -= Time.deltaTime;
+            if (gainTimer <= 0f) gainFrom = -1f;
+        }
         PaintAir();
 
         if (damageTimer > 0f)
@@ -112,39 +129,82 @@ public class Hud : MonoBehaviour
 
     // --- Air ---
 
+    // fraction: air left, 0..1. A big loss at once leaves a pale tail that runs out a moment
+    // later (the player sees how much a hit cost); gained air stays bright for a moment.
     public void SetOxygen(float fraction)
     {
-        airFraction = Mathf.Clamp01(fraction);
+        fraction = Mathf.Clamp01(fraction);
+        if (airFraction - fraction > ChunkLoss)
+        {
+            trail = Mathf.Max(trail, airFraction);
+            trailHold = TrailHold;
+        }
+        else if (fraction < airFraction)
+        {
+            if (trailHold <= 0f) trail = fraction;   // ordinary slow drain: no tail
+        }
+        else if (fraction > airFraction + 0.0001f)
+        {
+            if (gainFrom < 0f || gainFrom > airFraction) gainFrom = airFraction;
+            gainTimer = GainTime;
+        }
+        airFraction = fraction;
+        if (trail < fraction) trail = fraction;
         PaintAir();
     }
 
-    // The air bar flashes white when a crystal is collected.
+    // Start of a level: the bar jumps to the new value without a tail or a highlight.
+    public void ResetOxygen(float fraction)
+    {
+        airFraction = Mathf.Clamp01(fraction);
+        trail = airFraction;
+        trailHold = 0f;
+        gainFrom = -1f;
+        gainTimer = 0f;
+        PaintAir();
+    }
+
+    // A crystal was collected: keep the gained part bright a little longer.
     public void FlashOxygen()
     {
-        airFlash = 1f;
+        if (gainFrom >= 0f) gainTimer = GainTime;
     }
 
     void PaintAir()
     {
         bool low = airFraction < LowAir;
+        bool dim = low && !Blink(5f);
         Color full = low ? BadColor : (leaking ? LeakingColor : AirColor);
-        if (low && !Blink(5f)) full.a = 0.45f;
-        full = Color.Lerp(full, Color.white, airFlash);
+        if (dim) full.a = 0.45f;
+        if (airIcon != null) airIcon.color = low ? (dim ? new Color(1f, 0.35f, 0.3f, 0.45f) : BadColor) : Color.white;
 
-        float lit = airFraction * airCells.Length;
-        for (int i = 0; i < airCells.Length; i++)
+        int n = airCells.Length;
+        float lit = airFraction * n, tail = trail * n;
+        float gainStart = gainFrom >= 0f ? gainFrom * n : float.MaxValue;
+        float glow = Mathf.Clamp01(gainTimer / GainTime);
+        for (int i = 0; i < n; i++)
         {
             float share = Mathf.Clamp01(lit - i);            // 1 = full cell, 0 = empty
-            airCells[i].color = share <= 0f ? EmptyCell : Color.Lerp(EmptyCell, full, 0.35f + 0.65f * share);
+            Color empty = i < n * LowAir ? EmptyDanger : EmptyCell;
+            Color c;
+            if (share > 0f)
+            {
+                c = Color.Lerp(empty, full, 0.35f + 0.65f * share);
+                if (i + 1 > gainStart) c = Color.Lerp(c, Color.white, 0.75f * glow); // just gained
+            }
+            else if (tail - i > 0f) c = LostColor;              // just lost
+            else c = empty;
+            airCells[i].color = c;
         }
     }
 
-    // count: holes in the hull. One red drop each; the air bar turns orange while it leaks.
+    // count: holes in the hull. One red crack each; the air bar turns orange while it leaks.
     public void SetBreaches(int count)
     {
         leaking = count > 0;
-        for (int i = 0; i < leakDrops.Length; i++)
-            leakDrops[i].SetActive(i < count);
+        if (leakMarks != null)   // empty until Filip > Rebuild Prefabs And Scene has made the HUD
+            for (int i = 0; i < leakMarks.Length; i++)
+                if (leakMarks[i] != null) leakMarks[i].SetActive(i < count);
         PaintAir();
     }
 

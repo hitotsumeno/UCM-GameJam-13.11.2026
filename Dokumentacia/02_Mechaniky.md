@@ -91,7 +91,7 @@ Hra nemá životy ani okamžité tresty. Tvrdý úder prederaví trup:
   Z nej strieľa prúd vzduchu (biele obláčiky), ktorý sa otáča spolu s loďou.
 - Každá trhlina zrýchli úbytok kyslíka o **1** za sekundu. Najviac **5** trhlín.
 - Obrazovka sa červeno zableskne, kamera sa silno zatrasie, pod ukazovateľom vzduchu
-  pribudne červená kvapka a ukazovateľ zoranžovie.
+  pribudne červená trhlina a ukazovateľ zoranžovie.
 - Séria sa zruší.
 - Trhliny vydržia do konca úrovne, ak ich hráč nezaplátá fľašou.
 
