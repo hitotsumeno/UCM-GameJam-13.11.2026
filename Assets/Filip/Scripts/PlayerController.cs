@@ -83,12 +83,12 @@ public class PlayerController : MonoBehaviour
         get { return rb.linearVelocity.magnitude; }
     }
 
-    // Puts the player at a point, standing still (restart from a checkpoint).
-    public void Teleport(Vector2 position)
+    // Puts the player at a point, already flying (thrown out of a wormhole).
+    public void Launch(Vector2 position, Vector2 velocity)
     {
         transform.position = position;
         rb.position = position;
-        rb.linearVelocity = Vector2.zero;
+        rb.linearVelocity = velocity;
     }
 
     // Called on docking: the astronaut stops drifting.

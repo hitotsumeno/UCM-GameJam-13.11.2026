@@ -23,6 +23,7 @@ public class BlackHole : MonoBehaviour
     public static void ResetStatics()
     {
         All.Clear();
+        immuneUntil = 0f;
     }
 
     // big: a large still hole with rocks circling it.
@@ -83,17 +84,10 @@ public class BlackHole : MonoBehaviour
                 Color.black, Vector2.one * bodyRadius * 2f, 4);
         }
 
-        // Dotted circle: the edge of the pull.
-        var edge = new GameObject("FieldEdge").transform;
-        edge.SetParent(go.transform, false);
-        int dots = Mathf.RoundToInt(fieldRadius * 4f);
-        for (int i = 0; i < dots; i++)
-        {
-            float a = Mathf.PI * 2f * i / dots;
-            var dot = SpriteFactory.MakeSprite("Dot", edge, SpriteFactory.Circle(),
-                new Color(0.75f, 0.6f, 1f, 0.35f), Vector2.one * 0.2f, -40);
-            dot.transform.localPosition = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f) * fieldRadius;
-        }
+        // Soft warm haze that gets denser toward the hole: where it is visible, the hole pulls.
+        // (It replaced a dotted circle that looked like scattered dots and explained nothing.)
+        SpriteFactory.MakeSprite("PullHaze", go.transform, SpriteFactory.Glow(),
+            new Color(1f, 0.55f, 0.3f, 0.2f), Vector2.one * fieldRadius * 2f, -41);
         return hole;
     }
 
@@ -121,6 +115,38 @@ public class BlackHole : MonoBehaviour
         return Vector2.Distance(transform.position, position) < bodyRadius + margin;
     }
 
+    // Falling into a hole is not death: the hole is a wormhole. It spits the player out of
+    // one of the two nearest other holes, at speed, with a breached hull and some air lost.
+    // It may throw them forward or back: a gamble, not a shortcut.
+    void ThrowThroughWormhole(PlayerController player)
+    {
+        var game = DraftGame.Instance;
+        if (game == null || game.State != GameState.Playing) return;
+        if (Time.time < immuneUntil) return; // just came out of a hole: cannot fall in again right away
+        immuneUntil = Time.time + Tuning.WormholeImmunity;
+
+        // The two nearest other holes; one of them is the exit.
+        BlackHole first = null, second = null;
+        float d1 = float.MaxValue, d2 = float.MaxValue;
+        foreach (var other in All)
+        {
+            if (other == this) continue;
+            float d = Vector2.Distance(other.transform.position, transform.position);
+            if (d < d1) { second = first; d2 = d1; first = other; d1 = d; }
+            else if (d < d2) { second = other; d2 = d; }
+        }
+        BlackHole exit = first == null ? this : (second != null && Random.value < 0.5f ? second : first);
+
+        Vector2 dir = Random.insideUnitCircle.normalized;
+        if (dir == Vector2.zero) dir = Vector2.up;
+        Vector2 from = transform.position;
+        Vector2 to = (Vector2)exit.transform.position + dir * (exit.bodyRadius + 2.5f);
+        player.Launch(to, dir * Tuning.WormholeExitSpeed);
+        game.ThrownThroughWormhole(from, to);
+    }
+
+    static float immuneUntil;
+
     void FixedUpdate()
     {
         if (drifts)
@@ -141,10 +167,7 @@ public class BlackHole : MonoBehaviour
 
             if (Swallows(body.position, player != null ? Tuning.PlayerDiameter * 0.2f : 0f))
             {
-                if (player != null)
-                {
-                    if (DraftGame.Instance != null) DraftGame.Instance.Lose("SWALLOWED BY A BLACK HOLE");
-                }
+                if (player != null) ThrowThroughWormhole(player);
                 else Destroy(hit.gameObject); // bullets and mines just vanish: a hunter can be lured into a hole
                 continue;
             }

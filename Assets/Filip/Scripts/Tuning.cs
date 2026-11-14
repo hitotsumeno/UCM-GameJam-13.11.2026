@@ -186,6 +186,10 @@ public static class Tuning
     public const float HoleBulletPull = 2.5f;     // bullets feel the pull this many times stronger, so their arc is easy to see
     public const float HoleOrbitSpeed = 3f;       // units per second along the circle
     public const float HoleSpinSpeed = 25f;       // degrees per second: how fast the picture turns
+    // A hole does not kill: it throws the player out of another hole nearby.
+    public const float WormholeExitSpeed = 10f;   // how fast the player flies out
+    public const float WormholeOxygenCost = 10f;  // air lost on the way (plus one hull breach)
+    public const float WormholeImmunity = 2f;     // seconds after coming out during which holes cannot swallow again
 
 
     // --- Oxygen crystals: destroyed rocks leave air behind ("destroy to breathe") ---

@@ -94,24 +94,25 @@ cat <<'EOF'
 # meteors=off
 # movers=0
 # stars=35,15
-# hint1=BLACK HOLES PULL YOU AND YOUR SHOTS. THE DARK MIDDLE IS DEATH
+# hint1=BLACK HOLES PULL YOU AND YOUR SHOTS. FALL IN, AND THE HOLE THROWS YOU OUT OF ANOTHER ONE WITH A BREACHED HULL
 # hint2=THE ONLY AIR HERE IS IN THE ROCKS CIRCLING THE HOLES. YOUR SHOTS CURVE: AIM TO THE SIDE
 # hint3=SMALL HOLES DRIFT. WATCH WHERE THEY ARE GOING
 # hint4=FLY PAST A HOLE AND IT TURNS YOU FOR FREE. GRAB CRYSTALS FAST: HOLES EAT THEM. MINES TOO
-# hint5=THE LAST GATE: STRAIGHT BETWEEN THE TWO HOLES, THEN BRAKE
+# hint5=THE LAST GATE IS MINED. BLOW THE WALL UP FROM HERE, THEN FLY STRAIGHT BETWEEN THE HOLES AND BRAKE
 EOF
 {
   echo "11 77 P"; echo "11 75 1"; echo "11 4 S"
-  # Room 1: one small hole right on the way, two rocks circling it
-  echo "11 71 2"; echo "11 67 c"
-  # Room 2: a gate of two small holes with a third one drifting across it
-  echo "11 61 3"; echo "5 57 c"; echo "17 57 c"; echo "11 53 x"
-  # Room 3: a big hole in the middle, its pull covers the whole width; a tank close to it; two hunters to lure in
-  echo "11 50 4"; echo "11 42 O"; echo "11 47 o"; echo "3 40 m"; echo "19 44 m"
-  # Room 4: a slalom between two big holes, a small one drifting up and down between them
-  echo "5 29 O"; echo "17 21 O"; echo "11 25 y"
-  # Room 5: the last gate and the ship behind it
-  echo "11 16 5"; echo "11 15 o"; echo "4 11 O"; echo "18 11 O"
+  # Room 1: one small hole right on the way, two rocks circling it, a hunter that wakes behind you
+  echo "11 71 2"; echo "11 67 c"; echo "3 73 m"; row 70 a 2 20
+  # Room 2: a gate of two small holes with a third one drifting across it, hunters on both sides
+  echo "11 61 3"; echo "5 57 c"; echo "17 57 c"; echo "11 53 x"; row 60 m 2 20; row 51 a 3 19
+  # Room 3: a big hole in the middle, its pull covers the whole width. A tank close to it,
+  # a heavy mine whose blast can throw you in, a ring-guarded tank off to the side, hunters to lure in
+  echo "11 50 4"; echo "11 42 O"; echo "11 47 o"; echo "3 44 m"; echo "19 46 m"; echo "18 38 M"; echo "3 36 R"
+  # Room 4: a slalom between two big holes, a small one drifting up and down between them, patrols across
+  echo "5 29 O"; echo "17 21 O"; echo "11 25 y"; row 32 h 12 18; row 18 h 4 10; echo "19 30 m"; echo "3 20 m"
+  # Room 5: a chain wall of mines right in the last gate, then the ship
+  echo "11 17 5"; echo "11 16 o"; echo "4 11 O"; echo "18 11 O"; row 13 s 8 9 10 11 12 13 14
 } | mkmap 22 80
 } > $L/level3.txt
 

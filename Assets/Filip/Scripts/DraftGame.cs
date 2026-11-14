@@ -136,6 +136,22 @@ public class DraftGame : MonoBehaviour
         CameraRig.ShakeHard();
     }
 
+    // The player fell into a black hole and came out of another one.
+    // from: the hole they fell into, to: where they are now.
+    public void ThrownThroughWormhole(Vector2 from, Vector2 to)
+    {
+        if (State != GameState.Playing) return;
+        BreachHull(from);                         // the hull does not like it
+        SpendOxygen(Tuning.WormholeOxygenCost);
+        hud.Toast("THROWN THROUGH A WORMHOLE");
+        if (world != null)
+        {
+            Blast.Create(from, 5f, world.root);   // flash where they vanished and where they came out
+            Blast.Create(to, 5f, world.root);
+        }
+        cameraRig.SnapToTarget();
+    }
+
     // Seals one breach. Called when an oxygen tank is picked up.
     public void RepairBreach()
     {
