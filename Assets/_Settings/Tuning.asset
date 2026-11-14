@@ -26,7 +26,7 @@ MonoBehaviour:
   PlayerMass: 1
   PlayerGlowSize: 3
   PlayerGlowOpacity: 0.35
-  CameraSize: 15
+  CameraSize: 10
   CameraFollowSharpness: 5
   CameraShakeTime: 0.08
   CameraShakeStrength: 0.19
@@ -88,7 +88,7 @@ MonoBehaviour:
   AsteroidHpSmall: 1
   AsteroidHpMedium: 2
   AsteroidHpLarge: 4
-  AsteroidDensity: 0.5
+  AsteroidDensity: 0.3
   AsteroidDriftMin: 0.2
   AsteroidDriftMax: 0.6
   AsteroidMoverChance: 0.5
@@ -105,7 +105,7 @@ MonoBehaviour:
   MeteorLead: 0.9
   MeteorShowerChance: 0.1
   MeteorShowerCount: 3
-  MeteorSideSpeed: 1
+  MeteorSideSpeed: 0.75
   MeteorSpread: 8
   MeteorSpawnAhead: 22
   MeteorLifetime: 20

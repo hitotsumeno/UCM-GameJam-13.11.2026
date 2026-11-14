@@ -85,6 +85,9 @@ oblaky sa zdanlivo prevaľujú. V časti búrky, ktorá je na obrazovke, občas 
 Ďaleko za okrajom je už len jednoliata tmavá farba búrky. Obrázky (`storm_body`,
 `storm_glow`, `storm_bolt1` – `3`) vygeneroval nástroj `Assets/Editor/Tools~/storm.ps1`
 (rovnaký šum s krútením ako pri oblakoch, opakuje sa pozdĺž okraja bez švu).
+Textúra sa opakuje iba pozdĺž okraja; naprieč okrajom je „orezaná“ (Clamp). Inak by sa
+priehľadná vnútorná strana obrázka zmiešala s hustou vonkajšou a na začiatku búrky by
+bola vidieť tenká čiara.
 
 ## Grafika a jej príprava
 

@@ -82,7 +82,11 @@ public class ArtImportSettings : AssetPostprocessor
             if (name == "storm_body" || name == "storm_glow")
             {
                 importer.spritePixelsPerUnit = 24f;
-                importer.wrapMode = TextureWrapMode.Repeat;
+                // Repeats only along the edge (V). Across it (U) the picture is clamped: its inner
+                // side is transparent and its outer side dense, and repeating would blend the two
+                // into a thin line where the storm begins.
+                importer.wrapModeU = TextureWrapMode.Clamp;
+                importer.wrapModeV = TextureWrapMode.Repeat;
             }
             importer.textureCompression = TextureImporterCompression.CompressedHQ;
             var settings = new TextureImporterSettings();
