@@ -93,7 +93,8 @@ do hry priamo: Unity z nich v editore „zapečie“ (vyrenderuje) 2D obrázky.
 
 | Grafika | Ako vznikla |
 |---|---|
-| Kamene (12 obrázkov: 4 veľké, 4 stredné, 4 malé) | Z modelu výtvarníčky `stone.fbx` (5 tvarov kameňov) z rôznych uhlov. Svetlo prichádza hlavne od kamery, takže kameň vyzerá dobre aj pri otáčaní. Pridaný je jemný reliéf, zatienenie v záhyboch a teplý okraj. Kolízny kruh má 0,45 strany obrázka. Menu: Filip > Bake Rocks And Stars From FBX. |
+| Kamene: rendery výtvarníčky `stone1` – `stone5` | Päť tvarov pre všetky veľkosti kameňov aj meteory. Pri Rebuild sa v každom obrázku zmeria kameň (podľa priehľadnosti) a zmenší sa na svoju triedu (2, 4, 6 jednotiek). |
+| Staršie kamene (12 obrázkov: 4 veľké, 4 stredné, 4 malé; použijú sa, len ak `stone` obrázky chýbajú) | Z modelu výtvarníčky `stone.fbx` (5 tvarov kameňov) z rôznych uhlov. Svetlo prichádza hlavne od kamery, takže kameň vyzerá dobre aj pri otáčaní. Pridaný je jemný reliéf, zatienenie v záhyboch a teplý okraj. Kolízny kruh má 0,45 strany obrázka. Menu: Filip > Bake Rocks And Stars From FBX. |
 | Hviezdy (5 tvarov + 5 žiar) | Z modelu výtvarníčky `stars.fbx`. Tvar zaberá stredných 42 % obrázka, zvyšok je priestor pre žiaru. Farbu dostávajú až v hre. |
 | Oblaky (hmloviny) | Vygenerované programom: periodický Perlinov šum vo viacerých vrstvách (fBm), preto sú bezšvové. |
 | Slnko, planéta s prstencom, čierna diera, planéta | Vygenerované kódom. |

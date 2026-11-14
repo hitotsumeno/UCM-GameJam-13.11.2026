@@ -8,6 +8,10 @@ Size in the game is set by code (the larger side of the picture), not by the pic
                                of the turbine. The collider follows the picture's outline.
   ship.png           10 units  the GOAL to dock to (side of the picture), nose UP as drawn.
                                The docking area follows the picture's outline.
+  stone1.png ...     the artist's rock renders, used for every rock size (small 2, medium 4, large 6
+  stone5.png         units) and for meteors. Each rock may be drawn at any size in its picture: the
+                     rebuild measures it (alpha) and scales it to its class. Add stone6.png ... to
+                     get more variety. Without stone pictures the older asteroid_* ones are used:
   asteroid_s1.png    2 units   variants: asteroid_s2.png, asteroid_s3.png ...
   asteroid_m1.png    4 units   variants: asteroid_m2.png, asteroid_m3.png ...
   asteroid_l1.png    6 units   variants: asteroid_l2.png, asteroid_l3.png ...

@@ -23,6 +23,10 @@ public class Asteroid : MonoBehaviour
     [SerializeField] bool confined = true;
     [Tooltip("A random one is used when this rock is spawned during play (splits, meteors)")]
     [SerializeField] Sprite[] variants;
+    [Tooltip("Body scale for each variant: the rocks are drawn at different sizes in their pictures")]
+    [SerializeField] float[] variantScales;
+    [Tooltip("Body position for each variant: puts the middle of the rock on the collider")]
+    [SerializeField] Vector2[] variantOffsets;
     [Tooltip("Large rocks split into two of these when destroyed")]
     [SerializeField] Asteroid splitPrefab;
     [SerializeField] OxygenCrystal crystalPrefab;
@@ -113,8 +117,12 @@ public class Asteroid : MonoBehaviour
     public void PickRandomLook()
     {
         if (variants == null || variants.Length == 0) return;
-        var s = variants[Random.Range(0, variants.Length)];
-        if (s != null) body.sprite = s;
+        int i = Random.Range(0, variants.Length);
+        if (variants[i] != null) body.sprite = variants[i];
+        if (variantScales != null && i < variantScales.Length && variantScales[i] > 0f)
+            body.transform.localScale = new Vector3(variantScales[i], variantScales[i], 1f);
+        if (variantOffsets != null && i < variantOffsets.Length)
+            body.transform.localPosition = variantOffsets[i];
     }
 
     public void SetTint(Color tint)

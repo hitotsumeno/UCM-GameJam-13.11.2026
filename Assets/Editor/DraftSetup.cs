@@ -41,6 +41,8 @@ public static class DraftSetup
     {
         var oldRandom = Random.state;
         Random.InitState(1311); // same layout every time
+        rockFits.Clear();
+        reimported.Clear();
         try
         {
             tune = TuningConnector.GetOrCreate();
@@ -404,9 +406,42 @@ public static class DraftSetup
         return Vector3.Scale(basePoint, fire.transform.localScale);
     }
 
+    // Where the rock sits in its picture, measured from the PNG's alpha: x, y = middle of the rock
+    // from the picture's centre, z = diameter of a circle with the rock's area; all as shares of
+    // the picture side. Measured once per rebuild.
+    static readonly Dictionary<Sprite, Vector3> rockFits = new Dictionary<Sprite, Vector3>();
+
+    static Vector3 RockFit(Sprite sprite)
+    {
+        Vector3 fit;
+        if (rockFits.TryGetValue(sprite, out fit)) return fit;
+        fit = new Vector3(0f, 0f, 0.9f);
+        string path = AssetDatabase.GetAssetPath(sprite);
+        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (File.Exists(path) && tex.LoadImage(File.ReadAllBytes(path)))
+        {
+            var px = tex.GetPixels32();
+            int w = tex.width, h = tex.height;
+            long n = 0; double sx = 0, sy = 0;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    if (px[y * w + x].a > 128) { n++; sx += x; sy += y; }
+            if (n > 0)
+                fit = new Vector3((float)(sx / n / w - 0.5), (float)(sy / n / h - 0.5),
+                    (float)(2.0 * System.Math.Sqrt(n / System.Math.PI) / w));
+        }
+        Object.DestroyImmediate(tex);
+        rockFits[sprite] = fit;
+        return fit;
+    }
+
     // Re-imports a picture so ArtImportSettings (mipmaps, physics outline) applies to it.
+    // Once per rebuild: big pictures take a while to compress.
+    static readonly HashSet<string> reimported = new HashSet<string>();
+
     static void Reimport(string name)
     {
+        if (!reimported.Add(name)) return;
         foreach (var ext in new[] { ".png", ".jpg", ".psd", ".tga" })
         {
             string path = "Assets/_Resources/Art/" + name + ext;
@@ -494,12 +529,30 @@ public static class DraftSetup
         float d = Asteroid.Diameter(tune, size);
         var go = new GameObject("Asteroid_" + size);
 
-        var variants = Art.LoadAll(ArtName(size));
+        // The artist's rock renders stone1..stone5 for every size; without them the older pictures
+        // baked from stone.fbx (asteroid_s / _m / _l). Each rock is scaled so that its
+        // equal-area circle is 0.9 of the class size: the collider circle (radius 0.45 d).
+        foreach (var n in new[] { "stone1", "stone2", "stone3", "stone4", "stone5", "stone6", "stone7", "stone8", "stone9" })
+            Reimport(n);
+        var variants = Art.LoadAll("stone");
+        bool renders = variants.Count > 0;
+        if (!renders) variants = Art.LoadAll(ArtName(size));
         float radius = d * 0.45f;
         SpriteRenderer body;
+        var scales = new float[variants.Count];
+        var offsets = new Vector2[variants.Count];
         if (variants.Count > 0)
         {
             body = Art.Make("Body", variants[0], go.transform, d, 3);
+            for (int i = 0; i < variants.Count; i++)
+            {
+                Vector3 fit = renders ? RockFit(variants[i]) : new Vector3(0f, 0f, 0.9f);
+                float side = Mathf.Max(variants[i].bounds.size.x, variants[i].bounds.size.y);
+                scales[i] = 0.9f * d / (fit.z * side);
+                offsets[i] = -new Vector2(fit.x, fit.y) * side * scales[i];
+            }
+            body.transform.localScale = new Vector3(scales[0], scales[0], 1f);
+            body.transform.localPosition = offsets[0];
         }
         else
         {
@@ -536,6 +589,12 @@ public static class DraftSetup
         var list = so.FindProperty("variants");
         list.arraySize = variants.Count;
         for (int i = 0; i < variants.Count; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = variants[i];
+        var sl = so.FindProperty("variantScales");
+        sl.arraySize = scales.Length;
+        for (int i = 0; i < scales.Length; i++) sl.GetArrayElementAtIndex(i).floatValue = scales[i];
+        var ol = so.FindProperty("variantOffsets");
+        ol.arraySize = offsets.Length;
+        for (int i = 0; i < offsets.Length; i++) ol.GetArrayElementAtIndex(i).vector2Value = offsets[i];
         so.ApplyModifiedPropertiesWithoutUndo();
         return go;
     }
@@ -1031,7 +1090,10 @@ public static class DraftSetup
         go.GetComponent<Asteroid>().PickRandomLook();
         PrefabUtility.RecordPrefabInstancePropertyModifications(go.transform);
         foreach (var sr in go.GetComponentsInChildren<SpriteRenderer>(true))
+        {
             PrefabUtility.RecordPrefabInstancePropertyModifications(sr);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(sr.transform); // variant scale and position
+        }
         return go;
     }
 

@@ -57,7 +57,8 @@ sa zástupný tvar. Veľkosť v hre určuje kód (dlhšia strana obrázka), nie 
 |---|---|---|
 | `player_ship.png` | 2,2 (strana obrázka) | loď hráča, nosom **nahor**, hlavná turbína dole; zrážky podľa obrysu |
 | `ship.png` | 10 (strana obrázka) | cieľová loď, nosom **nahor**; pristátie podľa obrysu |
-| `asteroid_s1.png` … | 2 | malé kamene; varianty `asteroid_s2`, `asteroid_s3` … |
+| `stone1.png` … `stone5.png` | 2 / 4 / 6 | kamene všetkých veľkostí aj meteory; kameň môže byť v obrázku nakreslený v ľubovoľnej veľkosti, Rebuild ho zmeria a zmenší |
+| `asteroid_s1.png` … | 2 | staršie malé kamene (len keď `stone` chýbajú); varianty `asteroid_s2`, `asteroid_s3` … |
 | `asteroid_m1.png` … | 4 | stredné kamene |
 | `asteroid_l1.png` … | 6 | veľké kamene |
 | `fire.png` | 3,6 priemeru kameňa | chvost meteoru: spodok plameňa dole, jazyky hore. Ak sa v Sprite Editore rozreže na snímky (Sprite Mode: Multiple), po Rebuild sa prehrávajú ako animácia |

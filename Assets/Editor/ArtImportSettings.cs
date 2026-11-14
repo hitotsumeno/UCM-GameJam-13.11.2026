@@ -116,6 +116,13 @@ public class ArtImportSettings : AssetPostprocessor
             importer.SetTextureSettings(settings);
         }
 
+        if (name.StartsWith("stone"))
+        {
+            // The artist's rock renders: shown much smaller than drawn and always turning.
+            importer.mipmapEnabled = true;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+        }
+
         if (name.StartsWith("asteroid"))
             importer.textureCompression = TextureImporterCompression.CompressedHQ; // keep the rock relief clean
 
