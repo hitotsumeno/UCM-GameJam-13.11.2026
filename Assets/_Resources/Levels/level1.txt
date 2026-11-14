@@ -3,7 +3,7 @@
 # backdrop=wreck
 # clouds=0.9
 # starcolor=0.8,0.9,1.0
-# oxygen=55
+# oxygen=65
 # meteors=5-8
 # movers=0.35
 # stars=45,20

@@ -7,7 +7,7 @@ Vo všetkých troch hráč začína dole a cieľová loď čaká hore.
 
 | # | Názov v hre | Veľkosť (bunky) | Veľkosť (jednotky) | Vzduch na štarte | Meteory | Hlavná výzva |
 |---|---|---|---|---|---|---|
-| 1 | `rocks` | 20 × 90 | 40 × 180 | 55 | každých 5 – 8 s | kamene a meteory, vzduch iba z kameňov |
+| 1 | `rocks` | 20 × 90 | 40 × 180 | 65 | každých 5 – 8 s | kamene a meteory, vzduch iba z kameňov |
 | 2 | `mines` | 24 × 84 | 48 × 168 | 70 | nie | mínové pole, asi 83 mín, vzduch iba z mín |
 | 3 | `holes` | 22 × 80 | 44 × 160 | 70 | nie | 10 čiernych dier, vzduch na ich obežných dráhach |
 
@@ -17,7 +17,7 @@ Na začiatku úrovne sa na tri sekundy ukáže jej poradie a názov, napríklad 
 
 - **Obsah:** 38 malých, 18 stredných a 7 veľkých kameňov, jediná kyslíková fľaša.
   35 % kameňov sú „letci“, ktorí sa pohybujú rýchlejšie.
-- **Ako sa hrá:** vzduchu je na štarte málo (55) a fľaša je len jedna. Takmer všetok
+- **Ako sa hrá:** vzduchu je na štarte menej (65) a fľaša je len jedna. Takmer všetok
   kyslík je v kameňoch: strieľaj, rozbíjaj a zbieraj kryštály, kým nezhasnú.
   Pred cieľovou loďou sú husté rady stredných a veľkých kameňov, cez ktoré si treba
   prestrieľať cestu.

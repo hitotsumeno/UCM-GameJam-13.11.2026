@@ -27,7 +27,7 @@ Brzdí sa výstrelom v smere letu: spätný ráz loď spomalí.
 | Čo | Hodnota |
 |---|---|
 | Maximum | 100 |
-| Na začiatku úrovne | podľa úrovne: 55 / 70 / 70 |
+| Na začiatku úrovne | podľa úrovne: 65 / 70 / 70 |
 | Úbytok za sekundu | 2 |
 | Výstrel | −1 |
 | Mimo hraníc úrovne | úbytok 4× rýchlejší |
