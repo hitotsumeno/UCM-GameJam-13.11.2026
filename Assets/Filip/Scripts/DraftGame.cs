@@ -132,7 +132,7 @@ public class DraftGame : MonoBehaviour
         BreakCombo();
         hud.SetBreaches(Breaches);
         hud.FlashDamage();
-        hud.Toast("HULL BREACH");
+        hud.Toast(Texts.Breach);
         CameraRig.ShakeHard();
     }
 
@@ -143,7 +143,7 @@ public class DraftGame : MonoBehaviour
         if (State != GameState.Playing) return;
         BreachHull(from);                         // the hull does not like it
         SpendOxygen(Tuning.WormholeOxygenCost);
-        hud.Toast("THROWN THROUGH A WORMHOLE");
+        hud.Toast(Texts.Wormhole);
         if (world != null)
         {
             Blast.Create(from, 5f, world.root);   // flash where they vanished and where they came out
@@ -159,7 +159,7 @@ public class DraftGame : MonoBehaviour
         Breaches--;
         if (world != null && world.player != null) world.player.RemoveBreach();
         hud.SetBreaches(Breaches);
-        hud.Toast("LEAK SEALED");
+        hud.Toast(Texts.Sealed);
     }
 
     // --- Oxygen ---
@@ -169,7 +169,7 @@ public class DraftGame : MonoBehaviour
         if (State != GameState.Playing) return;
         Oxygen = Mathf.Max(0f, Oxygen - amount);
         hud.SetOxygen(Oxygen / Tuning.OxygenMax);
-        if (Oxygen <= 0f) Lose("OUT OF OXYGEN");
+        if (Oxygen <= 0f) Lose(Texts.OutOfAir);
     }
 
     public void AddOxygen(float amount)
@@ -225,7 +225,7 @@ public class DraftGame : MonoBehaviour
         }
         player.BounceFrom(shipPosition);
         SpendOxygen(Tuning.DockPenalty);
-        hud.Toast("TOO FAST");
+        hud.Toast(Texts.TooFast);
         CameraRig.Shake();
     }
 
@@ -236,9 +236,9 @@ public class DraftGame : MonoBehaviour
         if (world != null && world.player != null) world.player.Stop();
 
         bool last = levelIndex >= levelCount;
-        string sub = "OXYGEN LEFT " + Mathf.RoundToInt(Oxygen) + "     "
-            + (last ? "ALL LEVELS COMPLETE. PRESS ENTER TO PLAY AGAIN" : "PRESS ENTER FOR THE NEXT LEVEL");
-        hud.ShowMessage("DOCKED", new Color(0.4f, 1f, 0.5f), sub);
+        string sub = Texts.AirLeft + Mathf.RoundToInt(Oxygen) + "      "
+            + (last ? Texts.TheEnd : Texts.Next);
+        hud.ShowMessage(Texts.Docked, new Color(0.4f, 1f, 0.5f), sub);
     }
 
     // title: what killed the player, shown in big letters.
@@ -246,7 +246,7 @@ public class DraftGame : MonoBehaviour
     {
         if (State != GameState.Playing) return;
         State = GameState.Lost;
-        hud.ShowMessage(title, new Color(1f, 0.35f, 0.3f), "PRESS R TO RESTART");
+        hud.ShowMessage(title, new Color(1f, 0.35f, 0.3f), Texts.Retry);
     }
 
     // --- Scene setup ---
@@ -313,7 +313,7 @@ public class DraftGame : MonoBehaviour
         hud.HideMessage();
         hud.SetSignalLost(false);
         hud.SetHint(null);
-        hud.ShowTitle(level != null ? "LEVEL " + level.index + ": " + level.name : null);
+        hud.ShowTitle(level != null ? level.index + " / " + levelCount + "   " + level.name : null);
         hud.SetCompass(world.ship.position - world.player.transform.position);
         BreakCombo();
 

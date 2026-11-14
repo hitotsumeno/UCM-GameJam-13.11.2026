@@ -10,8 +10,7 @@ col() { local c=$1 ch=$2; shift 2; for r in "$@"; do echo "$c $r $ch"; done; }  
 # ---------------- LEVEL 1: DEBRIS. All the air is inside the rocks; meteors hunt you. ----------------
 {
 cat <<'EOF'
-# name=DEBRIS
-# radio=Fuel is gone and the tanks are nearly dry. The only air out here is frozen inside the rocks.
+# name=rocks
 # nebula=calm
 # backdrop=wreck
 # clouds=0.9
@@ -20,12 +19,10 @@ cat <<'EOF'
 # meteors=5-8
 # movers=0.35
 # stars=45,20
-# hint1=LEFT MOUSE BUTTON: SHOOT. THE RECOIL MOVES YOU
-# hint2=THERE ARE NO SPARE TANKS. BREAK ROCKS AND GRAB THE CRYSTALS: THEY ARE YOUR AIR
-# hint3=BREAK ROCKS ONE AFTER ANOTHER: A COMBO GIVES MORE AIR
-# hint4=A RED ARROW AT THE TOP MEANS A METEOR IS COMING AT YOU. DODGE IT OR SHOOT IT
-# hint5=BIG ROCKS SPLIT. DRILL A TUNNEL THROUGH THE WALL
-# hint6=SHOOT TOWARD THE SHIP TO BRAKE. DOCK SLOWER THAN SPEED 5
+# hint1=hold the left mouse button to fly
+# hint2=rocks hold air
+# hint4=red arrow = meteor
+# hint6=slow down before docking
 EOF
 {
   echo "10 87 P"; echo "10 85 1"; echo "10 4 S"
@@ -45,8 +42,7 @@ EOF
 # ---------------- LEVEL 2: MINEFIELD. Every shot throws you back, and mines are behind you too. ----------------
 {
 cat <<'EOF'
-# name=MINEFIELD
-# radio=Old defense mines. They are all around us. Every shot we fire kicks us back, so look behind.
+# name=mines
 # nebula=alert
 # clouds=0.8
 # light=1.0,0.82,0.80
@@ -56,12 +52,10 @@ cat <<'EOF'
 # meteors=off
 # movers=0.2
 # stars=40,15
-# hint1=RED MINES HUNT YOU, AND THEY ARE FAST. HIDE BEHIND A ROCK OR SHOOT THEM FROM AFAR
-# hint2=EVERY SHOT KICKS YOU BACK. CHECK WHAT IS BEHIND YOU
-# hint3=YELLOW MINES PATROL. WAIT FOR THE GAP, OR BLOW ONE UP AND SLIP THROUGH
-# hint4=A RING GUARDS EACH TANK. BREAK THE RING ONE MINE AT A TIME. A TANK SEALS ONE LEAK
-# hint5=THE BIG ORANGE MINE TAKES THREE HITS AND WIPES OUT EVERYTHING AROUND IT. SNIPE IT FROM HERE
-# hint6=ONE SHOT INTO A WALL OF MINES SETS THE WHOLE WALL OFF. KEEP YOUR DISTANCE
+# hint1=red ones chase you
+# hint3=yellow ones patrol
+# hint4=a tank patches a leak
+# hint5=the big one takes three hits
 EOF
 {
   echo "12 81 P"; echo "12 79 1"; echo "12 4 S"
@@ -83,8 +77,7 @@ EOF
 # ---------------- LEVEL 3: EVENT HORIZON. Nothing flies straight, and the only air circles the holes. ----------------
 {
 cat <<'EOF'
-# name=EVENT HORIZON
-# radio=Black holes, everywhere. Nothing flies straight in here: not us, not our shots.
+# name=holes
 # tint=0.6,0.5,1.0
 # clouds=0.5
 # light=0.9,0.88,1.0
@@ -94,11 +87,8 @@ cat <<'EOF'
 # meteors=off
 # movers=0
 # stars=35,15
-# hint1=BLACK HOLES PULL YOU AND YOUR SHOTS. FALL IN, AND THE HOLE THROWS YOU OUT OF ANOTHER ONE WITH A BREACHED HULL
-# hint2=THE ONLY AIR HERE IS IN THE ROCKS CIRCLING THE HOLES. YOUR SHOTS CURVE: AIM TO THE SIDE
-# hint3=SMALL HOLES DRIFT. WATCH WHERE THEY ARE GOING
-# hint4=FLY PAST A HOLE AND IT TURNS YOU FOR FREE. GRAB CRYSTALS FAST: HOLES EAT THEM. MINES TOO
-# hint5=THE LAST GATE IS MINED. BLOW THE WALL UP FROM HERE, THEN FLY STRAIGHT BETWEEN THE HOLES AND BRAKE
+# hint1=holes bend everything
+# hint2=the air is on the orbits
 EOF
 {
   echo "11 77 P"; echo "11 75 1"; echo "11 4 S"

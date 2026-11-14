@@ -1,5 +1,4 @@
-# name=MINEFIELD
-# radio=Old defense mines. They are all around us. Every shot we fire kicks us back, so look behind.
+# name=mines
 # nebula=alert
 # clouds=0.8
 # light=1.0,0.82,0.80
@@ -9,12 +8,10 @@
 # meteors=off
 # movers=0.2
 # stars=40,15
-# hint1=RED MINES HUNT YOU, AND THEY ARE FAST. HIDE BEHIND A ROCK OR SHOOT THEM FROM AFAR
-# hint2=EVERY SHOT KICKS YOU BACK. CHECK WHAT IS BEHIND YOU
-# hint3=YELLOW MINES PATROL. WAIT FOR THE GAP, OR BLOW ONE UP AND SLIP THROUGH
-# hint4=A RING GUARDS EACH TANK. BREAK THE RING ONE MINE AT A TIME. A TANK SEALS ONE LEAK
-# hint5=THE BIG ORANGE MINE TAKES THREE HITS AND WIPES OUT EVERYTHING AROUND IT. SNIPE IT FROM HERE
-# hint6=ONE SHOT INTO A WALL OF MINES SETS THE WHOLE WALL OFF. KEEP YOUR DISTANCE
+# hint1=red ones chase you
+# hint3=yellow ones patrol
+# hint4=a tank patches a leak
+# hint5=the big one takes three hits
 ........................
 ........................
 ........................

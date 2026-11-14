@@ -67,23 +67,23 @@ public class Hud : MonoBehaviour
         Stretch(hud.damageFlash.rectTransform);
 
         // Number of leaks, next to the OXYGEN label. Hidden while the hull is whole.
-        hud.breachText = MakeText("Breaches", go.transform, font, 32, TextAnchor.UpperLeft, BadColor);
-        Place(hud.breachText.rectTransform, new Vector2(0f, 1f), new Vector2(215f, -33f), new Vector2(300f, 44f));
+        hud.breachText = MakeText("Breaches", go.transform, font, 24, TextAnchor.UpperLeft, BadColor);
+        Place(hud.breachText.rectTransform, new Vector2(0f, 1f), new Vector2(110f, -28f), new Vector2(300f, 34f));
         hud.breachText.gameObject.SetActive(false);
 
-        var signal = MakeText("SignalText", go.transform, font, 72, TextAnchor.MiddleCenter, new Color(1f, 0.3f, 0.25f));
-        signal.text = "SIGNAL LOST";
+        var signal = MakeText("SignalText", go.transform, font, 44, TextAnchor.MiddleCenter, new Color(1f, 0.3f, 0.25f));
+        signal.text = Texts.OutOfBounds;
         Place(signal.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -60f), new Vector2(1200f, 100f));
         hud.signalText = signal.gameObject;
 
         // OXYGEN label, top-left.
-        var label = MakeText("OxygenLabel", go.transform, font, 36, TextAnchor.UpperLeft, Color.white);
-        label.text = "OXYGEN";
-        Place(label.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -30f), new Vector2(400f, 44f));
+        var label = MakeText("OxygenLabel", go.transform, font, 24, TextAnchor.UpperLeft, Color.white);
+        label.text = Texts.Air;
+        Place(label.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -28f), new Vector2(400f, 34f));
 
-        // Oxygen bar under the label.
+        // Oxygen bar under the label: thin, so it does not shout.
         var bg = MakeImage("OxygenBar", go.transform, new Color(1f, 1f, 1f, 0.2f));
-        Place(bg.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -80f), new Vector2(400f, 28f));
+        Place(bg.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -62f), new Vector2(320f, 12f));
         var fill = MakeImage("Fill", bg.transform, OxygenColor);
         hud.oxygenFillImage = fill;
         hud.oxygenFill = fill.rectTransform;
@@ -93,21 +93,21 @@ public class Hud : MonoBehaviour
         hud.BuildCombo(go.transform, font);
 
         // Level name, shown for a few seconds at the start of a level.
-        hud.titleText = MakeText("Title", go.transform, font, 44, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.9f));
+        hud.titleText = MakeText("Title", go.transform, font, 30, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.9f));
         Place(hud.titleText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -190f), new Vector2(1600f, 60f));
 
         // Short notice in the upper part of the screen (TOO FAST).
-        hud.toastText = MakeText("Toast", go.transform, font, 60, TextAnchor.MiddleCenter, new Color(1f, 0.6f, 0.2f));
+        hud.toastText = MakeText("Toast", go.transform, font, 36, TextAnchor.MiddleCenter, new Color(1f, 0.6f, 0.2f));
         Place(hud.toastText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 230f), new Vector2(1600f, 80f));
 
         // Hint at the bottom of the screen.
-        hud.hintText = MakeText("Hint", go.transform, font, 34, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.9f));
+        hud.hintText = MakeText("Hint", go.transform, font, 28, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.9f));
         Place(hud.hintText.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 70f), new Vector2(1800f, 50f));
 
         // Big message in the center (DOCKED / OUT OF OXYGEN) with a line under it.
-        hud.message = MakeText("Message", go.transform, font, 110, TextAnchor.MiddleCenter, Color.white);
+        hud.message = MakeText("Message", go.transform, font, 72, TextAnchor.MiddleCenter, Color.white);
         Place(hud.message.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 60f), new Vector2(1800f, 160f));
-        hud.messageSub = MakeText("MessageSub", go.transform, font, 40, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.85f));
+        hud.messageSub = MakeText("MessageSub", go.transform, font, 26, TextAnchor.MiddleCenter, new Color(1f, 1f, 1f, 0.85f));
         Place(hud.messageSub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -60f), new Vector2(1800f, 60f));
 
         hud.HideMessage();
@@ -122,16 +122,16 @@ public class Hud : MonoBehaviour
     // to the ship, the distance is in the middle, the player's speed is under it.
     void BuildCompass(Transform parent, Font font)
     {
-        const float size = 180f;
+        const float size = 130f;
         var root = new GameObject("Compass", typeof(RectTransform)).GetComponent<RectTransform>();
         root.SetParent(parent, false);
-        Place(root, new Vector2(0f, 1f), new Vector2(40f, -135f), new Vector2(size, size));
+        Place(root, new Vector2(0f, 1f), new Vector2(40f, -92f), new Vector2(size, size));
 
-        var disc = MakeImage("Disc", root, new Color(0f, 0f, 0f, 0.45f));
+        var disc = MakeImage("Disc", root, new Color(0f, 0f, 0f, 0.3f));
         disc.sprite = SpriteFactory.Circle();
         Stretch(disc.rectTransform);
 
-        var ring = MakeImage("Ring", root, new Color(1f, 1f, 1f, 0.7f));
+        var ring = MakeImage("Ring", root, new Color(1f, 1f, 1f, 0.4f));
         ring.sprite = SpriteFactory.Ring();
         Stretch(ring.rectTransform);
 
@@ -141,14 +141,14 @@ public class Hud : MonoBehaviour
 
         var arrow = MakeImage("Arrow", compassNeedle, GoodColor);
         arrow.sprite = SpriteFactory.Triangle();
-        Place(arrow.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, size * 0.5f - 26f), new Vector2(34f, 34f));
+        Place(arrow.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, size * 0.5f - 20f), new Vector2(26f, 26f));
 
-        compassText = MakeText("Distance", root, font, 28, TextAnchor.MiddleCenter, Color.white);
-        Place(compassText.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size, 80f));
+        compassText = MakeText("Distance", root, font, 24, TextAnchor.MiddleCenter, Color.white);
+        Place(compassText.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(size, 60f));
 
         // Green while slow enough to dock, red when too fast.
-        speedText = MakeText("Speed", parent, font, 30, TextAnchor.UpperLeft, GoodColor);
-        Place(speedText.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -325f), new Vector2(300f, 40f));
+        speedText = MakeText("Speed", parent, font, 22, TextAnchor.UpperLeft, GoodColor);
+        Place(speedText.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -230f), new Vector2(300f, 34f));
     }
 
     // Combo counter in the top-right corner, with a bar showing the time left to continue it.
@@ -159,7 +159,7 @@ public class Hud : MonoBehaviour
         Place(root, new Vector2(1f, 1f), new Vector2(-40f, -30f), new Vector2(420f, 100f));
         comboRoot = root.gameObject;
 
-        comboText = MakeText("Text", root, font, 64, TextAnchor.UpperRight, new Color(1f, 0.85f, 0.3f));
+        comboText = MakeText("Text", root, font, 48, TextAnchor.UpperRight, new Color(1f, 0.85f, 0.3f));
         Stretch(comboText.rectTransform);
 
         var barBg = MakeImage("Bar", root, new Color(1f, 1f, 1f, 0.2f));
@@ -210,7 +210,7 @@ public class Hud : MonoBehaviour
     public void SetBreaches(int count)
     {
         breachText.gameObject.SetActive(count > 0);
-        if (count > 0) breachText.text = count == 1 ? "1 LEAK" : count + " LEAKS";
+        if (count > 0) breachText.text = Texts.Leaks + count;
         oxygenBase = count > 0 ? LeakingColor : OxygenColor;
         oxygenFillImage.color = oxygenBase;
     }
@@ -232,7 +232,7 @@ public class Hud : MonoBehaviour
         if (distance != shownDistance)
         {
             shownDistance = distance;
-            compassText.text = "SHIP\n" + distance + " m";
+            compassText.text = distance + Texts.Metres;
         }
     }
 
@@ -243,7 +243,7 @@ public class Hud : MonoBehaviour
         if (rounded == shownSpeed && slowEnough == shownSpeedOk) return;
         shownSpeed = rounded;
         shownSpeedOk = slowEnough;
-        speedText.text = "SPEED " + rounded;
+        speedText.text = Texts.Speed + rounded;
         speedText.color = slowEnough ? GoodColor : BadColor;
     }
 
@@ -257,7 +257,7 @@ public class Hud : MonoBehaviour
         if (combo != shownCombo)
         {
             shownCombo = combo;
-            comboText.text = "COMBO x" + combo;
+            comboText.text = Texts.Combo + combo;
         }
         comboBar.anchorMin = new Vector2(1f - Mathf.Clamp01(timeLeft), 0f); // shrinks toward the right edge
     }
@@ -274,6 +274,7 @@ public class Hud : MonoBehaviour
     // Short notice that disappears by itself.
     public void Toast(string text)
     {
+        if (string.IsNullOrEmpty(text)) return;
         toastText.text = text;
         toastText.gameObject.SetActive(true);
         toastTimer = 1.2f;

@@ -62,6 +62,6 @@ public class Planet : MonoBehaviour
     void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.collider.GetComponent<PlayerController>() == null) return;
-        if (DraftGame.Instance != null) DraftGame.Instance.Lose("CRASHED INTO THE PLANET");
+        if (DraftGame.Instance != null) DraftGame.Instance.Lose(Texts.HitPlanet);
     }
 }

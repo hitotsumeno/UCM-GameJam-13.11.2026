@@ -1,5 +1,4 @@
-# name=EVENT HORIZON
-# radio=Black holes, everywhere. Nothing flies straight in here: not us, not our shots.
+# name=holes
 # tint=0.6,0.5,1.0
 # clouds=0.5
 # light=0.9,0.88,1.0
@@ -9,11 +8,8 @@
 # meteors=off
 # movers=0
 # stars=35,15
-# hint1=BLACK HOLES PULL YOU AND YOUR SHOTS. FALL IN, AND THE HOLE THROWS YOU OUT OF ANOTHER ONE WITH A BREACHED HULL
-# hint2=THE ONLY AIR HERE IS IN THE ROCKS CIRCLING THE HOLES. YOUR SHOTS CURVE: AIM TO THE SIDE
-# hint3=SMALL HOLES DRIFT. WATCH WHERE THEY ARE GOING
-# hint4=FLY PAST A HOLE AND IT TURNS YOU FOR FREE. GRAB CRYSTALS FAST: HOLES EAT THEM. MINES TOO
-# hint5=THE LAST GATE IS MINED. BLOW THE WALL UP FROM HERE, THEN FLY STRAIGHT BETWEEN THE HOLES AND BRAKE
+# hint1=holes bend everything
+# hint2=the air is on the orbits
 ......................
 ......................
 ......................
