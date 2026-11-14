@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c76593a316a85b45b1e9cb319e7fb99, type: 3}
   m_Name: Tuning
   m_EditorClassIdentifier: 
-  RecoilImpulse: 3
+  RecoilImpulse: 5
   BulletSpeed: 20
   BulletLifetime: 2
   FireRate: 4
@@ -20,20 +20,20 @@ MonoBehaviour:
   BulletMass: 0.05
   BulletGlowSize: 0.9
   BulletGlowOpacity: 0.8
-  PlayerMaxSpeed: 12
+  PlayerMaxSpeed: 24
   PlayerDiameter: 1
   PlayerShipSize: 2.2
   PlayerMass: 1
   PlayerGlowSize: 3
   PlayerGlowOpacity: 0.35
-  CameraSize: 10
+  CameraSize: 15
   CameraFollowSharpness: 5
   CameraShakeTime: 0.08
   CameraShakeStrength: 0.19
   CameraHardShakeTime: 0.3
   CameraHardShakeStrength: 2.5
   OxygenMax: 100
-  OxygenDrainPerSecond: 2
+  OxygenDrainPerSecond: 0.5
   OxygenPerShot: 1
   OutOfBoundsDrainMultiplier: 4
   StormPush: 8
@@ -98,20 +98,22 @@ MonoBehaviour:
   AsteroidSplitSpeed: 1.5
   Bounciness: 0.5
   MeteorFirstDelay: 4
-  MeteorIntervalMin: 3
-  MeteorIntervalMax: 6
-  MeteorSpeedMin: 13
-  MeteorSpeedMax: 17
+  MeteorIntervalMin: 6
+  MeteorIntervalMax: 12
+  MeteorSpeedMin: 11
+  MeteorSpeedMax: 13
   MeteorLead: 0.9
-  MeteorShowerChance: 0.3
+  MeteorShowerChance: 0.1
   MeteorShowerCount: 3
-  MeteorSideSpeed: 1.5
+  MeteorSideSpeed: 1
   MeteorSpread: 8
   MeteorSpawnAhead: 22
   MeteorLifetime: 20
   MeteorMediumChance: 0.25
   MeteorHeatSize: 3
   MeteorHeatOpacity: 0.75
+  MeteorFireSize: 3.6
+  MeteorFireFps: 12
   OxygenTankAmount: 30
   OxygenTankPickupRadius: 0.7
   OxygenTankGlowSize: 2

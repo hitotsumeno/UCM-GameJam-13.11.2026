@@ -258,10 +258,10 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4100452084425521450}
-  - {fileID: 1866169533405635557}
+  - {fileID: 5197894962145577190}
   m_Father: {fileID: 797205841258407747}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &6006840126902122474
+--- !u!1001 &187959198278376681
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -335,41 +335,41 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4557602584116470159, guid: 5b0213e72923e40fd9567c64b5889d67, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5269032896241379576}
+      addedObject: {fileID: 8822938594625216919}
   m_SourcePrefab: {fileID: 100100000, guid: 5b0213e72923e40fd9567c64b5889d67, type: 3}
---- !u!4 &1866169533405635557 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5384442619014976527, guid: 5b0213e72923e40fd9567c64b5889d67, type: 3}
-  m_PrefabInstance: {fileID: 6006840126902122474}
-  m_PrefabAsset: {fileID: 0}
---- !u!50 &2388333549585650563 stripped
-Rigidbody2D:
-  m_CorrespondingSourceObject: {fileID: 8248771460737492073, guid: 5b0213e72923e40fd9567c64b5889d67, type: 3}
-  m_PrefabInstance: {fileID: 6006840126902122474}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &7810172087787198053 stripped
+--- !u!1 &4441702079925091686 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4557602584116470159, guid: 5b0213e72923e40fd9567c64b5889d67, type: 3}
-  m_PrefabInstance: {fileID: 6006840126902122474}
+  m_PrefabInstance: {fileID: 187959198278376681}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &5269032896241379576
+--- !u!114 &8822938594625216919
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7810172087787198053}
+  m_GameObject: {fileID: 4441702079925091686}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 783badf40b0217b43adb0af05a8d910b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   tuning: {fileID: 11400000, guid: fb4fe8e17958c456198f69e4472f6c0b, type: 2}
-  rb: {fileID: 2388333549585650563}
+  rb: {fileID: 8134140935459387520}
   center: {fileID: 797205841258407747}
   radius: 5.1
   angle: 3.2632282
   direction: 1
+--- !u!4 &5197894962145577190 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5384442619014976527, guid: 5b0213e72923e40fd9567c64b5889d67, type: 3}
+  m_PrefabInstance: {fileID: 187959198278376681}
+  m_PrefabAsset: {fileID: 0}
+--- !u!50 &8134140935459387520 stripped
+Rigidbody2D:
+  m_CorrespondingSourceObject: {fileID: 8248771460737492073, guid: 5b0213e72923e40fd9567c64b5889d67, type: 3}
+  m_PrefabInstance: {fileID: 187959198278376681}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8241263488919268645
 PrefabInstance:
   m_ObjectHideFlags: 0
