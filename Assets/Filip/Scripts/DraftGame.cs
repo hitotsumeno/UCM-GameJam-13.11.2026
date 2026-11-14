@@ -29,22 +29,6 @@ public class DraftGame : MonoBehaviour
     float comboTimer;
     int levelIndex = 1;    // 1 = level1.txt
     int levelCount;        // 0 = no level files: the random test ground is used
-    bool hasCheckpoint;    // a checkpoint of the current level was reached
-    Vector2 checkpoint;    // R restarts from here
-
-    // A checkpoint already passed (used to draw it dim after a restart).
-    public bool IsCheckpointUsed(Vector2 position)
-    {
-        return hasCheckpoint && Vector2.Distance(position, checkpoint) < 0.1f;
-    }
-
-    // Called by a checkpoint beacon when the player flies through it.
-    public void ReachCheckpoint(Vector2 position)
-    {
-        hasCheckpoint = true;
-        checkpoint = position;
-        hud.Toast("CHECKPOINT");
-    }
 
     // Reset static fields (works even when domain reload is disabled).
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -86,16 +70,9 @@ public class DraftGame : MonoBehaviour
         // Esc closes the game (only matters in the built game, not in the editor).
         if (Input.GetKeyDown(KeyCode.Escape)) Application.Quit();
 
-        // R restarts from the last checkpoint (or from the start of the level if none was reached).
+        // R restarts the current level at any moment.
         if (Input.GetKeyDown(KeyCode.R))
         {
-            BuildWorld();
-            return;
-        }
-        // Backspace restarts the level from its very beginning.
-        if (Input.GetKeyDown(KeyCode.Backspace))
-        {
-            hasCheckpoint = false;
             BuildWorld();
             return;
         }
@@ -104,7 +81,6 @@ public class DraftGame : MonoBehaviour
         if (State == GameState.Won && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
         {
             levelIndex = levelIndex < levelCount ? levelIndex + 1 : 1;
-            hasCheckpoint = false;
             BuildWorld();
             return;
         }
@@ -312,8 +288,6 @@ public class DraftGame : MonoBehaviour
         LevelData level = levelCount > 0 ? LevelData.Load(levelIndex) : null;
         world = WorldBuilder.Build(level);
         if (globalLight != null) globalLight.color = level != null ? level.light : Color.white;
-        // Restarting after a checkpoint: the level is rebuilt whole, the player starts from the beacon.
-        if (hasCheckpoint) world.player.Teleport(checkpoint);
 
         State = GameState.Playing;
         Breaches = 0;
@@ -323,7 +297,7 @@ public class DraftGame : MonoBehaviour
         hud.HideMessage();
         hud.SetSignalLost(false);
         hud.SetHint(null);
-        hud.ShowTitle(level != null && !hasCheckpoint ? "LEVEL " + level.index + ": " + level.name : null);
+        hud.ShowTitle(level != null ? "LEVEL " + level.index + ": " + level.name : null);
         hud.SetCompass(world.ship.position - world.player.transform.position);
         BreakCombo();
 

@@ -33,18 +33,18 @@ public class BlackHole : MonoBehaviour
             big ? Tuning.HoleBigField : Tuning.HoleSmallField,
             big ? Tuning.HoleBigStrength : Tuning.HoleSmallStrength);
 
-        if (big)
+        // Rocks circle every still hole. On this level they are the only air: shoot them with
+        // curved shots and grab the crystals before the hole eats them.
+        // Big holes have two circles turning in opposite directions.
+        int rocks = big ? Tuning.HoleOrbitRocks : Tuning.HoleSmallOrbitRocks;
+        for (int i = 0; i < rocks; i++)
         {
-            // Rocks on two circles, turning in opposite directions.
-            for (int i = 0; i < Tuning.HoleOrbitRocks; i++)
-            {
-                bool outer = i % 2 == 1;
-                float radius = hole.bodyRadius + (outer ? 8.5f : 5f);
-                float angle = Mathf.PI * 2f * i / Tuning.HoleOrbitRocks + Random.Range(-0.3f, 0.3f);
-                Vector2 pos = position + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
-                var rock = Asteroid.Create(outer ? AsteroidSize.Medium : AsteroidSize.Small, pos, Vector2.zero, parent, false);
-                Orbiter.Attach(rock.gameObject, hole.transform, radius, angle, outer ? -1f : 1f);
-            }
+            bool outer = big && i % 2 == 1;
+            float radius = hole.bodyRadius + (big ? (outer ? 9f : 5f) : 4f);
+            float angle = Mathf.PI * 2f * i / rocks + Random.Range(-0.3f, 0.3f);
+            Vector2 pos = position + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            var rock = Asteroid.Create(outer ? AsteroidSize.Medium : AsteroidSize.Small, pos, Vector2.zero, parent, false);
+            Orbiter.Attach(rock.gameObject, hole.transform, radius, angle, outer ? -1f : 1f);
         }
         return hole;
     }
@@ -136,7 +136,8 @@ public class BlackHole : MonoBehaviour
             if (body == null) continue;
             var player = hit.GetComponent<PlayerController>();
             bool bullet = hit.GetComponent<Bullet>() != null;
-            if (player == null && !bullet) continue; // rocks and mines do not feel the pull
+            bool mine = hit.GetComponent<Mine>() != null;
+            if (player == null && !bullet && !mine) continue; // rocks do not feel the pull
 
             if (Swallows(body.position, player != null ? Tuning.PlayerDiameter * 0.2f : 0f))
             {
@@ -144,10 +145,12 @@ public class BlackHole : MonoBehaviour
                 {
                     if (DraftGame.Instance != null) DraftGame.Instance.Lose("SWALLOWED BY A BLACK HOLE");
                 }
-                else Destroy(hit.gameObject);
+                else Destroy(hit.gameObject); // bullets and mines just vanish: a hunter can be lured into a hole
                 continue;
             }
-            body.AddForce(PullAt(body.position) * body.mass);
+            // Bullets are pulled harder, so their arc is easy to see.
+            float scale = bullet ? Tuning.HoleBulletPull : 1f;
+            body.AddForce(PullAt(body.position) * body.mass * scale);
         }
     }
 }

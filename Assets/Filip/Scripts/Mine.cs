@@ -1,12 +1,13 @@
 using UnityEngine;
 
-public enum MineMode { Hunter, Wall, Patrol, Orbit }
+public enum MineMode { Hunter, Wall, Patrol, Orbit, Heavy }
 
 // A mine. Four behaviours, so a minefield is never just targets standing still:
 //  - Hunter (red): sleeps until the player is close, then swims toward them.
 //  - Patrol (yellow): glides back and forth along a line; the gap between patrols keeps moving.
 //  - Orbit (yellow): circles around a point (usually an oxygen tank) together with others.
 //  - Wall (yellow): holds its place in a dense row; one shot sets the whole row off.
+//  - Heavy (orange): big and still, takes three hits, and its blast wipes out everything around.
 // Shot by the player: blows up, leaves crystals, counts for the combo.
 // Touching the player or exploding next to them: breaches the hull and throws them away.
 // A blast pushes everything around, sets off other mines nearby and cracks rocks.
@@ -14,6 +15,7 @@ public class Mine : MonoBehaviour
 {
     static readonly Color Red = new Color(1f, 0.25f, 0.2f);
     static readonly Color Yellow = new Color(1f, 0.8f, 0.2f);
+    static readonly Color Orange = new Color(1f, 0.5f, 0.1f);
 
     MineMode mode;
     Rigidbody2D rb;
@@ -21,6 +23,9 @@ public class Mine : MonoBehaviour
     Color color;
     bool awake;
     bool exploded;
+    int hits = 1;          // bullets needed to set it off
+    float size;            // diameter
+    float blastScale = 1f; // heavy mines blast wider
 
     Vector2 home;          // Wall: its place. Patrol: middle of its line. Orbit: center of the circle.
     Vector2 axis;          // Patrol: direction of the line
@@ -29,12 +34,12 @@ public class Mine : MonoBehaviour
 
     public static Mine CreateHunter(Vector2 position, Transform parent)
     {
-        return Create(position, parent, MineMode.Hunter);
+        return Create(position, parent, MineMode.Hunter, Tuning.MineSize);
     }
 
     public static Mine CreateWall(Vector2 position, Transform parent)
     {
-        var m = Create(position, parent, MineMode.Wall);
+        var m = Create(position, parent, MineMode.Wall, Tuning.MineSize);
         m.home = position;
         return m;
     }
@@ -42,14 +47,24 @@ public class Mine : MonoBehaviour
     // Glides along `axis` around its starting place.
     public static Mine CreatePatrol(Vector2 position, Vector2 axis, Transform parent)
     {
-        var m = Create(position, parent, MineMode.Patrol);
+        var m = Create(position, parent, MineMode.Patrol, Tuning.MineSize);
         m.home = position;
         m.axis = axis.normalized;
         m.phase = Random.Range(0f, Mathf.PI * 2f);
         return m;
     }
 
-    // A ring of mines circling a point.
+    // Big, slow to kill, and its blast clears a wide area: dangerous up close, a gift from afar.
+    public static Mine CreateHeavy(Vector2 position, Transform parent)
+    {
+        var m = Create(position, parent, MineMode.Heavy, Tuning.MineHeavySize);
+        m.home = position;
+        m.hits = Tuning.MineHeavyHits;
+        m.blastScale = Tuning.MineHeavyBlastScale;
+        return m;
+    }
+
+    // A ring of mines circling a point. They are spaced so that one blast does not set off the next.
     public static void CreateRing(Vector2 center, Transform parent)
     {
         float turn = Random.value < 0.5f ? 1f : -1f;
@@ -57,7 +72,7 @@ public class Mine : MonoBehaviour
         {
             float angle = Mathf.PI * 2f * i / Tuning.MineRingCount;
             Vector2 pos = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * Tuning.MineRingRadius;
-            var m = Create(pos, parent, MineMode.Orbit);
+            var m = Create(pos, parent, MineMode.Orbit, Tuning.MineSize);
             m.home = center;
             m.phase = angle;
             m.orbitRadius = Tuning.MineRingRadius;
@@ -65,13 +80,13 @@ public class Mine : MonoBehaviour
         }
     }
 
-    static Mine Create(Vector2 position, Transform parent, MineMode mode)
+    static Mine Create(Vector2 position, Transform parent, MineMode mode, float s)
     {
         var go = new GameObject("Mine_" + mode);
         go.transform.SetParent(parent, false);
         go.transform.position = position;
-        float s = Tuning.MineSize;
-        Color color = mode == MineMode.Hunter ? Red : Yellow;
+        // (s: diameter of this mine)
+        Color color = mode == MineMode.Hunter ? Red : mode == MineMode.Heavy ? Orange : Yellow;
 
         // Glow in the mine's colour: everything dangerous glows.
         var glow = SpriteFactory.MakeSprite("Glow", go.transform, SpriteFactory.Glow(),
@@ -111,6 +126,7 @@ public class Mine : MonoBehaviour
         m.lamp = lamp;
         m.glow = glow;
         m.color = color;
+        m.size = s;
         return m;
     }
 
@@ -130,7 +146,7 @@ public class Mine : MonoBehaviour
         float dist = player != null ? Vector2.Distance(player.position, rb.position) : float.MaxValue;
 
         // Close enough to touch: go off (does not rely on the physics contact alone).
-        if (!exploded && dist < Tuning.MineSize * 0.45f + Tuning.PlayerDiameter * 0.5f + 0.08f)
+        if (!exploded && dist < size * 0.45f + Tuning.PlayerDiameter * 0.5f + 0.08f)
         {
             Explode(true, false);
             return;
@@ -148,6 +164,7 @@ public class Mine : MonoBehaviour
                 break;
 
             case MineMode.Wall:
+            case MineMode.Heavy:
                 wanted = Toward(home);
                 break;
 
@@ -192,7 +209,15 @@ public class Mine : MonoBehaviour
     // Hit by the player's bullet.
     public void Shot()
     {
-        if (!exploded) Explode(false, true);
+        if (exploded) return;
+        hits--;
+        if (hits > 0)
+        {
+            // Not yet: the lamp turns whiter with every hit.
+            color = Color.Lerp(color, Color.white, 0.45f);
+            return;
+        }
+        Explode(false, true);
     }
 
     // Set off by another mine's blast, a moment later.
@@ -208,16 +233,18 @@ public class Mine : MonoBehaviour
         var game = DraftGame.Instance;
 
         // A blast right next to the player breaches the hull; farther away it only pushes.
+        float blastRadius = Tuning.MineBlastRadius * blastScale;
         Transform player = game != null ? game.PlayerTransform : null;
         if (player != null && (touchedPlayer
-            || Vector2.Distance(player.position, pos) < Tuning.MineBreachRadius))
+            || Vector2.Distance(player.position, pos) < Tuning.MineBreachRadius * blastScale))
             game.BreachHull(pos);
 
         if (game != null && shotByPlayer)
         {
             int combo = game.RegisterKill();
             float worth = Tuning.CrystalOxygen * (1f + Tuning.ComboBonusPerStep * (combo - 1));
-            OxygenCrystal.Burst(pos, Tuning.CrystalsFromMine, worth, transform.parent);
+            int crystals = Mathf.RoundToInt(Tuning.CrystalsFromMine * blastScale * blastScale);
+            OxygenCrystal.Burst(pos, crystals, worth, transform.parent);
         }
         else if (game != null && !touchedPlayer)
         {
@@ -225,10 +252,10 @@ public class Mine : MonoBehaviour
             OxygenCrystal.Burst(pos, 1, Tuning.CrystalOxygen, transform.parent);
         }
 
-        Blast.Create(pos, Tuning.MineBlastRadius, transform.parent);
+        Blast.Create(pos, blastRadius, transform.parent);
         CameraRig.Shake();
 
-        foreach (var hit in Physics2D.OverlapCircleAll(pos, Tuning.MineBlastRadius))
+        foreach (var hit in Physics2D.OverlapCircleAll(pos, blastRadius))
         {
             if (hit.gameObject == gameObject) continue;
             Vector2 to = (Vector2)hit.transform.position - pos;
@@ -238,7 +265,7 @@ public class Mine : MonoBehaviour
             var body = hit.attachedRigidbody;
             if (body != null)
             {
-                float falloff = Mathf.Clamp01(1f - dist / Tuning.MineBlastRadius);
+                float falloff = Mathf.Clamp01(1f - dist / blastRadius);
                 Vector2 dir = dist > 0.01f ? to / dist : Vector2.up;
                 body.AddForce(dir * Tuning.MineBlastImpulse * falloff * Mathf.Min(body.mass, 3f), ForceMode2D.Impulse);
             }
@@ -247,7 +274,7 @@ public class Mine : MonoBehaviour
             if (other != null && !other.exploded) other.Invoke("Chain", Tuning.MineChainDelay);
 
             var rock = hit.GetComponent<Asteroid>();
-            if (rock != null && dist < Tuning.MineRockRadius + rock.Size * 0.5f) rock.Hit();
+            if (rock != null && dist < Tuning.MineRockRadius * blastScale + rock.Size * 0.5f) rock.Hit();
         }
 
         Destroy(gameObject);

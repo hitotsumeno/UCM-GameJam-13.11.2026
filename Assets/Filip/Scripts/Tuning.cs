@@ -108,8 +108,11 @@ public static class Tuning
     public const float MeteorFirstDelay = 4f;     // seconds before the first one
     public const float MeteorIntervalMin = 3f;    // seconds between meteors
     public const float MeteorIntervalMax = 6f;
-    public const float MeteorSpeedMin = 7f;
-    public const float MeteorSpeedMax = 10f;
+    public const float MeteorSpeedMin = 13f;
+    public const float MeteorSpeedMax = 17f;
+    public const float MeteorLead = 0.9f;         // aims this many seconds ahead of where the player is flying
+    public const float MeteorShowerChance = 0.3f; // chance that a whole shower comes instead of one meteor
+    public const int MeteorShowerCount = 3;
     public const float MeteorSideSpeed = 1.5f;    // max sideways speed
     public const float MeteorSpread = 8f;         // appears this far left/right of the player at most
     public const float MeteorSpawnAhead = 22f;    // appears this far above the top of the screen
@@ -144,10 +147,10 @@ public static class Tuning
     // --- Mines: they sleep until the player is close, then hunt ---
     public const float MineSize = 1.1f;
     public const float MineMass = 0.8f;
-    public const float MineWakeRadius = 12f;      // wakes up when the player is this close
-    public const float MineLoseRadius = 20f;      // gives up when the player is this far
-    public const float MineSpeed = 4.5f;          // the player's top speed is 12, docking speed is 5
-    public const float MineAccel = 8f;            // how quickly it picks up speed
+    public const float MineWakeRadius = 16f;      // wakes up when the player is this close
+    public const float MineLoseRadius = 26f;      // gives up when the player is this far
+    public const float MineSpeed = 6.5f;          // the player's top speed is 12, docking speed is 5
+    public const float MineAccel = 14f;           // how quickly it picks up speed
     public const float MineBreachRadius = 2.2f;   // a blast this close to the player breaches the hull
     public const float MineBlastRadius = 4.5f;    // everything this close is pushed away
     public const float MineBlastImpulse = 10f;    // how hard
@@ -159,27 +162,30 @@ public static class Tuning
     // --- Mine behaviours ---
     public const float MinePatrolRange = 6f;      // a patrol mine glides this far to each side of its place
     public const float MinePatrolSpeed = 3.5f;
-    public const int MineRingCount = 6;           // mines circling a guarded tank
-    public const float MineRingRadius = 4.5f;
-    public const float MineRingSpeed = 2.5f;      // units per second along the circle
+    public const int MineRingCount = 5;           // mines circling a guarded tank; far enough apart not to set each other off
+    public const float MineRingRadius = 6f;
+    public const float MineRingSpeed = 3f;      // units per second along the circle
+    public const float MineHeavySize = 2.4f;      // heavy mine: big, takes several hits, wipes out everything around
+    public const int MineHeavyHits = 3;
+    public const float MineHeavyBlastScale = 2f;  // its blast and breach radius are this many times bigger
 
     // --- Black holes: they pull the player, bullets and crystals; the dark middle is fatal ---
     public const float HoleBigRadius = 2.2f;      // the dark middle of a big hole
     public const float HoleBigField = 20f;        // its pull reaches this far (dotted circle)
-    public const float HoleBigStrength = 320f;    // pull = this / distance squared
+    public const float HoleBigStrength = 520f;    // pull = this / distance squared
     public const float HoleSmallRadius = 1.1f;
     public const float HoleSmallField = 11f;
-    public const float HoleSmallStrength = 110f;
-    public const float HoleMaxAccel = 12f;        // the pull never gets stronger than this
+    public const float HoleSmallStrength = 200f;
+    public const float HoleMaxAccel = 14f;        // the pull never gets stronger than this
     public const float HoleCrystalPull = 0.7f;    // crystals feel this share of the pull
     public const float HoleDriftRange = 8f;       // a drifting hole glides this far to each side
-    public const float HoleDriftSpeed = 2.2f;
-    public const int HoleOrbitRocks = 4;          // rocks circling a big hole
+    public const float HoleDriftSpeed = 3f;
+    public const int HoleOrbitRocks = 6;          // rocks circling a big hole (they are the air supply of that level)
+    public const int HoleSmallOrbitRocks = 2;     // rocks circling a small still hole
+    public const float HoleBulletPull = 2.5f;     // bullets feel the pull this many times stronger, so their arc is easy to see
     public const float HoleOrbitSpeed = 3f;       // units per second along the circle
     public const float HoleSpinSpeed = 25f;       // degrees per second: how fast the picture turns
 
-    // --- Checkpoints inside a level ---
-    public const float CheckpointRadius = 3f;     // fly this close to the beacon to save the place
 
     // --- Oxygen crystals: destroyed rocks leave air behind ("destroy to breathe") ---
     public const float CrystalOxygen = 2f;        // oxygen per crystal (before the combo bonus)

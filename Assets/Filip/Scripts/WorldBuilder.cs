@@ -62,6 +62,7 @@ public static class WorldBuilder
                     case 'h': Mine.CreatePatrol(p, Vector2.right, w.root); break;
                     case 'v': Mine.CreatePatrol(p, Vector2.up, w.root); break;
                     case 's': Mine.CreateWall(p, w.root); break;
+                    case 'M': Mine.CreateHeavy(p, w.root); break;
                     case 'R': OxygenTank.Create(p, w.root); Mine.CreateRing(p, w.root); break;
                     // Gravity: planet, big and small black hole, small holes drifting sideways or up and down.
                     case '@': Planet.Create(p, w.root); break;
@@ -69,10 +70,6 @@ public static class WorldBuilder
                     case 'c': BlackHole.Create(p, w.root, false); break;
                     case 'x': BlackHole.CreateDrifting(p, Vector2.right, w.root); break;
                     case 'y': BlackHole.CreateDrifting(p, Vector2.up, w.root); break;
-                    case 'C':
-                        Checkpoint.Create(p, w.root,
-                            DraftGame.Instance != null && DraftGame.Instance.IsCheckpointUsed(p));
-                        break;
                     default:
                         if (char.IsDigit(c) && level.hints.ContainsKey(c))
                         {
